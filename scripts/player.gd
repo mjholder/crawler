@@ -15,19 +15,37 @@ signal turn_ended
 var health: float
 var is_dead: bool = false
 
+# --- Actions ---
+# Maps action name -> Callable(target: Node).
+# Register new actions with register_action(); call them via execute_action().
+var _actions: Dictionary = {}
+
 
 func _ready() -> void:
 	health = max_health
+	_register_actions()
 
 
-# --- Turn ---
+func _register_actions() -> void:
+	register_action("attack", _do_attack)
 
-func attack(target: Node) -> void:
-	if is_dead:
+
+func register_action(action_name: String, callable: Callable) -> void:
+	_actions[action_name] = callable
+
+
+func execute_action(action_name: String, target: Node = null) -> void:
+	if is_dead or not _actions.has(action_name):
 		return
-	if target.has_method("take_damage"):
-		target.take_damage(attack_damage)
+	_actions[action_name].call(target)
 	turn_ended.emit()
+
+
+# --- Action Implementations ---
+
+func _do_attack(target: Node) -> void:
+	if target and target.has_method("take_damage"):
+		target.take_damage(attack_damage)
 
 
 # --- Combat ---
