@@ -1,11 +1,68 @@
+class_name Enemy
 extends Node2D
 
+# --- Signals ---
+signal damaged(amount: float)
+signal died
+signal turn_ended
 
-# Called when the node enters the scene tree for the first time.
+# --- Stats ---
+@export var enemy_name: String = "Enemy"
+@export var max_health: float = 30.0
+@export var attack_damage: float = 5.0
+@export var experience_value: int = 10
+
+# --- State ---
+var health: float
+var is_dead: bool = false
+
+
 func _ready() -> void:
-	pass # Replace with function body.
+	health = max_health
+	_on_ready()
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
+# --- Turn ---
+
+func take_turn(target: Node) -> void:
+	if is_dead:
+		return
+	_perform_action(target)
+	turn_ended.emit()
+
+
+func _perform_action(target: Node) -> void:
+	if target.has_method("take_damage"):
+		target.take_damage(attack_damage)
+
+
+# --- Combat ---
+
+func take_damage(amount: float) -> void:
+	if is_dead:
+		return
+	health -= amount
+	damaged.emit(amount)
+	_on_damaged(amount)
+	if health <= 0.0:
+		_die()
+
+
+func _die() -> void:
+	is_dead = true
+	_on_death()
+	died.emit()
+
+
+# --- Extension Hooks ---
+
+func _on_ready() -> void:
+	pass
+
+
+func _on_damaged(_amount: float) -> void:
+	pass
+
+
+func _on_death() -> void:
 	pass
