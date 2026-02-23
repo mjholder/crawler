@@ -18,6 +18,28 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 <!-- Add entries below, newest first -->
 
+## Scoped state ownership — enemies belong to events, player belongs to game.gd
+
+**Decision:** The player reference lives on game.gd and persists across all events. Enemy references live on the event that spawned them and are gone when the event ends. Events receive the player as an argument on `start(player)` for the duration of the encounter.
+**Date:** 2026-02-22
+**Context:** game.gd previously held both player and enemy references. Enemies are transient (encounter-scoped); centralising them in game.gd means teardown has to happen there too, and game.gd accumulates knowledge it shouldn't need.
+**Alternatives considered:** All participants owned by game.gd; all participants owned by the event (including player).
+**Rationale:** Ownership follows logical lifetime. The player persists across a full run — save state, stats, inventory all live there. Enemies exist for one encounter. Keeping enemies on the event means signal wiring, wave tracking, and teardown are all self-contained; when the event is freed, all of that goes with it cleanly. game.gd stays thin.
+**Trade-offs / risks:** Events need to communicate outcomes back to game.gd (loot gained, XP earned, player health after combat) through the `event_complete` signal payload or a result object rather than game.gd reading state directly. That contract needs to be defined consistently across event types.
+
+---
+
+## Event state machine with virtual phase hooks
+
+**Decision:** Events are implemented as a base `Event` class with a fixed phase enum (`SETUP → RUNNING → RESOLUTION → COMPLETE`) and virtual hooks (`_on_setup()`, `_on_running()`, `_on_resolution()`) that subclasses override. The base class owns phase transition logic and emits `event_complete` when done; game.gd waits for that signal without ever inspecting phase state directly.
+**Date:** 2026-02-22
+**Context:** Event types need to be independently complex (e.g. a combat event with pre-fight dialogue, multiple enemy waves, and a post-fight loot phase) without that complexity leaking into game.gd or requiring architectural changes later.
+**Alternatives considered:** Base class with a single virtual `load(game)` method; signal-driven event bus; flat match statement in game.gd per event type.
+**Rationale:** A fixed phase scaffold on the base class means all events speak the same language to game.gd, while subclasses have full freedom inside each phase hook. A `CombatEvent` can loop back through `RUNNING` for additional waves internally — game.gd never knows or cares. New event types are a new file with no changes to the host.
+**Trade-offs / risks:** The fixed phase order may not fit every event type naturally. Phases that don't apply to a subclass just get empty overrides, which is fine, but if events need radically different flow the base enum may need revisiting.
+
+---
+
 ## Explicit participant setup over scene-tree auto-collection
 
 **Decision:** Player is set via `set_player()` and enemies are loaded via `load_combat_event()` rather than auto-discovered from scene children in `_ready()`.
