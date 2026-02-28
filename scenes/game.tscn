@@ -1,6 +1,21 @@
 [gd_scene format=3 uid="uid://nuxeodotj3dc"]
 
 [ext_resource type="Script" uid="uid://drgdsu6ayfhxl" path="res://scripts/game.gd" id="1_uwrxv"]
+[ext_resource type="Texture2D" uid="uid://dwf078w6efs4m" path="res://assets/sprites/background.jpg" id="2_yqjtg"]
 
 [node name="Game" type="Node2D" unique_id=579372869]
 script = ExtResource("1_uwrxv")
+
+[node name="GUI" type="CanvasLayer" parent="." unique_id=1418679747]
+
+[node name="Background" type="CanvasLayer" parent="." unique_id=77366099]
+follow_viewport_enabled = true
+
+[node name="Background" type="TextureRect" parent="Background" unique_id=345179468]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_yqjtg")
+expand_mode = 3
