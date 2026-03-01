@@ -15,6 +15,7 @@ signal turn_ended
 # --- State ---
 var health: float
 var is_dead: bool = false
+var _turn_pending: bool = false
 
 
 func _ready() -> void:
@@ -27,8 +28,18 @@ func _ready() -> void:
 func take_turn(target: Node) -> void:
 	if is_dead:
 		return
+	_turn_pending = true
 	_perform_action(target)
-	turn_ended.emit()
+
+
+func _process(_delta: float) -> void:
+	if _turn_pending and _is_turn_complete():
+		_turn_pending = false
+		turn_ended.emit()
+
+
+func _is_turn_complete() -> bool:
+	return true
 
 
 func _perform_action(target: Node) -> void:

@@ -25,7 +25,7 @@ The base enemy infrastructure is in place: `enemy.gd` defines stats, the turn ho
 
 ```
 Skeleton            Node2D            scripts/skeleton.gd
-├── Sprite          Sprite2D          display; texture swapped per state
+├── Sprite          AnimatedSprite2D  named animation states; SpriteFrames resource
 ├── AnimationSequencer  Timer         drives async sprite state transitions
 └── SFX             Node              grouping container, no script
     ├── AttackPlayer    AudioStreamPlayer2D
@@ -43,15 +43,27 @@ Script: `skeleton.gd`, which extends `Enemy` (which extends `Node2D`).
 
 Plain `Node2D`, not `Area2D` or `CharacterBody2D`. This is a turn-based game — there is no physics, no collision, no movement. The skeleton is positioned by whoever instantiates the scene. Adding a physics body would be dead weight and noise in the inspector.
 
-### Sprite (Sprite2D)
+### Sprite (AnimatedSprite2D)
 
-Holds a single `Texture2D` reference, swapped at runtime to change the visual state. Textures are `preload`ed as class constants at the top of `skeleton.gd`.
+Plays named animations from a `SpriteFrames` resource. The resource is configured in the editor with five animations — one per state — each containing a single frame for now:
 
-**Why Sprite2D and not AnimatedSprite2D?**
+| Animation name | Source image | Loop |
+|---|---|---|
+| `idle` | `SkeletonIdleFiltered.png` | yes |
+| `windup` | `SkeletonWindupFiltered.png` | no |
+| `swing` | `SkeletonSwingFiltered.png` | no |
+| `hit` | `SkeletonHitFiltered.png` | no |
+| `death` | `SkeletonDeathFiltered.png` | no |
 
-`AnimatedSprite2D` is built for frame-by-frame spritesheets — a `SpriteFrames` resource with named animations that tick at a given FPS. The five skeleton assets are independent PNG files, not a sheet. Using `AnimatedSprite2D` here would mean creating a `SpriteFrames` resource with five single-frame "animations", which adds a layer of indirection that doesn't carry its weight.
+`skeleton.gd` calls `_sprite.play("idle")` etc. — no texture preloads in the script, no texture swapping. The `SpriteFrames` resource owns the asset references.
 
-`Sprite2D` with swapped `.texture` is the direct, correct tool for this asset format. When the pipeline moves to multi-frame spritesheets the migration path is: replace `Sprite2D` with `AnimatedSprite2D`, create a `SpriteFrames` resource, and change `_set_sprite_state()` from `texture = ...` to `play("idle")`. Everything else in the script stays the same.
+**Why AnimatedSprite2D over Sprite2D?**
+
+`Sprite2D` with texture-swapping works for still images but treats every state as an identical operation (assign a texture). `AnimatedSprite2D` gives named, intention-revealing state transitions (`play("hit")` is clearer than `_sprite.texture = TEXTURE_HIT`), emits `animation_finished` when a non-looping animation ends (useful once states have multiple frames), and makes adding real frame-by-frame animation later a purely additive change — just load more frames into the existing animation in the `SpriteFrames` resource, no script changes.
+
+It also makes visual effects straightforward: scaling the sprite (zoom in on an attack), modulating its colour (red flash on hit), or tweening any property is done directly on the node with `create_tween()` and targets `_sprite.scale`, `_sprite.modulate`, etc. None of that requires a different node type.
+
+**Single-frame timing note:** For now, all non-looping animations have one frame, so `animation_finished` fires immediately after `play()`. State sequencing (windup → swing → idle) is still driven by the `AnimationSequencer` Timer. When animations gain real frames, the Timer delays can be tuned or replaced with `animation_finished` connections.
 
 ### AnimationSequencer (Timer)
 
@@ -81,84 +93,69 @@ The combat ambient track (`skyrim---combat-2.wav`) is NOT placed here. It's ambi
 
 ## Animation Timing
 
-This is the most important design decision in the skeleton scene.
+`turn_ended` is emitted by `enemy.gd`'s `_process()` function, not inside `take_turn()`. This allows animation sequences to gate the turn — the signal only fires once the enemy returns to `IDLE` (or `DEAD`).
 
-### The conflict
-
-`take_turn()` in `enemy.gd` is synchronous:
+**How it works in `enemy.gd`:**
 
 ```gdscript
+var _turn_pending: bool = false
+
 func take_turn(target: Node) -> void:
     if is_dead:
         return
+    _turn_pending = true
     _perform_action(target)
-    emit_signal("turn_ended")
+    # turn_ended is NOT emitted here
+
+func _process(_delta: float) -> void:
+    if _turn_pending and _is_turn_complete():
+        _turn_pending = false
+        turn_ended.emit()
+
+func _is_turn_complete() -> bool:
+    return true  # default: fires on next frame; subclasses override
 ```
 
-`turn_ended` fires immediately after `_perform_action()` returns. If a skeleton wants to play a windup animation *before* dealing damage, and a swing animation *after*, and only then signal the turn is over — that sequence would need to block the return of `_perform_action()`.
+Skeleton overrides the hook:
 
-Three options were considered:
+```gdscript
+func _is_turn_complete() -> bool:
+    return _state == State.IDLE or _state == State.DEAD
+```
 
-**Option A — Make `take_turn` / `_perform_action` async (await-based)**
+`game.gd` is unchanged — it still connects to `turn_ended` and doesn't care when it fires. Simple enemies that don't override `_is_turn_complete()` still end their turn on the very next frame (imperceptibly instant). The skeleton holds the turn until its animation sequence completes naturally.
 
-Change the base class to `async`, use `await timer.timeout` inside `_perform_action`. This would let animation sequences truly block before `turn_ended` fires.
+**Three options were considered:**
 
-Rejected. Invasive change to a settled architectural boundary. Every future enemy type becomes async, even ones that don't animate. `take_turn` becomes a coroutine that callers must `await`, which complicates the game loop significantly.
+**Option A — `await` inside `_perform_action`** — Rejected: makes every future enemy a coroutine, invasive base class change.
 
-**Option B — Emit `turn_ended` from `skeleton.gd` manually**
+**Option B — emit `turn_ended` manually from `skeleton.gd`** — Rejected: breaks the signal contract; `CombatEvent` and `game.gd` must be able to trust that `turn_ended` always comes from the base class.
 
-Suppress the base class emission and emit at the end of the animation sequence from the skeleton itself.
+**Option C (chosen) — `_process()` + `_is_turn_complete()` hook** — Base class owns the emission timing, subclasses declare readiness through a clean override. The turn is genuinely held until the animation is done.
 
-Rejected outright. The architecture rule is: `turn_ended` is emitted by `take_turn()` in the base class. This is the single, trusted signal that `CombatEvent` and `game.gd` use to know a turn is over. Breaking it for one enemy type means the game loop's signal contract can no longer be trusted uniformly.
-
-**Option C — Cosmetic async animation (chosen)**
-
-`_perform_action()` applies damage immediately and returns. The sprite sequence (windup → swing → idle) plays out over subsequent frames in the background via the `AnimationSequencer` Timer, *after* `turn_ended` has already fired.
-
-The turn logic is complete the moment `_perform_action` returns. The visual sequence is a retrospective cosmetic effect — it has no bearing on when the next player turn starts. The player does not perceive the difference in a turn-based game: the combat log conveys the narrative beat, not animation timing.
-
-This is the model used by the vast majority of turn-based RPG engines. It keeps the base class clean, imposes no async complexity, and still gives full visual feedback.
-
-**When this trade-off would need revisiting:** If a future design requires the player to *react* to an animation mid-sequence (e.g. a parry window, a dodge prompt), the turn loop would need to support async enemy actions. That change belongs on the base class and the event system, not on this scene.
+**`animation_finished` and the Timer's future:** The `AnimationSequencer` Timer currently drives the windup → swing → idle sequence and controls display duration. Once animations have real frames, `animation_finished` can replace the Timer entirely — when the last frame of `swing` plays, `_transition(State.IDLE)` is called, `_is_turn_complete()` returns true, and `turn_ended` fires. No structural changes needed.
 
 ---
 
-## Sprite State Machine
+## Enemy State
 
-States are defined in a `SpriteState` enum in `skeleton.gd`. All texture swaps go through a single internal method `_set_sprite_state(state: SpriteState)` — never directly.
+`AnimatedSprite2D` owns animation state natively — `_sprite.play("hit")` is both the instruction and the record. There is no need to mirror that in a parallel sprite enum.
 
-```
-_on_ready()
-    └── IDLE
+What the script *does* need is a behavioral state enum, which serves a different purpose: game logic decisions that are independent of whichever animation is currently playing.
 
-_perform_action(target)
-    ├── apply damage to target
-    ├── WINDUP (sprite set immediately)
-    ├── play AttackSFX
-    └── start timer (0.25s)
-            └── timer fires → SWING
-                    └── start timer (0.20s)
-                            └── timer fires → IDLE
-
-_on_damaged(amount)
-    ├── stop timer (interrupt any in-progress attack sequence)
-    ├── reset _anim_phase to 0
-    ├── HIT
-    ├── play HurtSFX
-    └── start timer (0.20s)
-            └── timer fires → IDLE
-
-_on_death()
-    ├── stop timer
-    ├── reset _anim_phase to 0
-    ├── DEATH
-    └── play DeathSFX
-        (no further transitions)
+```gdscript
+enum State { IDLE, ATTACKING, HIT, DEAD }
+var _state: State = State.IDLE
 ```
 
-`_anim_phase` is an `int` counter that the timer's `timeout` callback reads to decide the next state. Using a counter on a single Timer is simpler than chaining multiple timers or nodes.
+This is used for:
 
-The `_on_damaged` path correctly handles the case where the skeleton is hit while its own attack animation is still playing out — `stop()` cancels the attack sequence cleanly before the hit reaction begins.
+- **Turn gating** — `_is_turn_complete()` returns `_state == State.IDLE or _state == State.DEAD`, which is what `enemy.gd`'s `_process()` checks before emitting `turn_ended`. The turn is held as long as the skeleton is in any other state.
+- **Interrupt detection** — `_on_damaged` checks `if _state == State.ATTACKING` to know whether to cancel the `AnimationSequencer` Timer before playing the hit reaction.
+- **Guard clauses** — hooks can return early if `_state == State.DEAD` to prevent stacking reactions on a dying enemy.
+- **Future logic** — e.g. a skeleton variant that takes reduced damage while attacking, or prevents certain actions during a hit stun.
+
+The animation name and the state value are kept in sync by `_transition(next_state: State)`, which sets `_state` and calls the matching `_sprite.play()`. They always move together but serve different masters: one for logic, one for visuals.
 
 ---
 
@@ -188,6 +185,7 @@ experience_value = 15
 ## Future Considerations
 
 - **Adding SFX:** Assign an `AudioStream` to any of the three players in the inspector. No code changes needed.
-- **Multiple frames per state:** Replace `Sprite2D` with `AnimatedSprite2D`, create a `SpriteFrames` resource, change `_set_sprite_state` to call `play()`. The timer-based sequencing logic is unchanged or simplified.
-- **Skeleton variants:** Subclass `Skeleton` for meaningful behaviour differences (e.g. a skeleton that sometimes skips the windup and attacks twice). For stat-only variants (armoured skeleton), just reuse `skeleton.gd` with different inspector values.
+- **Multiple frames per state:** Add frames to the relevant animation in the `SpriteFrames` resource. Set an appropriate FPS. The Timer delays can then be tuned to match, or replaced with `animation_finished` connections — no structural changes.
+- **Visual effects:** Tween `_sprite.scale` for a zoom punch on attack, tween `_sprite.modulate` for a red flash on hit, tween `_sprite.modulate.a` to zero for a death fade. All done with `create_tween()` in the relevant hook, targeting the `AnimatedSprite2D` node directly.
+- **Skeleton variants:** Subclass `Skeleton` for meaningful behaviour differences (e.g. a skeleton that sometimes skips the windup and attacks twice). For stat-only variants (armoured skeleton), just reuse `skeleton.gd` with different inspector values and a different `SpriteFrames` resource assigned in the scene.
 - **Reaction windows / parry prompts:** If these are ever needed, the async turn loop change belongs on `enemy.gd` and `CombatEvent`, not here. The skeleton scene just needs its `_perform_action` to emit a signal the event can hook into.
