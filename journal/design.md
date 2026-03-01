@@ -18,6 +18,15 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 <!-- Add entries below, newest first -->
 
+## Visual style — pixel art rendered from 3D models
+
+**Decision:** Sprites are produced by rendering 3D models into pixel art frames rather than hand-drawn pixel art or ASCII art. Each enemy and character is modelled, rigged, posed, and exported as a spritesheet per state (idle, attack, hurt, death).
+**Date:** 2026-03-01
+**Context:** Needed to commit to a visual style before building the UI and enemy display systems. ASCII art was the implicit placeholder; pixel art from 3D renders was explored as an alternative.
+**Alternatives considered:** ASCII art (terminal-style); hand-drawn pixel art; full 3D in-engine rendering.
+**Rationale:** Pixel art from 3D renders gives consistent proportions and lighting across all characters without requiring hand-drawing skill for every asset. The skeleton enemy was the first asset produced under this approach and confirmed the style is achievable and looks good. It also sets a replicable pipeline for future enemies.
+**Trade-offs / risks:** Asset production requires a 3D modelling and rigging step before any in-game sprite exists. Pipeline (model → rig → pose → render → import) needs to stay consistent across all characters or visual coherence breaks. Sprite resolution and palette should be standardised early.
+
 ## Scoped state ownership — enemies belong to events, player belongs to game.gd
 
 **Decision:** The player reference lives on game.gd and persists across all events. Enemy references live on the event that spawned them and are gone when the event ends. Events receive the player as an argument on `start(player)` for the duration of the encounter.
