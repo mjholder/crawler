@@ -7,8 +7,12 @@
 script = ExtResource("1_uwrxv")
 
 [node name="GUI" type="CanvasLayer" parent="." unique_id=1418679747]
+layer = 4
+
+[node name="EventContainer" type="Node" parent="." unique_id=885557593]
 
 [node name="Background" type="CanvasLayer" parent="." unique_id=77366099]
+layer = -1
 follow_viewport_enabled = true
 
 [node name="Background" type="TextureRect" parent="Background" unique_id=345179468]

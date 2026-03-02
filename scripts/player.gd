@@ -5,6 +5,7 @@ extends Node2D
 signal damaged(amount: float)
 signal died
 signal turn_ended
+signal attacked(damage: float)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -34,18 +35,17 @@ func register_action(action_name: String, callable: Callable) -> void:
 	_actions[action_name] = callable
 
 
-func execute_action(action_name: String, target: Node = null) -> void:
+func execute_action(action_name: String) -> void:
 	if is_dead or not _actions.has(action_name):
 		return
-	_actions[action_name].call(target)
+	_actions[action_name].call()
 	turn_ended.emit()
 
 
 # --- Action Implementations ---
 
-func _do_attack(target: Node) -> void:
-	if target and target.has_method("take_damage"):
-		target.take_damage(attack_damage)
+func _do_attack() -> void:
+	attacked.emit(attack_damage)
 
 
 # --- Combat ---

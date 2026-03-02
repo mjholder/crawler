@@ -11,15 +11,9 @@ enum Phase { SETUP, RUNNING, RESOLUTION, COMPLETE }
 
 var phase: Phase = Phase.SETUP
 
-# --- Participants ---
-
-var player: Player = null
-
-
 # --- Public API ---
 
-func start(p: Player) -> void:
-	player = p
+func start() -> void:
 	_set_phase(Phase.SETUP)
 	_set_phase(Phase.RUNNING)
 

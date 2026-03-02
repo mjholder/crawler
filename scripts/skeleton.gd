@@ -14,7 +14,6 @@ const HIT_DURATION: float = 0.20
 # --- Node References ---
 
 @onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
-@onready var _sequencer: Timer = $AnimationSequencer
 @onready var _attack_player: AudioStreamPlayer2D = $SFX/AttackPlayer
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
 @onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
@@ -24,13 +23,11 @@ const HIT_DURATION: float = 0.20
 
 func _on_ready() -> void:
 	_sprite.animation_finished.connect(_on_animation_finished)
-	_sequencer.timeout.connect(_on_sequencer_timeout)
 	_transition(State.IDLE)
 
 
-func _perform_action(target: Node) -> void:
-	if target.has_method("take_damage"):
-		target.take_damage(attack_damage)
+func _perform_action() -> void:
+	super._perform_action()
 	_play_sfx(_attack_player)
 	_transition(State.ATTACKING)
 
@@ -38,14 +35,11 @@ func _perform_action(target: Node) -> void:
 func _on_damaged(_amount: float) -> void:
 	if _state == State.DEAD:
 		return
-	_sequencer.stop()
 	_play_sfx(_hurt_player)
 	_transition(State.HIT)
-	_sequencer.start(HIT_DURATION)
 
 
 func _on_death() -> void:
-	_sequencer.stop()
 	_play_sfx(_death_player)
 	_transition(State.DEAD)
 
@@ -59,12 +53,7 @@ func _is_turn_complete() -> bool:
 # --- Internal ---
 
 func _on_animation_finished() -> void:
-	if _state == State.ATTACKING:
-		_transition(State.IDLE)
-
-
-func _on_sequencer_timeout() -> void:
-	if _state == State.HIT:
+	if _state == State.ATTACKING or _state == State.HIT:
 		_transition(State.IDLE)
 
 

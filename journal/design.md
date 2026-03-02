@@ -18,6 +18,17 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 <!-- Add entries below, newest first -->
 
+## Signal-based attacks and player reference isolation
+
+**Decision:** Player and Enemy both emit `attacked(damage: float)` signals when they act rather than calling `take_damage()` directly on a target reference. `game.gd` is the sole class that holds a `var player` reference. Events expose `receive_player_attack(damage)` for routing player damage to the appropriate enemy, and emit `player_attacked(damage)` for routing enemy damage back to `game.gd`. `Event.start()` takes no arguments — events no longer receive a player reference at all.
+**Date:** 2026-03-01
+**Context:** The original design passed target nodes across ownership boundaries: `enemy._perform_action(target: Node)` called `target.take_damage()` directly via duck typing, `player._do_attack(target: Node)` did the same, and `event.start(player: Player)` spread the player reference into the event layer. This created tight coupling and violated the principle that `game.gd` should be the sole owner of the player.
+**Alternatives considered:** Typed `Combatant` base class with a shared `deal_damage(target: Combatant)` method; keeping direct calls but enforcing typed parameters; a central event bus.
+**Rationale:** Godot best practices strongly favour loose coupling via signals. Neither combatant needs to know what it's hitting — the event layer owns target selection for player attacks, and `game.gd` owns damage application to the player. This makes both Player and Enemy independently testable and keeps all player-touching code in one place.
+**Trade-offs / risks:** Adding a new action type that needs to target something specific (e.g. a heal targeting a specific ally) requires extending the signal/routing pattern rather than passing a direct reference. `execute_action()` no longer accepts a target parameter, so action callables must pull context from signals or event state rather than receiving it directly.
+
+---
+
 ## Visual style — pixel art rendered from 3D models
 
 **Decision:** Sprites are produced by rendering 3D models into pixel art frames rather than hand-drawn pixel art or ASCII art. Each enemy and character is modelled, rigged, posed, and exported as a spritesheet per state (idle, attack, hurt, death).

@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://bltmvkwkf82bn"]
+
+[ext_resource type="Script" uid="uid://d2dwk8vxnygnd" path="res://scripts/event.gd" id="1_aerqd"]
+
+[node name="CombatEvent" type="Node2D" unique_id=1843324458]
+script = ExtResource("1_aerqd")
+metadata/_custom_type_script = "uid://d2dwk8vxnygnd"

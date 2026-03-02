@@ -5,6 +5,7 @@ extends Node2D
 signal damaged(amount: float)
 signal died
 signal turn_ended
+signal attacked(damage: float)
 
 # --- Stats ---
 @export var enemy_name: String = "Enemy"
@@ -25,11 +26,11 @@ func _ready() -> void:
 
 # --- Turn ---
 
-func take_turn(target: Node) -> void:
+func take_turn() -> void:
 	if is_dead:
 		return
 	_turn_pending = true
-	_perform_action(target)
+	_perform_action()
 
 
 func _process(_delta: float) -> void:
@@ -42,9 +43,8 @@ func _is_turn_complete() -> bool:
 	return true
 
 
-func _perform_action(target: Node) -> void:
-	if target.has_method("take_damage"):
-		target.take_damage(attack_damage)
+func _perform_action() -> void:
+	attacked.emit(attack_damage)
 
 
 # --- Combat ---

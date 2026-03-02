@@ -13,7 +13,6 @@ var round_number: int = 0
 var player: Player
 
 # --- Current Event ---
-# TODO: type as Event once the base class is implemented
 
 var current_event: Event = null
 
@@ -32,16 +31,28 @@ func set_player(p: Player) -> void:
 
 # --- Event Control ---
 
-func start_event(event: Node) -> void:
+func start_event(event: Event) -> void:
 	current_event = event
 	current_event.event_complete.connect(_on_event_complete, CONNECT_ONE_SHOT)
-	current_event.start(player)
+	if event is CombatEvent:
+		var ce := event as CombatEvent
+		ce.player_attacked.connect(_on_player_attacked)
+		player.attacked.connect(ce.receive_player_attack)
+	current_event.start()
 
 
 func _on_event_complete() -> void:
 	# TODO: receive a result payload once the Event API is finalised
+	if current_event is CombatEvent:
+		var ce := current_event as CombatEvent
+		ce.player_attacked.disconnect(_on_player_attacked)
+		player.attacked.disconnect(ce.receive_player_attack)
 	current_event = null
 	state = TurnState.NO_TURN
+
+
+func _on_player_attacked(damage: float) -> void:
+	player.take_damage(damage)
 
 
 # --- Turn Flow ---
