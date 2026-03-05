@@ -56,8 +56,6 @@ func _on_player_attacked(damage: float) -> void:
 
 
 # --- Turn Flow ---
-# TODO: turn flow will be driven by CombatEvent once implemented;
-# these stubs exist to keep the state machine wired up
 
 func _start_player_turn() -> void:
 	state = TurnState.PLAYER_TURN
