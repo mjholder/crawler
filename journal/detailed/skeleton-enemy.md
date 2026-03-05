@@ -26,7 +26,7 @@ The base enemy infrastructure is in place: `enemy.gd` defines stats, the turn ho
 ```
 Skeleton            Node2D            scripts/skeleton.gd
 ├── Sprite          AnimatedSprite2D  named animation states; SpriteFrames resource
-├── AnimationSequencer  Timer         drives async sprite state transitions
+├── AnimationPlayer AnimationPlayer   sequences multi-phase animations (e.g. attack)
 └── SFX             Node              grouping container, no script
     ├── AttackPlayer    AudioStreamPlayer2D
     ├── HurtPlayer      AudioStreamPlayer2D
@@ -63,17 +63,18 @@ Plays named animations from a `SpriteFrames` resource. The resource is configure
 
 It also makes visual effects straightforward: scaling the sprite (zoom in on an attack), modulating its colour (red flash on hit), or tweening any property is done directly on the node with `create_tween()` and targets `_sprite.scale`, `_sprite.modulate`, etc. None of that requires a different node type.
 
-**Single-frame timing note:** For now, all non-looping animations have one frame, so `animation_finished` fires immediately after `play()`. State sequencing (windup → swing → idle) is still driven by the `AnimationSequencer` Timer. When animations gain real frames, the Timer delays can be tuned or replaced with `animation_finished` connections.
+**Single-frame timing note:** For now, all non-looping animations have one frame, so `animation_finished` fires immediately after `play()`. State sequencing for the attack (windup → swing) is owned by the `AnimationPlayer` via method call tracks. Timing is tuned in the AnimationPlayer timeline — no script changes needed.
 
-### AnimationSequencer (Timer)
+### AnimationPlayer
 
-One-shot timer that drives the sprite state sequence *after* a turn ends. It does not block the turn loop.
+Owns the multi-phase attack sequence. The `"attack"` animation has two method call tracks:
 
-See **Animation Timing** below for why this exists.
+- At `t=0`: calls `_sprite.play("windup")`
+- At `t=N`: calls `_sprite.play("swing")` *(N tuned in editor to windup display duration)*
 
-Properties:
-- `one_shot = true` — each phase re-starts the timer explicitly; it does not loop.
-- `autostart = false`
+When the animation ends, `animation_finished` fires and `_on_anim_player_finished()` calls `_transition(State.IDLE)`.
+
+Single-state animations (`hit`, `death`) are played directly on the `AnimatedSprite2D` and do not use the `AnimationPlayer`.
 
 ### SFX (Node)
 
@@ -133,7 +134,7 @@ func _is_turn_complete() -> bool:
 
 **Option C (chosen) — `_process()` + `_is_turn_complete()` hook** — Base class owns the emission timing, subclasses declare readiness through a clean override. The turn is genuinely held until the animation is done.
 
-**`animation_finished` and the Timer's future:** The `AnimationSequencer` Timer currently drives the windup → swing → idle sequence and controls display duration. Once animations have real frames, `animation_finished` can replace the Timer entirely — when the last frame of `swing` plays, `_transition(State.IDLE)` is called, `_is_turn_complete()` returns true, and `turn_ended` fires. No structural changes needed.
+The `AnimationPlayer` owns attack sequencing via method call tracks. `_transition(State.IDLE)` is called when its `animation_finished` fires. Adding or reordering attack phases is a timeline edit, not a code change.
 
 ---
 
@@ -151,11 +152,51 @@ var _state: State = State.IDLE
 This is used for:
 
 - **Turn gating** — `_is_turn_complete()` returns `_state == State.IDLE or _state == State.DEAD`, which is what `enemy.gd`'s `_process()` checks before emitting `turn_ended`. The turn is held as long as the skeleton is in any other state.
-- **Interrupt detection** — `_on_damaged` checks `if _state == State.ATTACKING` to know whether to cancel the `AnimationSequencer` Timer before playing the hit reaction.
+- **Interrupt detection** — `_on_damaged` checks `if _state == State.ATTACKING` to know whether to stop the `AnimationPlayer` before playing the hit reaction.
 - **Guard clauses** — hooks can return early if `_state == State.DEAD` to prevent stacking reactions on a dying enemy.
 - **Future logic** — e.g. a skeleton variant that takes reduced damage while attacking, or prevents certain actions during a hit stun.
 
 The animation name and the state value are kept in sync by `_transition(next_state: State)`, which sets `_state` and calls the matching `_sprite.play()`. They always move together but serve different masters: one for logic, one for visuals.
+
+---
+
+## Node Wiring
+
+```gdscript
+@onready var _sprite: AnimatedSprite2D = $Sprite
+@onready var _anim_player: AnimationPlayer = $AnimationPlayer
+@onready var _attack_player: AudioStreamPlayer2D = $SFX/AttackPlayer
+@onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
+@onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
+```
+
+Signal connections made in `_on_ready()`:
+
+```gdscript
+func _on_ready() -> void:
+    _anim_player.animation_finished.connect(_on_anim_player_finished)
+    _sprite.animation_finished.connect(_on_sprite_animation_finished)
+    _transition(State.IDLE)
+
+func _on_anim_player_finished(_anim_name: StringName) -> void:
+    _transition(State.IDLE)
+
+func _on_sprite_animation_finished() -> void:
+    if _state == State.HIT:
+        _transition(State.IDLE)
+```
+
+`_transition()` calls `_anim_player.play("attack")` for the ATTACKING state so the AnimationPlayer drives the windup → swing sequence via its method call tracks:
+
+```gdscript
+func _transition(next: State) -> void:
+    _state = next
+    match _state:
+        State.IDLE:      _sprite.play("idle")
+        State.ATTACKING: _anim_player.play("attack")  # AnimationPlayer drives windup → swing via method call tracks
+        State.HIT:       _sprite.play("hit")
+        State.DEAD:      _sprite.play("death")
+```
 
 ---
 
@@ -185,7 +226,7 @@ experience_value = 15
 ## Future Considerations
 
 - **Adding SFX:** Assign an `AudioStream` to any of the three players in the inspector. No code changes needed.
-- **Multiple frames per state:** Add frames to the relevant animation in the `SpriteFrames` resource. Set an appropriate FPS. The Timer delays can then be tuned to match, or replaced with `animation_finished` connections — no structural changes.
+- **Multiple frames per state:** Add frames to the relevant animation in the `SpriteFrames` resource. Set an appropriate FPS. Timing for the attack sequence is tuned in the AnimationPlayer timeline. For sprite-only animations (hit, death), adjust FPS in the SpriteFrames resource.
 - **Visual effects:** Tween `_sprite.scale` for a zoom punch on attack, tween `_sprite.modulate` for a red flash on hit, tween `_sprite.modulate.a` to zero for a death fade. All done with `create_tween()` in the relevant hook, targeting the `AnimatedSprite2D` node directly.
 - **Skeleton variants:** Subclass `Skeleton` for meaningful behaviour differences (e.g. a skeleton that sometimes skips the windup and attacks twice). For stat-only variants (armoured skeleton), just reuse `skeleton.gd` with different inspector values and a different `SpriteFrames` resource assigned in the scene.
 - **Reaction windows / parry prompts:** If these are ever needed, the async turn loop change belongs on `enemy.gd` and `CombatEvent`, not here. The skeleton scene just needs its `_perform_action` to emit a signal the event can hook into.
