@@ -7,13 +7,10 @@ enum State { IDLE, ATTACKING, HIT, DEAD }
 
 var _state: State = State.IDLE
 
-# --- Animation Timing ---
-
-const HIT_DURATION: float = 0.20
-
 # --- Node References ---
 
-@onready var _sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var _sprite: AnimatedSprite2D = $Sprite
+@onready var _anim_player: AnimationPlayer = $AnimationPlayer
 @onready var _attack_player: AudioStreamPlayer2D = $SFX/AttackPlayer
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
 @onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
@@ -22,7 +19,8 @@ const HIT_DURATION: float = 0.20
 # --- Extension Hook Overrides ---
 
 func _on_ready() -> void:
-	_sprite.animation_finished.connect(_on_animation_finished)
+	_anim_player.animation_finished.connect(_on_anim_player_finished)
+	_sprite.animation_finished.connect(_on_sprite_animation_finished)
 	_transition(State.IDLE)
 
 
@@ -35,6 +33,8 @@ func _perform_action() -> void:
 func _on_damaged(_amount: float) -> void:
 	if _state == State.DEAD:
 		return
+	if _state == State.ATTACKING:
+		_anim_player.stop()
 	_play_sfx(_hurt_player)
 	_transition(State.HIT)
 
@@ -52,8 +52,12 @@ func _is_turn_complete() -> bool:
 
 # --- Internal ---
 
-func _on_animation_finished() -> void:
-	if _state == State.ATTACKING or _state == State.HIT:
+func _on_anim_player_finished(_anim_name: StringName) -> void:
+	_transition(State.IDLE)
+
+
+func _on_sprite_animation_finished() -> void:
+	if _state == State.HIT:
 		_transition(State.IDLE)
 
 
@@ -61,8 +65,8 @@ func _transition(next: State) -> void:
 	_state = next
 	match _state:
 		State.IDLE:      _sprite.play("idle")
-		State.ATTACKING: _sprite.play("attack")
-		State.HIT:       _sprite.play("hurt")
+		State.ATTACKING: _anim_player.play("attack")
+		State.HIT:       _sprite.play("hit")
 		State.DEAD:      _sprite.play("death")
 
 

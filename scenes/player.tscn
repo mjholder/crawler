@@ -1,6 +1,79 @@
-[gd_scene format=3 uid="uid://dc8po6axusk31"]
+[gd_scene load_steps=4 format=3 uid="uid://dc8po6axusk31"]
 
 [ext_resource type="Script" uid="uid://c2b7pggstlscu" path="res://scripts/player.gd" id="1_3vyb7"]
 
+[sub_resource type="SpriteFrames" id="SpriteFrames_player"]
+animations = [{
+"frames": [],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"windup",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"swing",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"hurt",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": false,
+"name": &"death",
+"speed": 5.0
+}]
+
+[sub_resource type="Animation" id="Animation_attack"]
+resource_name = "attack"
+length = 0.8
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite")
+tracks/0/interp = 1
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [&"windup"],
+"method": &"play"
+}, {
+"args": [&"swing"],
+"method": &"play"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_player"]
+_data = {
+&"attack": SubResource("Animation_attack")
+}
+
 [node name="Player" type="Node2D" unique_id=1669195153]
 script = ExtResource("1_3vyb7")
+player_name = "Player"
+max_health = 100.0
+attack_damage = 10.0
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_player")
+animation = &"idle"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_player")
+}
+
+[node name="SFX" type="Node" parent="."]
+
+[node name="AttackPlayer" type="AudioStreamPlayer2D" parent="SFX"]
+
+[node name="HurtPlayer" type="AudioStreamPlayer2D" parent="SFX"]
+
+[node name="DeathPlayer" type="AudioStreamPlayer2D" parent="SFX"]

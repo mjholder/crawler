@@ -101,11 +101,11 @@ The combat ambient track (`skyrim---combat-2.wav`) is NOT placed here. It's ambi
 ```gdscript
 var _turn_pending: bool = false
 
-func take_turn(target: Node) -> void:
+func take_turn() -> void:
     if is_dead:
         return
     _turn_pending = true
-    _perform_action(target)
+    _perform_action()
     # turn_ended is NOT emitted here
 
 func _process(_delta: float) -> void:

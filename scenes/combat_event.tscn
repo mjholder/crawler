@@ -5,3 +5,5 @@
 [node name="CombatEvent" type="Node2D" unique_id=1843324458]
 script = ExtResource("1_aerqd")
 metadata/_custom_type_script = "uid://d2dwk8vxnygnd"
+
+[node name="Enemies" type="Node" parent="."]

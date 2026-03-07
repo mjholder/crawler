@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://brbnfv00v65s2"]
+[gd_scene load_steps=9 format=3 uid="uid://brbnfv00v65s2"]
 
 [ext_resource type="Script" path="res://scripts/skeleton.gd" id="1_ssl1b"]
 [ext_resource type="Texture2D" uid="uid://bq8v4qtgu683g" path="res://assets/sprites/SkeletonWindupFiltered.png" id="2_w4hcs"]
@@ -9,17 +9,6 @@
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_rjsi3"]
 animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("2_w4hcs")
-}, {
-"duration": 1.0,
-"texture": ExtResource("3_haw2w")
-}],
-"loop": false,
-"name": &"attack",
-"speed": 5.0
-}, {
 "frames": [{
 "duration": 1.0,
 "texture": ExtResource("4_i0f3v")
@@ -33,7 +22,7 @@ animations = [{
 "texture": ExtResource("5_xrus2")
 }],
 "loop": false,
-"name": &"hurt",
+"name": &"hit",
 "speed": 5.0
 }, {
 "frames": [{
@@ -43,24 +32,69 @@ animations = [{
 "loop": true,
 "name": &"idle",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_haw2w")
+}],
+"loop": false,
+"name": &"swing",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_w4hcs")
+}],
+"loop": false,
+"name": &"windup",
+"speed": 5.0
 }]
 
-[node name="Skeleton" type="Node2D" unique_id=1852456792]
+[sub_resource type="Animation" id="Animation_atk01"]
+resource_name = "attack"
+length = 0.8
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite")
+tracks/0/interp = 1
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [&"windup"],
+"method": &"play"
+}, {
+"args": [&"swing"],
+"method": &"play"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_atk01"]
+_data = {
+&"attack": SubResource("Animation_atk01")
+}
+
+[node name="Skeleton" type="Node2D"]
 script = ExtResource("1_ssl1b")
 enemy_name = "Skeleton"
 max_health = 20.0
 attack_damage = 6.0
 experience_value = 15
-metadata/_custom_type_script = "uid://dgb10l4wratfq"
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1141638387]
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_rjsi3")
 animation = &"idle"
 
-[node name="SFX" type="Node" parent="." unique_id=1305986885]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_atk01")
+}
 
-[node name="AttackPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=626699632]
+[node name="SFX" type="Node" parent="."]
 
-[node name="HurtPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=761743524]
+[node name="AttackPlayer" type="AudioStreamPlayer2D" parent="SFX"]
 
-[node name="DeathPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=226246100]
+[node name="HurtPlayer" type="AudioStreamPlayer2D" parent="SFX"]
+
+[node name="DeathPlayer" type="AudioStreamPlayer2D" parent="SFX"]

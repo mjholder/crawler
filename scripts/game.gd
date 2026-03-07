@@ -8,6 +8,11 @@ enum TurnState { PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, NO_TURN }
 var state: TurnState = TurnState.NO_TURN
 var round_number: int = 0
 
+# --- Music ---
+
+@export var _combat_music: AudioStream
+@export var _exploration_music: AudioStream
+
 # --- Participants ---
 
 var player: Player
@@ -18,7 +23,11 @@ var current_event: Event = null
 
 
 func _ready() -> void:
-	pass
+	set_player($Player)
+	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
+	if _exploration_music:
+		$Music/BGM.stream = _exploration_music
+		$Music/BGM.play()
 
 
 # --- Participant Setup ---
@@ -32,12 +41,16 @@ func set_player(p: Player) -> void:
 # --- Event Control ---
 
 func start_event(event: Event) -> void:
+	$EventContainer.add_child(event)
 	current_event = event
 	current_event.event_complete.connect(_on_event_complete, CONNECT_ONE_SHOT)
 	if event is CombatEvent:
 		var ce := event as CombatEvent
 		ce.player_attacked.connect(_on_player_attacked)
-		player.attacked.connect(ce.receive_player_attack)
+		ce.enemy_turns_complete.connect(_on_enemy_turns_complete)
+		player.attacked.connect(_on_player_attack_action)
+		$GUI/CombatHUD.show()
+		_start_combat_music()
 	current_event.start()
 
 
@@ -46,9 +59,13 @@ func _on_event_complete() -> void:
 	if current_event is CombatEvent:
 		var ce := current_event as CombatEvent
 		ce.player_attacked.disconnect(_on_player_attacked)
-		player.attacked.disconnect(ce.receive_player_attack)
+		ce.enemy_turns_complete.disconnect(_on_enemy_turns_complete)
+		player.attacked.disconnect(_on_player_attack_action)
+		$GUI/CombatHUD.hide()
+	current_event.queue_free()
 	current_event = null
 	state = TurnState.NO_TURN
+	_start_exploration_music()
 
 
 func _on_player_attacked(damage: float) -> void:
@@ -69,9 +86,38 @@ func _on_player_turn_ended() -> void:
 
 
 func _run_enemy_turns() -> void:
-	# TODO: delegate to CombatEvent; enemy roster lives on the event
 	state = TurnState.ENEMY_TURN
+	(current_event as CombatEvent).run_enemy_turns()
+
+
+func _on_enemy_turns_complete() -> void:
 	_start_player_turn()
+
+
+func _on_player_attack_action(damage: float) -> void:
+	if current_event is CombatEvent:
+		var ce := current_event as CombatEvent
+		# Target selection: first living enemy for now
+		for enemy in ce._enemies:
+			if not enemy.is_dead:
+				ce.receive_player_attack(enemy, damage)
+				break
+
+
+# --- Music ---
+
+func _start_combat_music() -> void:
+	if _combat_music == null:
+		return
+	$Music/BGM.stream = _combat_music
+	$Music/BGM.play()
+
+
+func _start_exploration_music() -> void:
+	if _exploration_music == null:
+		return
+	$Music/BGM.stream = _exploration_music
+	$Music/BGM.play()
 
 
 # --- End Conditions ---

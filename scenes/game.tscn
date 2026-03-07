@@ -1,21 +1,17 @@
-[gd_scene format=3 uid="uid://nuxeodotj3dc"]
+[gd_scene load_steps=4 format=3 uid="uid://nuxeodotj3dc"]
 
 [ext_resource type="Script" uid="uid://drgdsu6ayfhxl" path="res://scripts/game.gd" id="1_uwrxv"]
 [ext_resource type="Texture2D" uid="uid://dwf078w6efs4m" path="res://assets/sprites/background.jpg" id="2_yqjtg"]
+[ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
 
 [node name="Game" type="Node2D" unique_id=579372869]
 script = ExtResource("1_uwrxv")
-
-[node name="GUI" type="CanvasLayer" parent="." unique_id=1418679747]
-layer = 4
-
-[node name="EventContainer" type="Node" parent="." unique_id=885557593]
 
 [node name="Background" type="CanvasLayer" parent="." unique_id=77366099]
 layer = -1
 follow_viewport_enabled = true
 
-[node name="Background" type="TextureRect" parent="Background" unique_id=345179468]
+[node name="BG" type="TextureRect" parent="Background" unique_id=345179468]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -23,3 +19,52 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("2_yqjtg")
 expand_mode = 3
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+
+[node name="EventContainer" type="Node" parent="." unique_id=885557593]
+
+[node name="Music" type="Node" parent="."]
+
+[node name="BGM" type="AudioStreamPlayer" parent="Music"]
+
+[node name="Ambience" type="AudioStreamPlayer" parent="Music"]
+
+[node name="HurtOverlay" type="CanvasLayer" parent="."]
+layer = 3
+
+[node name="HurtRect" type="ColorRect" parent="HurtOverlay"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.6, 0, 0, 0)
+
+[node name="GUI" type="CanvasLayer" parent="." unique_id=1418679747]
+layer = 4
+
+[node name="CombatHUD" type="Control" parent="GUI"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PlayerHUD" type="Control" parent="GUI/CombatHUD"]
+layout_mode = 1
+anchors_preset = 0
+
+[node name="EnemyHUD" type="Control" parent="GUI/CombatHUD"]
+layout_mode = 1
+anchors_preset = 0
+
+[node name="ActionMenu" type="Control" parent="GUI/CombatHUD"]
+layout_mode = 1
+anchors_preset = 0
+
+[node name="CombatLog" type="RichTextLabel" parent="GUI"]
+layout_mode = 1
+anchors_preset = 0

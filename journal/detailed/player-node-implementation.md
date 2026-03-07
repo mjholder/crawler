@@ -26,12 +26,13 @@ This plan adds:
 Player              Node2D              scripts/player.gd
 ├── Sprite          AnimatedSprite2D    SpriteFrames resource swapped on equip change
 ├── AnimationPlayer AnimationPlayer     sequences multi-phase animations (e.g. attack)
-├── HurtOverlay     ColorRect           full-screen red tint; alpha tweened on damage
 └── SFX             Node                grouping container, no script
     ├── AttackPlayer    AudioStreamPlayer2D
     ├── HurtPlayer      AudioStreamPlayer2D
     └── DeathPlayer     AudioStreamPlayer2D
 ```
+
+> **Note:** The hurt overlay is NOT a child of this scene. It lives as `HurtOverlay/HurtRect` (a `ColorRect` on a `CanvasLayer`) under `Game` in `game.tscn`. `game.gd._ready()` calls `$Player.set_hurt_overlay($HurtOverlay/HurtRect)` to pass a reference. `player.gd` tweens its alpha on `take_damage()`. See `game-scene-design.md` for the full rationale.
 
 ---
 
@@ -74,13 +75,11 @@ This keeps sequencing logic in the editor (timeline) rather than in timer callba
 
 Single-state animations (`hurt`, `death`) are played directly on the `AnimatedSprite2D` and do not need an `AnimationPlayer` animation.
 
-### HurtOverlay (ColorRect)
+### HurtOverlay
 
-A full-viewport-sized `ColorRect` (dark red, e.g. `Color(0.6, 0.0, 0.0, 0.0)` at rest) that flashes on damage. `player.gd` tweens its alpha up then back to zero using `create_tween()` when `take_damage()` is called. It is always present and always transparent at rest.
+The hurt overlay is **not a child of this scene**. It is owned by `game.tscn` as `HurtOverlay/HurtRect` — a `ColorRect` set to full-viewport size on a `CanvasLayer` (layer 3). This avoids world-space positioning issues that would arise from a `ColorRect` child of a `Node2D` that is not at the viewport origin.
 
-This node handles the screen-effect half of incoming damage feedback. The sprite state change (`_transition(State.HIT)`) handles the equipment-sprite half.
-
-> **Open question:** A `ColorRect` child of the Player `Node2D` is positioned in world space. If the player node is not at the viewport origin, the overlay may not cover the screen correctly. It may need to be placed on a `CanvasLayer` instead, or owned by a UI scene rather than the Player node. Resolve when the scene hierarchy for the full game screen is established.
+`game.gd._ready()` calls `$Player.set_hurt_overlay($HurtOverlay/HurtRect)` to pass the reference. `player.gd` stores it and tweens its alpha up then back to zero with `create_tween()` when `take_damage()` is called. The sprite state change (`_transition(State.HIT)`) handles the equipment-sprite half of damage feedback.
 
 ### SFX (Node)
 
@@ -237,7 +236,6 @@ attack_damage  = 10.0
 
 ## Open Questions
 
-- **HurtOverlay placement:** `ColorRect` as a direct child works if the Player node is at the viewport origin. If not, it may need to live on a `CanvasLayer` or be owned by a UI scene. Resolve when the full scene hierarchy is established.
 - **Hurt and death sprites:** `BattleAxeHurt` and `BattleAxeDeath` renders do not exist yet. The `hurt` and `death` animation names should still be created in the SpriteFrames resource with placeholder single frames so the state machine works before the art is ready.
 
 ---
