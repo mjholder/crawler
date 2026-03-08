@@ -43,6 +43,8 @@ func _ready() -> void:
 	screen_size = get_viewport_rect().size
 	screen_center = screen_size / 2
 	set_player($Player)
+	$Player.position = screen_center
+	_scale_sprite_to_viewport($Player.get_node("Sprite"))
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
 	if _exploration_music:
 		$Music/BGM.stream = _exploration_music
@@ -75,6 +77,7 @@ func start_event(event: Event) -> void:
 			for i in range(debug_enemy_count):
 				var enemy_instance = debug_enemy_scene.instantiate() as Skeleton
 				enemy_instance.position = _calculate_enemy_position(i, debug_enemy_count)
+				_scale_sprite_to_viewport(enemy_instance.get_node("Sprite"))
 				ce.add_enemy(enemy_instance)
 
 		ce.player_attacked.connect(_on_player_attacked)
@@ -166,7 +169,14 @@ func _on_player_died() -> void:
 
 # --- Helper Functions ---
 
+func _scale_sprite_to_viewport(sprite: AnimatedSprite2D) -> void:
+	var texture := sprite.sprite_frames.get_frame_texture("idle", 0)
+	var sprite_size := texture.get_size()
+	var scale_factor: float = min(screen_size.x / sprite_size.x, screen_size.y / sprite_size.y)
+	sprite.scale = Vector2(scale_factor, scale_factor)
+
+
 func _calculate_enemy_position(index: int, total: int) -> Vector2:
-	var spacing := 150
-	var start_x := -spacing * (total - 1) / 2 
+	var spacing: int = int(screen_size.x * 0.15)
+	var start_x := -spacing * (total - 1) / 2
 	return Vector2(start_x + index * spacing, 0) + screen_center

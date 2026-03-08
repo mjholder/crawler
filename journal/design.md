@@ -18,6 +18,17 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 <!-- Add entries below, newest first -->
 
+## POV Sprite Export Resolution
+
+**Decision:** All player POV sprites (weapons, hands) are exported at 480x270 to match the internal pixel art reference resolution.
+**Date:** 2026-03-08
+**Context:** The game runs at 1920x1080 or higher, but we needed a fixed export size for POV sprites so that Godot's upscaling preserves the retro pixel art aesthetic. Tested 480x270 in-engine and confirmed it looks correct.
+**Alternatives considered:** No formal alternatives evaluated — 480x270 was tested directly and accepted on visual merit.
+**Rationale:** Exporting at 480x270 captures the sprite at the exact scale it should appear from the player's POV. Upscaling from this resolution to the display resolution produces the desired pixel art look without additional filtering or engine tricks.
+**Trade-offs / risks:** If the reference resolution ever changes, all POV sprites need to be re-exported. Low risk in practice because assets are rendered from 3D models, so re-rendering at a new size is straightforward.
+
+---
+
 ## Signal-based attacks and player reference isolation
 
 **Decision:** Player and Enemy both emit `attacked(damage: float)` signals when they act rather than calling `take_damage()` directly on a target reference. `game.gd` is the sole class that holds a `var player` reference. Events expose `receive_player_attack(damage)` for routing player damage to the appropriate enemy, and emit `player_attacked(damage)` for routing enemy damage back to `game.gd`. `Event.start()` takes no arguments — events no longer receive a player reference at all.
