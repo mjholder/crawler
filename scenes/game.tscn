@@ -11,6 +11,7 @@ script = ExtResource("1_uwrxv")
 debug_start_combat = true
 debug_combat_event = ExtResource("2_iywne")
 debug_enemy_scene = ExtResource("3_p57ef")
+debug_enemy_count = 3
 
 [node name="Background" type="CanvasLayer" parent="." unique_id=77366099]
 layer = -1

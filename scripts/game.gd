@@ -168,5 +168,5 @@ func _on_player_died() -> void:
 
 func _calculate_enemy_position(index: int, total: int) -> Vector2:
 	var spacing := 150
-	var start_x := -spacing * (total - 1) / 2
+	var start_x := -spacing * (total - 1) / 2 
 	return Vector2(start_x + index * spacing, 0) + screen_center
