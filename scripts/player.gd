@@ -61,6 +61,7 @@ func register_action(action_name: String, callable: Callable) -> void:
 func execute_action(action_name: String) -> void:
 	if is_dead or not _actions.has(action_name):
 		return
+	print("[PLAYER] Action: %s" % action_name)
 	_actions[action_name].call()
 	_turn_pending = true
 
@@ -79,6 +80,7 @@ func take_damage(amount: float) -> void:
 	if is_dead:
 		return
 	health -= amount
+	print("  Player HP: %.0f / %.0f" % [health, max_health])
 	damaged.emit(amount)
 	_flash_hurt_overlay()
 	if health <= 0.0:
@@ -89,6 +91,7 @@ func take_damage(amount: float) -> void:
 
 
 func _die() -> void:
+	print("  [PLAYER] Died!")
 	is_dead = true
 	_play_sfx(_death_player)
 	_transition(State.DEAD)

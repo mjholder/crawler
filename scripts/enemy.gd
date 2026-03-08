@@ -44,6 +44,7 @@ func _is_turn_complete() -> bool:
 
 
 func _perform_action() -> void:
+	print("[ENEMY] %s attacks for %.0f damage" % [enemy_name, attack_damage])
 	attack.emit(attack_damage)
 
 
@@ -53,6 +54,7 @@ func take_damage(amount: float) -> void:
 	if is_dead:
 		return
 	health -= amount
+	print("  %s HP: %.0f / %.0f" % [enemy_name, health, max_health])
 	damaged.emit(amount)
 	_on_damaged(amount)
 	if health <= 0.0:
@@ -60,6 +62,7 @@ func take_damage(amount: float) -> void:
 
 
 func _die() -> void:
+	print("  [ENEMY] %s died!" % enemy_name)
 	is_dead = true
 	_on_death()
 	died.emit()

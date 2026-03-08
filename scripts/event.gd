@@ -29,6 +29,7 @@ func _advance_phase() -> void:
 
 func _set_phase(next_phase: Phase) -> void:
 	phase = next_phase
+	print("[EVENT] Phase: %s" % Phase.keys()[next_phase])
 	match phase:
 		Phase.SETUP:      _on_setup()
 		Phase.RUNNING:    _on_running()

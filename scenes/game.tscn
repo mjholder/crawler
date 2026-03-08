@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://nuxeodotj3dc"]
 
 [ext_resource type="Script" uid="uid://drgdsu6ayfhxl" path="res://scripts/game.gd" id="1_uwrxv"]
-[ext_resource type="PackedScene" path="res://scenes/combat_event.tscn" id="2_iywne"]
+[ext_resource type="PackedScene" uid="uid://bltmvkwkf82bn" path="res://scenes/combat_event.tscn" id="2_iywne"]
 [ext_resource type="Texture2D" uid="uid://dwf078w6efs4m" path="res://assets/sprites/background.jpg" id="2_yqjtg"]
 [ext_resource type="PackedScene" uid="uid://brbnfv00v65s2" path="res://scenes/skeleton.tscn" id="3_p57ef"]
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
@@ -27,7 +27,7 @@ expand_mode = 3
 
 [node name="Player" parent="." unique_id=1592968138 instance=ExtResource("3_player")]
 
-[node name="EventContainer" type="Node" parent="." unique_id=885557593]
+[node name="EventContainer" type="Node" parent="." unique_id=1731107034]
 
 [node name="Music" type="Node" parent="." unique_id=1624309728]
 

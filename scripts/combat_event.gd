@@ -14,6 +14,8 @@ var _turn_queue: Array[Enemy] = []
 
 
 func add_enemy(enemy: Enemy) -> void:
+	enemy.enemy_name = "%s %d" % [enemy.enemy_name, _enemies.size() + 1]
+	print("[EVENT] Enemy added: %s (HP: %.0f)" % [enemy.enemy_name, enemy.max_health])
 	_enemies.append(enemy)
 	$Enemies.add_child(enemy)
 	enemy.attack.connect(_on_enemy_attacked)
@@ -42,6 +44,7 @@ func _run_next_enemy_turn() -> void:
 		enemy_turns_complete.emit()
 		return
 	var enemy := _turn_queue.pop_front() as Enemy
+	print("[ENEMY] %s's turn" % enemy.enemy_name)
 	enemy.turn_ended.connect(_on_enemy_turn_ended, CONNECT_ONE_SHOT)
 	enemy.take_turn()
 
@@ -59,4 +62,5 @@ func _on_enemy_attacked(damage: float) -> void:
 func _on_enemy_died() -> void:
 	var all_dead := _enemies.all(func(e: Enemy) -> bool: return e.is_dead)
 	if all_dead:
+		print("[EVENT] All enemies defeated!")
 		_advance_phase()
