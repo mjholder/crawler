@@ -5,7 +5,7 @@ extends Node2D
 signal damaged(amount: float)
 signal died
 signal turn_ended
-signal attacked(damage: float)
+signal attack(damage: float)
 
 # --- Stats ---
 @export var enemy_name: String = "Enemy"
@@ -44,7 +44,7 @@ func _is_turn_complete() -> bool:
 
 
 func _perform_action() -> void:
-	attacked.emit(attack_damage)
+	attack.emit(attack_damage)
 
 
 # --- Combat ---

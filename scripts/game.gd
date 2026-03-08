@@ -1,6 +1,12 @@
 class_name Game
 extends Node2D
 
+# --- Debug ---
+@export var debug_start_combat: bool = false
+@export var debug_combat_event: PackedScene
+@export var debug_enemy_scene: PackedScene
+@export var debug_enemy_count: int = 1
+
 # --- Turn State ---
 
 enum TurnState { PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, NO_TURN }
@@ -29,6 +35,10 @@ func _ready() -> void:
 		$Music/BGM.stream = _exploration_music
 		$Music/BGM.play()
 
+	if debug_start_combat and debug_combat_event != null:
+		var event_instance = debug_combat_event.instantiate() as CombatEvent
+		start_event(event_instance)
+
 
 # --- Participant Setup ---
 
@@ -46,12 +56,20 @@ func start_event(event: Event) -> void:
 	current_event.event_complete.connect(_on_event_complete, CONNECT_ONE_SHOT)
 	if event is CombatEvent:
 		var ce := event as CombatEvent
+
+		if debug_start_combat and debug_enemy_scene != null:
+			for i in range(debug_enemy_count):
+				var enemy_instance = debug_enemy_scene.instantiate() as Skeleton
+				ce.add_enemy(enemy_instance)
+
 		ce.player_attacked.connect(_on_player_attacked)
 		ce.enemy_turns_complete.connect(_on_enemy_turns_complete)
-		player.attacked.connect(_on_player_attack_action)
+		player.attack.connect(_on_player_attack_action)
 		$GUI/CombatHUD.show()
 		_start_combat_music()
 	current_event.start()
+	if event is CombatEvent:
+		_start_player_turn()
 
 
 func _on_event_complete() -> void:
@@ -60,7 +78,7 @@ func _on_event_complete() -> void:
 		var ce := current_event as CombatEvent
 		ce.player_attacked.disconnect(_on_player_attacked)
 		ce.enemy_turns_complete.disconnect(_on_enemy_turns_complete)
-		player.attacked.disconnect(_on_player_attack_action)
+		player.attack.disconnect(_on_player_attack_action)
 		$GUI/CombatHUD.hide()
 	current_event.queue_free()
 	current_event = null

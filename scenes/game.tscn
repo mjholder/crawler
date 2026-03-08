@@ -1,11 +1,16 @@
-[gd_scene load_steps=4 format=3 uid="uid://nuxeodotj3dc"]
+[gd_scene format=3 uid="uid://nuxeodotj3dc"]
 
 [ext_resource type="Script" uid="uid://drgdsu6ayfhxl" path="res://scripts/game.gd" id="1_uwrxv"]
+[ext_resource type="PackedScene" path="res://scenes/combat_event.tscn" id="2_iywne"]
 [ext_resource type="Texture2D" uid="uid://dwf078w6efs4m" path="res://assets/sprites/background.jpg" id="2_yqjtg"]
+[ext_resource type="PackedScene" uid="uid://brbnfv00v65s2" path="res://scenes/skeleton.tscn" id="3_p57ef"]
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
 
 [node name="Game" type="Node2D" unique_id=579372869]
 script = ExtResource("1_uwrxv")
+debug_start_combat = true
+debug_combat_event = ExtResource("2_iywne")
+debug_enemy_scene = ExtResource("3_p57ef")
 
 [node name="Background" type="CanvasLayer" parent="." unique_id=77366099]
 layer = -1
@@ -20,20 +25,20 @@ grow_vertical = 2
 texture = ExtResource("2_yqjtg")
 expand_mode = 3
 
-[node name="Player" parent="." instance=ExtResource("3_player")]
+[node name="Player" parent="." unique_id=1592968138 instance=ExtResource("3_player")]
 
 [node name="EventContainer" type="Node" parent="." unique_id=885557593]
 
-[node name="Music" type="Node" parent="."]
+[node name="Music" type="Node" parent="." unique_id=1624309728]
 
-[node name="BGM" type="AudioStreamPlayer" parent="Music"]
+[node name="BGM" type="AudioStreamPlayer" parent="Music" unique_id=179934751]
 
-[node name="Ambience" type="AudioStreamPlayer" parent="Music"]
+[node name="Ambience" type="AudioStreamPlayer" parent="Music" unique_id=846813169]
 
-[node name="HurtOverlay" type="CanvasLayer" parent="."]
+[node name="HurtOverlay" type="CanvasLayer" parent="." unique_id=1444995207]
 layer = 3
 
-[node name="HurtRect" type="ColorRect" parent="HurtOverlay"]
+[node name="HurtRect" type="ColorRect" parent="HurtOverlay" unique_id=1096158340]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -44,27 +49,25 @@ color = Color(0.6, 0, 0, 0)
 [node name="GUI" type="CanvasLayer" parent="." unique_id=1418679747]
 layer = 4
 
-[node name="CombatHUD" type="Control" parent="GUI"]
+[node name="CombatHUD" type="Control" parent="GUI" unique_id=1958488847]
 visible = false
-layout_mode = 1
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PlayerHUD" type="Control" parent="GUI/CombatHUD"]
+[node name="PlayerHUD" type="Control" parent="GUI/CombatHUD" unique_id=908196036]
 layout_mode = 1
 anchors_preset = 0
 
-[node name="EnemyHUD" type="Control" parent="GUI/CombatHUD"]
+[node name="EnemyHUD" type="Control" parent="GUI/CombatHUD" unique_id=1616746194]
 layout_mode = 1
 anchors_preset = 0
 
-[node name="ActionMenu" type="Control" parent="GUI/CombatHUD"]
+[node name="ActionMenu" type="Control" parent="GUI/CombatHUD" unique_id=2111488421]
 layout_mode = 1
 anchors_preset = 0
 
-[node name="CombatLog" type="RichTextLabel" parent="GUI"]
-layout_mode = 1
-anchors_preset = 0
+[node name="CombatLog" type="RichTextLabel" parent="GUI" unique_id=1166319260]

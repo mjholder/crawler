@@ -16,7 +16,7 @@ var _turn_queue: Array[Enemy] = []
 func add_enemy(enemy: Enemy) -> void:
 	_enemies.append(enemy)
 	$Enemies.add_child(enemy)
-	enemy.attacked.connect(_on_enemy_attacked)
+	enemy.attack.connect(_on_enemy_attacked)
 	enemy.died.connect(_on_enemy_died)
 
 
