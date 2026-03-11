@@ -20,7 +20,6 @@ var _turn_pending: bool = false
 
 
 func _ready() -> void:
-	health = max_health
 	_on_ready()
 
 
@@ -71,7 +70,13 @@ func _die() -> void:
 # --- Extension Hooks ---
 
 func _on_ready() -> void:
-	pass
+	health = max_health
+	var healthbar: HealthBar = $HealthBar
+	if healthbar != null:
+		healthbar.set_max_health(max_health)
+		healthbar.set_current_health(health)
+		damaged.connect(healthbar.subtract_health)
+
 
 
 func _on_damaged(_amount: float) -> void:

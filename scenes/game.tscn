@@ -27,6 +27,7 @@ texture = ExtResource("2_yqjtg")
 expand_mode = 3
 
 [node name="Player" parent="." unique_id=1592968138 instance=ExtResource("3_player")]
+z_index = 4
 
 [node name="EventContainer" type="Node" parent="." unique_id=1731107034]
 

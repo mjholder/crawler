@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://ciyvvtls2c4cd"]
+
+[ext_resource type="Script" uid="uid://blsnteh6gey8r" path="res://scripts/health_bar.gd" id="1_6opq1"]
+[ext_resource type="Texture2D" uid="uid://c0koi3q6571vo" path="res://assets/sprites/BaseHealth.png" id="2_tujlf"]
+[ext_resource type="Texture2D" uid="uid://bi0ovt7ag50sy" path="res://assets/sprites/CurrentHealth.png" id="3_5oo0i"]
+
+[node name="HealthBar" type="Node2D" unique_id=1136298593 node_paths=PackedStringArray("base_health_sprite", "current_health_sprite")]
+script = ExtResource("1_6opq1")
+base_health_sprite = NodePath("BaseHealth")
+current_health_sprite = NodePath("CurrentHealth")
+
+[node name="BaseHealth" type="Sprite2D" parent="." unique_id=2132809796]
+scale = Vector2(64, 1)
+texture = ExtResource("2_tujlf")
+
+[node name="CurrentHealth" type="Sprite2D" parent="." unique_id=1179928119]
+scale = Vector2(64, 1)
+texture = ExtResource("3_5oo0i")
