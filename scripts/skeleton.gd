@@ -19,6 +19,7 @@ var _state: State = State.IDLE
 # --- Extension Hook Overrides ---
 
 func _on_ready() -> void:
+	super._on_ready()
 	enemy_name = "Skeleton"
 	_anim_player.animation_finished.connect(_on_anim_player_finished)
 	_sprite.animation_finished.connect(_on_sprite_animation_finished)

@@ -59,7 +59,7 @@ func register_action(action_name: String, callable: Callable) -> void:
 
 
 func execute_action(action_name: String) -> void:
-	if is_dead or not _actions.has(action_name):
+	if is_dead or _turn_pending or not _actions.has(action_name):
 		return
 	print("[PLAYER] Action: %s" % action_name)
 	_actions[action_name].call()
