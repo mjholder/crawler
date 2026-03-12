@@ -18,6 +18,20 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 <!-- Add entries below, newest first -->
 
+## UI Architecture — Passive GUI with Intent-Based API
+
+**Decision:** Use a single CanvasLayer as the top-level UI node, with sections (CombatUI, PauseMenu, MainMenu, etc.) as children. A `gui.gd` script exposes an intent-based API. `game.gd` drives all UI changes via direct method calls.
+**Date:** 2026-03-12
+**Context:** Starting to build out the UI layer. Needed to establish how game state and input connect to the display before writing any UI code.
+**Alternatives considered:**
+- Signal-driven (game emits, GUI connects) — rejected because the GUI would need to interpret signals and make display decisions, leaking intent into what should be a passive layer.
+- Autoload UI manager singleton — unnecessary indirection at this project scale.
+**Rationale:** The GUI has no independent existence — it is a direct output of game state. `game.gd` is the brain; the GUI is its display. Direct method calls reflect that coupling honestly. Signals are reserved for genuinely loosely coupled systems (e.g., `player.damaged` → `gui.update_health()`, wired by `game.gd`).
+**API design:** Methods are intent-based, not imperative. `game.gd` calls `gui.handle_esc()`, not `gui.show_section("pause")`. The GUI owns the *how* — which sections to toggle, transitions, etc. `game.gd` owns the *when* — input capture and game state decisions.
+**Trade-offs / risks:** `game.gd` holds a direct reference to the GUI, creating a hard dependency. Acceptable given the GUI's role as a direct output of game state.
+
+---
+
 ## POV Sprite Export Resolution
 
 **Decision:** All player POV sprites (weapons, hands) are exported at 480x270 to match the internal pixel art reference resolution.
