@@ -6,7 +6,6 @@
 [ext_resource type="Texture2D" uid="uid://bcecfrxv6sbjx" path="res://assets/sprites/SkeletonDeathFiltered.png" id="4_i0f3v"]
 [ext_resource type="Texture2D" uid="uid://m6k3d4st873b" path="res://assets/sprites/SkeletonHitFiltered.png" id="5_xrus2"]
 [ext_resource type="Texture2D" uid="uid://b07lppykvud14" path="res://assets/sprites/SkeletonIdleFiltered.png" id="6_7e1v2"]
-[ext_resource type="PackedScene" uid="uid://ciyvvtls2c4cd" path="res://scenes/health_bar.tscn" id="7_w4hcs"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_rjsi3"]
 animations = [{
@@ -91,9 +90,6 @@ animation = &"idle"
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1670771315]
 libraries/ = SubResource("AnimationLibrary_atk01")
 
-[node name="HealthBar" parent="." unique_id=1136298593 instance=ExtResource("7_w4hcs")]
-position = Vector2(0, -79)
-scale = Vector2(1.5, 1)
 
 [node name="SFX" type="Node" parent="." unique_id=560265488]
 

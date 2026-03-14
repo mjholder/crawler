@@ -6,6 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://brbnfv00v65s2" path="res://scenes/skeleton.tscn" id="3_p57ef"]
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
+[ext_resource type="Texture2D" uid="uid://brv2m764g5v4n" path="res://icon.svg" id="7_u5sy4"]
+[ext_resource type="Script" uid="uid://kw77gbksi4x4" path="res://scripts/gui.gd" id="8_gui"]
+[ext_resource type="PackedScene" uid="uid://ciyvvtls2c4cd" path="res://scenes/health_bar.tscn" id="9_hbar"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -55,6 +58,73 @@ color = Color(0.6, 0, 0, 0)
 
 [node name="GUI" type="CanvasLayer" parent="." unique_id=1418679747]
 layer = 4
+script = ExtResource("8_gui")
+_health_bar_scene = ExtResource("9_hbar")
+
+[node name="MainMenu" type="Control" parent="GUI" unique_id=100000001]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="GUI/MainMenu" unique_id=100000002]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 200.0
+offset_right = 500.0
+offset_bottom = 280.0
+text = "Crawler"
+
+[node name="StartButton" type="Button" parent="GUI/MainMenu" unique_id=100000003]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 300.0
+offset_right = 300.0
+offset_bottom = 350.0
+text = "Start"
+
+[node name="QuitButton" type="Button" parent="GUI/MainMenu" unique_id=100000004]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 370.0
+offset_right = 300.0
+offset_bottom = 420.0
+text = "Quit"
+
+[node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Overlay" type="ColorRect" parent="GUI/PauseMenu" unique_id=100000006]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="ResumeButton" type="Button" parent="GUI/PauseMenu" unique_id=100000007]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 200.0
+offset_right = 300.0
+offset_bottom = 250.0
+text = "Resume"
+
+[node name="QuitToMainButton" type="Button" parent="GUI/PauseMenu" unique_id=100000008]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 270.0
+offset_right = 300.0
+offset_bottom = 320.0
+text = "Quit to Main Menu"
 
 [node name="CombatHUD" type="Control" parent="GUI" unique_id=1958488847]
 layout_mode = 3
@@ -72,21 +142,23 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PlayerHealth" type="Label" parent="GUI/CombatHUD/PlayerHUD" unique_id=2034464028]
+[node name="PlayerHealthLabel" type="Label" parent="GUI/CombatHUD/PlayerHUD" unique_id=2034464028]
 layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -320.0
-offset_top = -135.0
-offset_right = -60.0
-offset_bottom = -47.0
-grow_horizontal = 0
-grow_vertical = 0
+offset_left = 38.0
+offset_top = 21.0
+offset_right = 298.0
+offset_bottom = 109.0
 text = "100/100"
 label_settings = SubResource("LabelSettings_u5sy4")
+
+[node name="PlayerHealthBar" type="ProgressBar" parent="GUI/CombatHUD/PlayerHUD" unique_id=100000009]
+layout_mode = 1
+offset_left = 38.0
+offset_top = 110.0
+offset_right = 298.0
+offset_bottom = 130.0
+value = 100.0
+show_percentage = false
 
 [node name="EnemyHUD" type="Control" parent="GUI/CombatHUD" unique_id=1616746194]
 layout_mode = 1
@@ -94,6 +166,26 @@ anchors_preset = 0
 
 [node name="ActionMenu" type="Control" parent="GUI/CombatHUD" unique_id=2111488421]
 layout_mode = 1
-anchors_preset = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="CombatLog" type="RichTextLabel" parent="GUI" unique_id=1166319260]
+[node name="AttackButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=1018194264]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -151.0
+offset_top = -104.0
+offset_right = -83.0
+offset_bottom = -73.0
+grow_horizontal = 0
+grow_vertical = 0
+icon = ExtResource("7_u5sy4")
+
+[node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
+layout_mode = 0

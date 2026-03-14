@@ -33,11 +33,20 @@ var player: Player
 
 var current_event: Event = null
 
+# --- GUI ---
+
+@onready var _gui: GUI = $GUI
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		_gui.handle_esc()
+		return
 	if state != TurnState.PLAYER_TURN:
 		return
 	if event.is_action_pressed("attack"):
 		player.execute_action("attack")
+
 
 func _ready() -> void:
 	screen_size = get_viewport_rect().size
@@ -50,6 +59,13 @@ func _ready() -> void:
 		$Music/BGM.stream = _exploration_music
 		$Music/BGM.play()
 
+	$GUI/MainMenu/StartButton.pressed.connect(_on_start_button_pressed)
+	$GUI/PauseMenu/QuitToMainButton.pressed.connect(_on_quit_to_main)
+	_gui.show_main_menu()
+
+
+func _on_start_button_pressed() -> void:
+	_gui.start_game()
 	if debug_start_combat and debug_combat_event != null:
 		var event_instance = debug_combat_event.instantiate() as CombatEvent
 		start_event(event_instance)
@@ -61,6 +77,12 @@ func set_player(p: Player) -> void:
 	player = p
 	player.turn_ended.connect(_on_player_turn_ended)
 	player.died.connect(_on_player_died)
+	player.damaged.connect(_on_player_damaged)
+	_gui.update_player_health(player.max_health, player.max_health)
+
+
+func _on_player_damaged(_amount: float) -> void:
+	_gui.update_player_health(player.health, player.max_health)
 
 
 # --- Event Control ---
@@ -79,11 +101,17 @@ func start_event(event: Event) -> void:
 				enemy_instance.position = _calculate_enemy_position(i, debug_enemy_count)
 				_scale_sprite_to_viewport(enemy_instance.get_node("Sprite"))
 				ce.add_enemy(enemy_instance)
+				_gui.add_enemy_health_bar(enemy_instance)
+				enemy_instance.damaged.connect(func(_amt: float) -> void:
+					_gui.update_enemy_health_bar(enemy_instance, enemy_instance.health))
+				enemy_instance.died.connect(func() -> void:
+					_gui.remove_enemy_health_bar(enemy_instance))
 
 		ce.player_attacked.connect(_on_player_attacked)
 		ce.enemy_turns_complete.connect(_on_enemy_turns_complete)
 		player.attack.connect(_on_player_attack_action)
-		$GUI/CombatHUD.show()
+		_gui.show_combat_hud()
+		_gui.set_player_turn(false)
 		_start_combat_music()
 	current_event.start()
 	if event is CombatEvent:
@@ -98,7 +126,9 @@ func _on_event_complete() -> void:
 		ce.player_attacked.disconnect(_on_player_attacked)
 		ce.enemy_turns_complete.disconnect(_on_enemy_turns_complete)
 		player.attack.disconnect(_on_player_attack_action)
-		$GUI/CombatHUD.hide()
+		for enemy in ce._enemies:
+			_gui.remove_enemy_health_bar(enemy)
+		_gui.hide_combat_hud()
 	current_event.queue_free()
 	current_event = null
 	state = TurnState.NO_TURN
@@ -116,6 +146,8 @@ func _start_player_turn() -> void:
 	state = TurnState.PLAYER_TURN
 	round_number += 1
 	print("[ROUND %d] === Player Turn ===" % round_number)
+	_gui.set_player_turn(true)
+	_gui.log_message("[Round %d] Your turn." % round_number)
 
 
 func _on_player_turn_ended() -> void:
@@ -127,6 +159,7 @@ func _on_player_turn_ended() -> void:
 func _run_enemy_turns() -> void:
 	state = TurnState.ENEMY_TURN
 	print("[ROUND %d] === Enemy Turn ===" % round_number)
+	_gui.set_player_turn(false)
 	(current_event as CombatEvent).run_enemy_turns()
 
 
@@ -166,6 +199,12 @@ func _start_exploration_music() -> void:
 func _on_player_died() -> void:
 	print("[GAME] Player died — GAME OVER")
 	state = TurnState.GAME_OVER
+
+
+func _on_quit_to_main() -> void:
+	_gui.return_to_main_menu()
+	state = TurnState.NO_TURN
+
 
 # --- Helper Functions ---
 
