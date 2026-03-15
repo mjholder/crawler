@@ -38,16 +38,6 @@ var current_event: Event = null
 @onready var _gui: GUI = $GUI
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
-		_gui.handle_esc()
-		return
-	if state != TurnState.PLAYER_TURN:
-		return
-	if event.is_action_pressed("attack"):
-		player.execute_action("attack")
-
-
 func _ready() -> void:
 	screen_size = get_viewport_rect().size
 	screen_center = screen_size / 2
@@ -59,12 +49,32 @@ func _ready() -> void:
 		$Music/BGM.stream = _exploration_music
 		$Music/BGM.play()
 
-	$GUI/MainMenu/StartButton.pressed.connect(_on_start_button_pressed)
-	$GUI/PauseMenu/QuitToMainButton.pressed.connect(_on_quit_to_main)
+	_gui.start_requested.connect(start_game)
+	_gui.quit_to_main_requested.connect(quit_to_main)
+	_gui.attack_requested.connect(attack_action)
 	_gui.show_main_menu()
 
 
-func _on_start_button_pressed() -> void:
+# --- Input Handling ---
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		_gui.handle_esc()
+		return
+	if state != TurnState.PLAYER_TURN:
+		return
+
+
+# --- GUI Callbacks ---
+
+func attack_action() -> void:
+	if state != TurnState.PLAYER_TURN:
+		return
+	_gui.set_player_turn(false)
+	player.execute_action("attack")
+
+
+func start_game() -> void:
 	_gui.start_game()
 	if debug_start_combat and debug_combat_event != null:
 		var event_instance = debug_combat_event.instantiate() as CombatEvent
@@ -159,7 +169,6 @@ func _on_player_turn_ended() -> void:
 func _run_enemy_turns() -> void:
 	state = TurnState.ENEMY_TURN
 	print("[ROUND %d] === Enemy Turn ===" % round_number)
-	_gui.set_player_turn(false)
 	(current_event as CombatEvent).run_enemy_turns()
 
 
@@ -201,7 +210,7 @@ func _on_player_died() -> void:
 	state = TurnState.GAME_OVER
 
 
-func _on_quit_to_main() -> void:
+func quit_to_main() -> void:
 	_gui.return_to_main_menu()
 	state = TurnState.NO_TURN
 

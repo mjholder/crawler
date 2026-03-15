@@ -1,6 +1,11 @@
 class_name GUI
 extends CanvasLayer
 
+# --- Signals ---
+signal start_requested
+signal quit_to_main_requested
+signal attack_requested
+
 # --- Node References ---
 @onready var _main_menu: Control = $MainMenu
 @onready var _pause_menu: Control = $PauseMenu
@@ -17,8 +22,10 @@ var _enemy_bars: Dictionary = {}
 
 
 func _ready() -> void:
-	$PauseMenu/ResumeButton.pressed.connect(handle_esc)
+	$MainMenu/StartButton.pressed.connect(_on_start_button_pressed)
 	$MainMenu/QuitButton.pressed.connect(_on_quit_button_pressed)
+	$PauseMenu/ResumeButton.pressed.connect(handle_esc)
+	$PauseMenu/QuitToMainButton.pressed.connect(_on_quit_to_main_button_pressed)
 	_main_menu.hide()
 	_pause_menu.hide()
 	_combat_hud.hide()
@@ -98,3 +105,15 @@ func log_message(text: String) -> void:
 
 func _on_quit_button_pressed() -> void:
 	get_tree().quit()
+
+
+func _on_attack_button_pressed() -> void:
+	attack_requested.emit()
+
+
+func _on_start_button_pressed() -> void:
+	start_requested.emit()
+
+
+func _on_quit_to_main_button_pressed() -> void:
+	quit_to_main_requested.emit()

@@ -163,6 +163,8 @@ show_percentage = false
 [node name="EnemyHUD" type="Control" parent="GUI/CombatHUD" unique_id=1616746194]
 layout_mode = 1
 anchors_preset = 0
+offset_left = 1.0
+offset_right = 1.0
 
 [node name="ActionMenu" type="Control" parent="GUI/CombatHUD" unique_id=2111488421]
 layout_mode = 1
@@ -189,3 +191,6 @@ icon = ExtResource("7_u5sy4")
 
 [node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
 layout_mode = 0
+
+[connection signal="pressed" from="GUI/MainMenu/StartButton" to="GUI" method="_on_start_button_pressed"]
+[connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]
