@@ -86,7 +86,7 @@ func _do_attack() -> void:
 func take_damage(amount: float) -> void:
 	if is_dead:
 		return
-	var net_amount: float = max(amount - defense, 0)  # Apply defense reduction		
+	var net_amount: float = _apply_defense(amount)
 	health -= net_amount
 	print("  Player HP: %.0f / %.0f" % [health, max_health])
 	damaged.emit(net_amount)
@@ -106,8 +106,11 @@ func _die() -> void:
 	died.emit()
 
 
+func _apply_defense(amount: float) -> float:
+	return maxf(amount - defense, 0.0)
+
+
 func _calculate_damage() -> float:
-	# Placeholder damage formula; can be expanded with more complex logic.
 	return base_damage + (strength * 0.5)
 
 
