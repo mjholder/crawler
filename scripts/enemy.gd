@@ -12,6 +12,7 @@ signal attack(damage: float)
 @export var max_health: float = 30.0
 @export var attack_damage: float = 5.0
 @export var experience_value: int = 10
+@export var defense: float = 0.0
 
 # --- State ---
 var health: float
@@ -52,10 +53,11 @@ func _perform_action() -> void:
 func take_damage(amount: float) -> void:
 	if is_dead:
 		return
-	health -= amount
+	var net_amount: float = max(amount - defense, 0)  # Apply defense reduction
+	health -= net_amount
 	print("  %s HP: %.0f / %.0f" % [enemy_name, health, max_health])
-	damaged.emit(amount)
-	_on_damaged(amount)
+	damaged.emit(net_amount)
+	_on_damaged(net_amount)
 	if health <= 0.0:
 		_die()
 

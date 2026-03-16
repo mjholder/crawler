@@ -12,7 +12,6 @@ extends Node2D
 var screen_size: Vector2
 var screen_center: Vector2
 
-
 # --- Turn State ---
 
 enum TurnState { PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, NO_TURN }

@@ -82,6 +82,7 @@ enemy_name = "Skeleton"
 max_health = 20.0
 attack_damage = 6.0
 experience_value = 15
+defense = 4.0
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1257614996]
 sprite_frames = SubResource("SpriteFrames_rjsi3")
@@ -89,7 +90,6 @@ animation = &"idle"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1670771315]
 libraries/ = SubResource("AnimationLibrary_atk01")
-
 
 [node name="SFX" type="Node" parent="." unique_id=560265488]
 

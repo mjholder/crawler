@@ -10,7 +10,14 @@ signal attack(damage: float)
 # --- Stats ---
 @export var player_name: String = "Player"
 @export var max_health: float = 100.0
-@export var attack_damage: float = 10.0
+@export var strength: float = 50.0
+@export var defense: float = 50.0
+@export var constitution: float = 50.0
+@export var agility: float = 50.0
+@export var spirit: float = 50.0
+@export var luck: float = 50.0
+
+@export var base_damage: float = 10.0
 
 # --- State Machine ---
 enum State { IDLE, ATTACKING, HIT, DEAD }
@@ -71,7 +78,7 @@ func execute_action(action_name: String) -> void:
 func _do_attack() -> void:
 	_play_sfx(_attack_player)
 	_transition(State.ATTACKING)
-	attack.emit(attack_damage)
+	attack.emit(_calculate_damage())
 
 
 # --- Combat ---
@@ -79,9 +86,10 @@ func _do_attack() -> void:
 func take_damage(amount: float) -> void:
 	if is_dead:
 		return
-	health -= amount
+	var net_amount: float = max(amount - defense, 0)  # Apply defense reduction		
+	health -= net_amount
 	print("  Player HP: %.0f / %.0f" % [health, max_health])
-	damaged.emit(amount)
+	damaged.emit(net_amount)
 	_flash_hurt_overlay()
 	if health <= 0.0:
 		_die()
@@ -96,6 +104,11 @@ func _die() -> void:
 	_play_sfx(_death_player)
 	_transition(State.DEAD)
 	died.emit()
+
+
+func _calculate_damage() -> float:
+	# Placeholder damage formula; can be expanded with more complex logic.
+	return base_damage + (strength * 0.5)
 
 
 # --- Equipment ---
