@@ -48,7 +48,7 @@ These decisions are documented in `journal/design.md`. Do not change them withou
 - Signals declared at the top of the file, before stats
 - Section comments use `# --- Section Name ---`
 - Extension hooks on Enemy (`_on_ready`, `_on_damaged`, `_on_death`) use a leading underscore and do nothing in the base class
-- `@export` vars are placeholder stats for now; they will be replaced by a proper stat system (STR/CON/AGI/SPI/LCK)
+- `@export` vars on Player and Enemy are base stats (STR/CON/AGI/SPI/LCK); effective values are computed by adding equipment modifier layers on top — see `journal/detailed/equipment-system.md`
 - Prefer guard clauses over nested conditionals
 
 ## Journal
@@ -59,7 +59,7 @@ Log significant decisions in `journal/design.md` using the template at the top o
 
 - `Event` base class and concrete implementations (`CombatEvent`, `SkillCheckEvent`, `LootEvent`, `RoleplaysEvent`)
 - UI layer (health bars, combat log, action menus)
-- Full stat system — currently flat `@export` floats on Player and Enemy
+- Full stat system — base stats are `@export` floats; equipment modifier layer is designed (see `journal/detailed/equipment-system.md`) but not yet implemented
 - Equipment and inventory
 - Procedural dungeon/floor generation
 - Loot and XP systems
