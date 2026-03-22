@@ -17,6 +17,7 @@ signal attack_requested
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
 
 @export var _health_bar_scene: PackedScene
+@export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
 
 var _enemy_bars: Dictionary = {}
 
@@ -76,6 +77,8 @@ func add_enemy_health_bar(enemy: Enemy) -> void:
 	var bar = _health_bar_scene.instantiate()
 	bar.set_max_health(enemy.max_health)
 	bar.set_current_health(enemy.health)
+	var screen_pos: Vector2 = get_viewport().get_canvas_transform() * enemy.global_position
+	bar.position = screen_pos + enemy_health_bar_offset
 	_enemy_hud.add_child(bar)
 	_enemy_bars[enemy] = bar
 
