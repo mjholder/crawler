@@ -20,6 +20,10 @@ journal/   # Developer docs (design decisions, ideas, daily logs)
 | `scripts/game.gd` | Turn state machine; orchestrates turn flow only |
 | `scripts/player.gd` | Player character; action registry pattern |
 | `scripts/enemy.gd` | Enemy base class; AI via `_perform_action()` hook |
+| `scripts/enums.gd` | Shared `Enums` class — `TurnState`, `Stat`, `Slot` |
+| `scripts/equipment_data.gd` | `EquipmentData` resource (base) and `WeaponData` |
+| `scripts/equipment.gd` | `Equipment` base node — visuals, modifiers, hooks |
+| `scripts/weapon.gd` | `Weapon extends Equipment` — attack animation and SFX |
 | `journal/design.md` | Architectural decisions with rationale — read before changing structure |
 | `journal/ideas.md` | Future systems backlog |
 | `journal/daily/` | Session logs |
@@ -59,7 +63,7 @@ Log significant decisions in `journal/design.md` using the template at the top o
 
 - `Event` base class and concrete implementations (`CombatEvent`, `SkillCheckEvent`, `LootEvent`, `RoleplaysEvent`)
 - UI layer (health bars, combat log, action menus)
-- Full stat system — base stats are `@export` floats; equipment modifier layer is designed (see `journal/detailed/equipment-system.md`) but not yet implemented
-- Equipment and inventory
+- Full stat system — base stats are `@export` floats; equipment modifier layer (`get_effective_stat()`) **is implemented** — see `journal/detailed/equipment-system.md`
+- Inventory system — equipment slots (`equip()`, `_equipped` dict) are implemented; carrying, storing, or picking up items is not
 - Procedural dungeon/floor generation
 - Loot and XP systems

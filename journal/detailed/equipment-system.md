@@ -1,7 +1,7 @@
 # Equipment System — Design
 
 **Date:** 2026-03-21
-**Status:** Designed, not yet implemented
+**Status:** Implemented
 
 This document covers the architecture of the equipment system: the shared `Enums` class, the `EquipmentData` resource hierarchy, the `Equipment` base node and its `Weapon` subclass, and how the Player integrates equipped items into stat calculations and visual feedback.
 
@@ -122,7 +122,6 @@ extends Node2D
 
 # --- Node References ---
 @onready var _sprite: AnimatedSprite2D = $Sprite
-@onready var _anim_player: AnimationPlayer = $AnimationPlayer
 @onready var _equip_player: AudioStreamPlayer2D = $SFX/EquipPlayer
 @onready var _unequip_player: AudioStreamPlayer2D = $SFX/UnequipPlayer
 
@@ -155,7 +154,7 @@ Extension hooks follow the same leading-underscore convention used by `enemy.gd`
 
 ```gdscript
 func _on_equipped() -> void:
-    pass
+    _scale_sprite_to_viewport()
 
 func _on_unequipped() -> void:
     pass
@@ -171,6 +170,9 @@ Reacts to the Player's `attack` signal. Does not own attack logic — only plays
 class_name Weapon
 extends Equipment
 
+signal animation_finished
+
+@onready var anim_player: AnimationPlayer = $AnimationPlayer
 @onready var _attack_player: AudioStreamPlayer2D = $SFX/AttackPlayer
 
 
@@ -178,15 +180,24 @@ func _ready() -> void:
     super._ready()
     if data is WeaponData:
         _attack_player.stream = (data as WeaponData).attack_sfx
+    _sprite.animation_finished.connect(_on_sprite_animation_finished)
 
 
-func _on_player_attacked() -> void:
+func _on_player_attacked(damage: float) -> void:
     if _attack_player.stream != null:
         _attack_player.play()
-    _anim_player.play("attack")
+    _sprite.play("attack")
+
+
+func _on_sprite_animation_finished() -> void:
+    if _sprite.animation == &"attack":
+        animation_finished.emit()
+        _sprite.play("idle")
 ```
 
 The Player connects `attack` → `weapon._on_player_attacked()` when equipping. Weapon never reaches into the Player.
+
+`animation_finished` (the Weapon signal, not `AnimatedSprite2D`'s) is what the Player listens to for turn gating — it fires only when the attack animation ends. `anim_player` is exposed as a public field so the Player can wire to it if needed for multi-phase sequences; for the current single-phase attack, the AnimatedSprite2D is driven directly and `AnimationPlayer` is unused.
 
 ---
 
@@ -207,14 +218,16 @@ func equip(slot: Enums.Slot, item: Equipment) -> void:
         old.play_unequip()
         old._on_unequipped()
         if slot == Enums.Slot.WEAPON:
-            attack.disconnect(old._on_player_attacked)
+            attack.disconnect((old as Weapon)._on_player_attacked)
+            (old as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
         remove_child(old)
     _equipped[slot] = item
     add_child(item)
     item.play_equip()
     item._on_equipped()
     if slot == Enums.Slot.WEAPON:
-        attack.connect(item._on_player_attacked)
+        attack.connect((item as Weapon)._on_player_attacked)
+        (item as Weapon).animation_finished.connect(_on_weapon_animation_finished)
 ```
 
 Signal wiring is handled inside `equip()` — no external wiring needed. The Player owns the connection because it owns the signal.
@@ -264,8 +277,9 @@ The existing `equip_weapon(frames: SpriteFrames)` on `player.gd` is replaced by 
 | Signal | Emitted by | Connected to | Wired by |
 |---|---|---|---|
 | `attack(damage: float)` | `player.gd` | `weapon._on_player_attacked()` | `player.equip()` |
+| `animation_finished` | `weapon.gd` | `player._on_weapon_animation_finished()` | `player.equip()` |
 
-No new signals are added to `Equipment` or `Weapon` at this stage. Equipment is a receiver, not a broadcaster.
+`Weapon.animation_finished` was added during implementation to give `player.gd` a stable, parameter-free hook for turn gating. It fires internally when the attack `AnimatedSprite2D` animation ends, decoupling the Player from the sprite wiring details.
 
 ---
 
@@ -278,7 +292,7 @@ All animations are driven by named states on the `AnimatedSprite2D`, same patter
 | `idle` | yes | Default resting state |
 | `attack` | no | Weapons only — played on `_on_player_attacked()` |
 
-The `AnimationPlayer` can own multi-phase sequences (e.g. windup → swing) via method call tracks, identical to the pattern on the Player and Skeleton. For a weapon with a simple single-phase attack, the AnimationPlayer is unused and the sprite plays `attack` directly.
+For the basic single-phase attack, the `AnimatedSprite2D` is driven directly (`_sprite.play("attack")`). The `AnimationPlayer` is present in the scene for future multi-phase sequences (e.g. windup → swing via method call tracks) but is not in the current attack path. When `animation_finished` fires on the sprite, `Weapon` re-emits its own `animation_finished` signal and returns to idle.
 
 ---
 

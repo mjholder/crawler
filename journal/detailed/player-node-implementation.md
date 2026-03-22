@@ -1,7 +1,7 @@
 # Player Node — Scene Design
 
 **Date:** 2026-03-05
-**Status:** Planned, not yet implemented
+**Status:** Implemented (modified — see implementation notes below)
 
 This document covers the node tree design, rationale, animation system, signal contract, and turn gate for the Player scene. It is intended to be read before implementing or modifying the player scene.
 
@@ -20,17 +20,31 @@ This plan adds:
 
 ---
 
+## Implementation Notes
+
+The following diverged from this design during implementation:
+
+- **`Sprite` and `AnimationPlayer` were removed from the Player scene.** All visual output (attack animation, idle sprite) is owned by the equipped `Weapon` node. The Player has no sprite of its own.
+- **State machine simplified to `{ IDLE, DEAD }`.** `ATTACKING` and `HIT` were removed — with no sprite, there is nothing to animate from the Player's side. `_transition()` only sets `_state`.
+- **Turn gating uses `_attack_animation_pending` flag** instead of an `ATTACKING` state. The flag is set in `_do_attack()` when a weapon is equipped, and cleared by `_on_weapon_animation_finished()` when `Weapon.animation_finished` fires.
+- **`equip_weapon(frames: SpriteFrames)` was replaced by `equip(slot: Enums.Slot, item: Equipment)`.** The new method handles child node management, signal wiring, and audio in one place.
+- **Signal is named `attack`, not `attacked`.**
+
+The sections below retain their original design rationale where still relevant, with corrections inline.
+
+---
+
 ## Node Tree
 
 ```
 Player              Node2D              scripts/player.gd
-├── Sprite          AnimatedSprite2D    SpriteFrames resource swapped on equip change
-├── AnimationPlayer AnimationPlayer     sequences multi-phase animations (e.g. attack)
 └── SFX             Node                grouping container, no script
     ├── AttackPlayer    AudioStreamPlayer2D
     ├── HurtPlayer      AudioStreamPlayer2D
     └── DeathPlayer     AudioStreamPlayer2D
 ```
+
+`Sprite` and `AnimationPlayer` were removed — all visual output is owned by the equipped `Weapon` node, which is added as a child of `Player` at runtime via `equip()`.
 
 > **Note:** The hurt overlay is NOT a child of this scene. It lives as `HurtOverlay/HurtRect` (a `ColorRect` on a `CanvasLayer`) under `Game` in `game.tscn`. `game.gd._ready()` calls `$Player.set_hurt_overlay($HurtOverlay/HurtRect)` to pass a reference. `player.gd` tweens its alpha on `take_damage()`. See `game-scene-design.md` for the full rationale.
 
@@ -42,38 +56,18 @@ Player              Node2D              scripts/player.gd
 
 Plain `Node2D`, same reasoning as the skeleton. No physics body — turn-based, no movement or collision needed.
 
-### Sprite (AnimatedSprite2D)
+### Sprite and AnimationPlayer
 
-First-person view: the sprite represents the equipped weapon, not the player body. The battle axe sprites are the first concrete asset set.
+**Removed from the Player scene.** All sprite and animation work is owned by the equipped `Weapon` node (`equipment.tscn` / `weapon.tscn`). The `Weapon` node is added as a child of the Player when equipped, so its sprites appear in the correct world position without any `Sprite` node on the Player itself.
 
-Named animations are driven by the `SpriteFrames` resource configured in the editor. The script calls `_sprite.play("idle")` etc. — no texture references in code.
-
-When equipment changes, `equip_weapon(frames: SpriteFrames)` swaps `_sprite.sprite_frames` and resets to `idle`. No structural scene changes are needed for new weapon types — only a new SpriteFrames resource.
-
-**Why AnimatedSprite2D:** same rationale as the skeleton — named states, `animation_finished` signal, additive frame expansion later. See `skeleton-enemy.md` for the full argument.
+The animation table below is preserved as reference — these animations are defined in the weapon's `SpriteFrames` resource, not the Player scene:
 
 | Animation | Source images | Loop |
 |---|---|---|
 | `idle`   | `BattleAxeIdleFiltered.png`   | yes |
-| `windup` | `BattleAxeWindupFiltered.png` | no  |
-| `swing`  | `BattleAxeSwingFiltered.png`  | no  |
-| `hurt`   | TBD — sprite not yet rendered | no  |
-| `death`  | TBD — sprite not yet rendered | no  |
+| `attack` | windup + swing frames         | no  |
 
-`windup` and `swing` are separate sprite animations. Their sequencing is owned by the `AnimationPlayer`, not by the `AnimatedSprite2D`.
-
-### AnimationPlayer
-
-Owns all multi-phase animation sequences. For `attack`, it has a single `"attack"` animation with two method call tracks:
-
-- At `t=0`: calls `_sprite.play("windup")`
-- At `t=N`: calls `_sprite.play("swing")` (N tuned to the windup display duration)
-
-When the `AnimationPlayer` animation finishes, its `animation_finished` signal fires and `_on_anim_player_finished()` calls `_transition(State.IDLE)`.
-
-This keeps sequencing logic in the editor (timeline) rather than in timer callbacks. Adding or reordering phases is a timeline edit, not a code change. Other states that need multi-phase sequences (e.g. a charged attack) follow the same pattern — add a new named animation to the `AnimationPlayer`.
-
-Single-state animations (`hurt`, `death`) are played directly on the `AnimatedSprite2D` and do not need an `AnimationPlayer` animation.
+The `AnimationPlayer` on `weapon.tscn` is reserved for future multi-phase sequences (e.g. separate windup → swing tracks). For the current single-phase attack, `_sprite.play("attack")` is called directly.
 
 ### HurtOverlay
 
@@ -96,38 +90,34 @@ One player per sound type so they cannot cut each other off. No stream assigned 
 ### Behavioral State Machine
 
 ```gdscript
-enum State { IDLE, ATTACKING, HIT, DEAD }
+enum State { IDLE, DEAD }
 var _state: State = State.IDLE
 ```
 
-`_transition(next: State)` sets `_state` and calls the matching `_sprite.play()`. Logic and visuals always move together.
+`_transition(next: State)` sets `_state` only — no sprite calls, since the Player has no sprite.
 
 | State | Purpose |
 |---|---|
-| `IDLE` | At rest; `_is_turn_complete()` returns true |
-| `ATTACKING` | AnimationPlayer running the attack sequence; turn held |
-| `HIT` | Hurt sprite + overlay flash; does not block the turn (player is hit on the enemy's turn, not their own) |
-| `DEAD` | Death animation playing or complete; `_is_turn_complete()` returns true |
+| `IDLE` | At rest; `_is_turn_complete()` may return true (also depends on `_attack_animation_pending`) |
+| `DEAD` | Player is dead; `_is_turn_complete()` returns true |
 
-### Attack Sequence (AnimationPlayer)
-
-The `AnimationPlayer` has a named animation `"attack"` with method call tracks:
-
-1. `t=0` — `_sprite.play("windup")`
-2. `t=N` — `_sprite.play("swing")` *(N tuned in editor to windup display duration)*
-3. Animation ends → `animation_finished` fires → `_on_anim_player_finished()` → `_transition(State.IDLE)`
-
-`_transition(State.ATTACKING)` calls `_anim_player.play("attack")` to start the sequence. No timer callbacks, no code changes needed to adjust timing — edit the timeline.
+`ATTACKING` and `HIT` were removed. Attack progress is tracked by the `_attack_animation_pending` flag instead (see Turn Gate below). `HIT` was removed because there is no hurt sprite on the Player — damage feedback is handled by `_flash_hurt_overlay()` and SFX only.
 
 ### Equipment Swapping
 
 ```gdscript
-func equip_weapon(frames: SpriteFrames) -> void:
-    _sprite.sprite_frames = frames
-    _transition(State.IDLE)
+func equip(slot: Enums.Slot, item: Equipment) -> void:
+    # ... handles old item teardown, signal disconnection, remove_child
+    _equipped[slot] = item
+    add_child(item)
+    item.play_equip()
+    item._on_equipped()
+    if slot == Enums.Slot.WEAPON:
+        attack.connect((item as Weapon)._on_player_attacked)
+        (item as Weapon).animation_finished.connect(_on_weapon_animation_finished)
 ```
 
-All animation names (`idle`, `windup`, `swing`, `hurt`, `death`) must exist in every weapon's SpriteFrames resource. The script never references a specific weapon — only calls `_sprite.play("swing")` etc.
+`equip()` manages the full lifecycle: removes the old item, connects/disconnects signals, and adds the new item as a child. Swapping weapons is transparent to `game.gd`.
 
 ---
 
@@ -139,9 +129,10 @@ Pattern is identical to `enemy.gd`:
 
 ```gdscript
 var _turn_pending: bool = false
+var _attack_animation_pending: bool = false
 
 func execute_action(action_name: String) -> void:
-    if is_dead or not _actions.has(action_name):
+    if is_dead or _turn_pending or not _actions.has(action_name):
         return
     _actions[action_name].call()
     _turn_pending = true
@@ -153,8 +144,13 @@ func _process(_delta: float) -> void:
         turn_ended.emit()
 
 func _is_turn_complete() -> bool:
-    return _state == State.IDLE or _state == State.DEAD
+    return not _attack_animation_pending and (_state == State.IDLE or _state == State.DEAD)
+
+func _on_weapon_animation_finished() -> void:
+    _attack_animation_pending = false
 ```
+
+`_attack_animation_pending` is set to `true` in `_do_attack()` when a weapon is equipped, and cleared when `Weapon.animation_finished` fires. This gates the turn on the weapon's visual completing, not just the damage calculation.
 
 `game.gd` is unchanged — it still connects to `turn_ended` and does not care when it fires.
 
@@ -165,8 +161,8 @@ func _is_turn_complete() -> bool:
 | Signal | Emitted when | Connected by |
 |---|---|---|
 | `turn_ended` | `_process()` detects `_is_turn_complete()` after an action | `game.gd` in `set_player()` |
-| `attacked(damage: float)` | `_do_attack()` | `game.gd` → `CombatEvent.receive_player_attack` |
-| `damaged(amount: float)` | `take_damage()` | UI (health bar) — not yet built |
+| `attack(damage: float)` | `_do_attack()` | `game.gd` → `CombatEvent.receive_player_attack`; also `Weapon._on_player_attacked` |
+| `damaged(amount: float)` | `take_damage()` | `game.gd` → `_gui.update_player_health` |
 | `died` | `_die()` | `game.gd` in `set_player()` |
 
 No new signals are needed. The existing four cover all current communication requirements.
@@ -188,8 +184,9 @@ func _register_actions() -> void:
 
 func _do_attack() -> void:
     _play_sfx(_attack_player)
-    _transition(State.ATTACKING)
-    attacked.emit(attack_damage)
+    if _equipped.has(Enums.Slot.WEAPON):
+        _attack_animation_pending = true
+    attack.emit(_calculate_damage())
 ```
 
 **Adding future actions:** call `register_action("action_name", _do_action_name)` in `_register_actions()`. The new callable follows the same pattern: transition to appropriate state, emit intent signal, play SFX. No changes to `execute_action()`, `_process()`, or the turn gate are required.
@@ -199,26 +196,27 @@ func _do_attack() -> void:
 ## Node Wiring
 
 ```gdscript
-@onready var _sprite: AnimatedSprite2D = $Sprite
-@onready var _anim_player: AnimationPlayer = $AnimationPlayer
-@onready var _hurt_overlay: ColorRect = $HurtOverlay
 @onready var _attack_player: AudioStreamPlayer2D = $SFX/AttackPlayer
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
 @onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
+
+var _hurt_overlay: ColorRect = null      # set via set_hurt_overlay() from game.gd
+var _attack_animation_pending: bool = false
+var _equipped: Dictionary = {}           # Enums.Slot → Equipment
 ```
+
+`_hurt_overlay` is not wired in `_ready()` — `game.gd` passes a reference via `set_hurt_overlay($HurtOverlay/HurtRect)` after the player is in the tree. This avoids world-space positioning issues from a `ColorRect` child of the Player node.
 
 Signal connections made in `_ready()`:
 
 ```gdscript
 func _ready() -> void:
     health = max_health
-    _anim_player.animation_finished.connect(_on_anim_player_finished)
     _register_actions()
     _transition(State.IDLE)
-
-func _on_anim_player_finished(_anim_name: StringName) -> void:
-    _transition(State.IDLE)
 ```
+
+`_on_weapon_animation_finished` is connected dynamically inside `equip()` when a weapon is equipped, not in `_ready()`.
 
 ---
 
@@ -242,7 +240,7 @@ attack_damage  = 10.0
 
 ## Future Considerations
 
-- **Multiple equipment slots:** The current design covers one weapon sprite. When armour, shield, or off-hand slots are added, each slot would need its own `AnimatedSprite2D` node, with `equip_weapon()` generalised to `equip(slot: String, frames: SpriteFrames)`.
+- **Multiple equipment slots:** `equip(slot: Enums.Slot, item: Equipment)` already handles multiple slots — adding a new slot means adding an entry to `Enums.Slot` and optionally handling its signal wiring in `equip()`. No structural changes to the Player node tree are needed since each equipped item manages its own visuals as a child node.
 - **Action-to-animation coupling:** Today each action callable directly calls `_transition()`. If many actions share animation logic, a mapping (`Dictionary[String, State]`) could centralise this — but not worth adding until there are three or more actions.
 - **Visual effects:** Tween `_sprite.scale` for a punch on attack, tween `_sprite.modulate` for a flash on hurt. All done with `create_tween()` in the relevant handler, no structural changes needed.
 - **Adding SFX:** Assign an `AudioStream` to any player node in the inspector. No code changes needed.
