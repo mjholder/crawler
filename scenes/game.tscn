@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://dwf078w6efs4m" path="res://assets/sprites/background.jpg" id="2_yqjtg"]
 [ext_resource type="PackedScene" uid="uid://brbnfv00v65s2" path="res://scenes/skeleton.tscn" id="3_p57ef"]
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="4_vtaks"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
 [ext_resource type="Texture2D" uid="uid://brv2m764g5v4n" path="res://icon.svg" id="7_u5sy4"]
 [ext_resource type="Script" uid="uid://kw77gbksi4x4" path="res://scripts/gui.gd" id="8_gui"]
@@ -20,6 +21,7 @@ debug_start_combat = true
 debug_combat_event = ExtResource("2_iywne")
 debug_enemy_scene = ExtResource("3_p57ef")
 debug_enemy_count = 3
+debug_weapon_scene = ExtResource("4_vtaks")
 
 [node name="Background" type="CanvasLayer" parent="." unique_id=77366099]
 layer = -1

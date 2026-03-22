@@ -1,87 +1,12 @@
 [gd_scene format=3 uid="uid://dc8po6axusk31"]
 
 [ext_resource type="Script" uid="uid://c2b7pggstlscu" path="res://scripts/player.gd" id="1_3vyb7"]
-[ext_resource type="Texture2D" uid="uid://b6vomb1lcxcc6" path="res://assets/sprites/BattleAxeSwingFiltered.png" id="2_dqkch"]
-[ext_resource type="Texture2D" uid="uid://kn5oin53rfme" path="res://assets/sprites/BattleAxeWindupFiltered.png" id="3_qlg0r"]
-[ext_resource type="Texture2D" uid="uid://dl12aldtnnnq4" path="res://assets/sprites/BattleAxeIdleFiltered.png" id="4_tuyoq"]
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_player"]
-animations = [{
-"frames": [],
-"loop": false,
-"name": &"death",
-"speed": 5.0
-}, {
-"frames": [],
-"loop": false,
-"name": &"hurt",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("4_tuyoq")
-}],
-"loop": true,
-"name": &"idle",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("2_dqkch")
-}],
-"loop": false,
-"name": &"swing",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": ExtResource("3_qlg0r")
-}],
-"loop": false,
-"name": &"windup",
-"speed": 5.0
-}]
-
-[sub_resource type="Animation" id="Animation_attack"]
-resource_name = "attack"
-length = 0.8
-tracks/0/type = "method"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Sprite")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.4),
-"transitions": PackedFloat32Array(1, 1),
-"values": [{
-"args": [&"windup"],
-"method": &"play"
-}, {
-"args": [&"swing"],
-"method": &"play"
-}]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_player"]
-_data = {
-&"attack": SubResource("Animation_attack")
-}
 
 [node name="Player" type="Node2D" unique_id=1669195153]
 script = ExtResource("1_3vyb7")
 defense = 4.0
 
-[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1114002827]
-sprite_frames = SubResource("SpriteFrames_player")
-animation = &"windup"
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=693267239]
-libraries/ = SubResource("AnimationLibrary_player")
-
 [node name="SFX" type="Node" parent="." unique_id=824489096]
-
-[node name="AttackPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=845991545]
 
 [node name="HurtPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=1611386459]
 

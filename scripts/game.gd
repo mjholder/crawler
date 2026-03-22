@@ -7,6 +7,7 @@ extends Node2D
 @export var debug_combat_event: PackedScene
 @export var debug_enemy_scene: PackedScene
 @export var debug_enemy_count: int = 1
+@export var debug_weapon_scene: PackedScene
 
 # --- Screen Transform ---
 var screen_size: Vector2
@@ -14,9 +15,7 @@ var screen_center: Vector2
 
 # --- Turn State ---
 
-enum TurnState { PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, NO_TURN }
-
-var state: TurnState = TurnState.NO_TURN
+var state: Enums.TurnState = Enums.TurnState.NO_TURN
 var round_number: int = 0
 
 # --- Music ---
@@ -42,7 +41,6 @@ func _ready() -> void:
 	screen_center = screen_size / 2
 	set_player($Player)
 	$Player.position = screen_center
-	_scale_sprite_to_viewport($Player.get_node("Sprite"))
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
 	if _exploration_music:
 		$Music/BGM.stream = _exploration_music
@@ -60,14 +58,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_gui.handle_esc()
 		return
-	if state != TurnState.PLAYER_TURN:
+	if state != Enums.TurnState.PLAYER_TURN:
 		return
 
 
 # --- GUI Callbacks ---
 
 func attack_action() -> void:
-	if state != TurnState.PLAYER_TURN:
+	if state != Enums.TurnState.PLAYER_TURN:
 		return
 	_gui.set_player_turn(false)
 	player.execute_action("attack")
@@ -78,6 +76,10 @@ func start_game() -> void:
 	if debug_start_combat and debug_combat_event != null:
 		var event_instance = debug_combat_event.instantiate() as CombatEvent
 		start_event(event_instance)
+	if debug_start_combat and debug_weapon_scene != null:
+		var weapon_instance := debug_weapon_scene.instantiate() as Weapon
+		weapon_instance.data = preload("res://resources/equipment/weapons/battle_axe.tres")
+		player.equip(Enums.Slot.WEAPON, weapon_instance)
 
 
 # --- Participant Setup ---
@@ -140,7 +142,7 @@ func _on_event_complete() -> void:
 		_gui.hide_combat_hud()
 	current_event.queue_free()
 	current_event = null
-	state = TurnState.NO_TURN
+	state = Enums.TurnState.NO_TURN
 	_start_exploration_music()
 
 
@@ -152,7 +154,7 @@ func _on_player_attacked(damage: float) -> void:
 # --- Turn Flow ---
 
 func _start_player_turn() -> void:
-	state = TurnState.PLAYER_TURN
+	state = Enums.TurnState.PLAYER_TURN
 	round_number += 1
 	print("[ROUND %d] === Player Turn ===" % round_number)
 	_gui.set_player_turn(true)
@@ -160,13 +162,13 @@ func _start_player_turn() -> void:
 
 
 func _on_player_turn_ended() -> void:
-	if state != TurnState.PLAYER_TURN:
+	if state != Enums.TurnState.PLAYER_TURN:
 		return
 	_run_enemy_turns()
 
 
 func _run_enemy_turns() -> void:
-	state = TurnState.ENEMY_TURN
+	state = Enums.TurnState.ENEMY_TURN
 	print("[ROUND %d] === Enemy Turn ===" % round_number)
 	(current_event as CombatEvent).run_enemy_turns()
 
@@ -206,12 +208,12 @@ func _start_exploration_music() -> void:
 
 func _on_player_died() -> void:
 	print("[GAME] Player died — GAME OVER")
-	state = TurnState.GAME_OVER
+	state = Enums.TurnState.GAME_OVER
 
 
 func quit_to_main() -> void:
 	_gui.return_to_main_menu()
-	state = TurnState.NO_TURN
+	state = Enums.TurnState.NO_TURN
 
 
 # --- Helper Functions ---

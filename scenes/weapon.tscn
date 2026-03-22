@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://bkwtkj4t1b4se"]
+
+[ext_resource type="Script" uid="uid://boj3vs6vv4j7f" path="res://scripts/weapon.gd" id="1_xasec"]
+
+[node name="Weapon" type="Node2D" unique_id=981608404]
+script = ExtResource("1_xasec")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1896329327]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=510384570]
+
+[node name="SFX" type="Node" parent="." unique_id=5052449]
+
+[node name="EquipPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=245580171]
+
+[node name="UnequipPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=570492957]
+
+[node name="AttackPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=1188818645]

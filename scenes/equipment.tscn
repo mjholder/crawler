@@ -1,3 +1,16 @@
 [gd_scene format=3 uid="uid://5q0diwqssqd0"]
 
+[ext_resource type="Script" uid="uid://duy120p4y8168" path="res://scripts/equipment.gd" id="1_dusko"]
+
 [node name="Equipment" type="Node2D" unique_id=1809990231]
+script = ExtResource("1_dusko")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=289303635]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1001534665]
+
+[node name="SFX" type="Node" parent="." unique_id=1074786934]
+
+[node name="EquipPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=1157591382]
+
+[node name="UnequipPlayer" type="AudioStreamPlayer2D" parent="SFX" unique_id=849670804]

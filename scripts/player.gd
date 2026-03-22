@@ -20,17 +20,16 @@ signal attack(damage: float)
 @export var base_damage: float = 10.0
 
 # --- State Machine ---
-enum State { IDLE, ATTACKING, HIT, DEAD }
+enum State { IDLE, DEAD }
 
 var _state: State = State.IDLE
 var health: float
 var is_dead: bool = false
 var _turn_pending: bool = false
+var _attack_animation_pending: bool = false
 var _hurt_overlay: ColorRect = null
 
 # --- Node References ---
-@onready var _sprite: AnimatedSprite2D = $Sprite
-@onready var _anim_player: AnimationPlayer = $AnimationPlayer
 @onready var _attack_player: AudioStreamPlayer2D = $SFX/AttackPlayer
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
 @onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
@@ -39,12 +38,11 @@ var _hurt_overlay: ColorRect = null
 # Maps action name -> Callable.
 # Register new actions with register_action(); call them via execute_action().
 var _actions: Dictionary = {}
+var _equipped: Dictionary = {}  # Enums.Slot → Equipment
 
 
 func _ready() -> void:
 	health = max_health
-	_anim_player.animation_finished.connect(_on_anim_player_finished)
-	_sprite.animation_finished.connect(_on_sprite_animation_finished)
 	_register_actions()
 	_transition(State.IDLE)
 
@@ -77,7 +75,9 @@ func execute_action(action_name: String) -> void:
 
 func _do_attack() -> void:
 	_play_sfx(_attack_player)
-	_transition(State.ATTACKING)
+	if _equipped.has(Enums.Slot.WEAPON):
+		_attack_animation_pending = true
+	print("  Player attacks for %.1f damage!" % _calculate_damage())
 	attack.emit(_calculate_damage())
 
 
@@ -95,7 +95,6 @@ func take_damage(amount: float) -> void:
 		_die()
 	else:
 		_play_sfx(_hurt_player)
-		_transition(State.HIT)
 
 
 func _die() -> void:
@@ -107,18 +106,51 @@ func _die() -> void:
 
 
 func _apply_defense(amount: float) -> float:
-	return maxf(amount - defense, 0.0)
+	return maxf(amount - get_effective_stat(Enums.Stat.DEFENSE), 0.0)
 
 
 func _calculate_damage() -> float:
-	return base_damage + (strength * 0.5)
+	return base_damage + (get_effective_stat(Enums.Stat.STRENGTH) * 0.5)
 
 
 # --- Equipment ---
 
-func equip_weapon(frames: SpriteFrames) -> void:
-	_sprite.sprite_frames = frames
-	_transition(State.IDLE)
+func equip(slot: Enums.Slot, item: Equipment) -> void:
+	if _equipped.has(slot):
+		var old: Equipment = _equipped[slot]
+		old.play_unequip()
+		old._on_unequipped()
+		if slot == Enums.Slot.WEAPON:
+			attack.disconnect((old as Weapon)._on_player_attacked)
+			(old as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
+		remove_child(old)
+	_equipped[slot] = item
+	add_child(item)
+	item.play_equip()
+	item._on_equipped()
+	if slot == Enums.Slot.WEAPON:
+		print("[PLAYER] Equipped weapon: %s" % item.data.item_name)
+		attack.connect((item as Weapon)._on_player_attacked)
+		(item as Weapon).animation_finished.connect(_on_weapon_animation_finished)
+
+
+func get_effective_stat(stat: Enums.Stat) -> float:
+	var base: float = _get_base_stat(stat)
+	var bonus: float = 0.0
+	for item in _equipped.values():
+		bonus += item.get_modifier(stat)
+	return base + bonus
+
+
+func _get_base_stat(stat: Enums.Stat) -> float:
+	match stat:
+		Enums.Stat.STRENGTH:     return strength
+		Enums.Stat.DEFENSE:      return defense
+		Enums.Stat.CONSTITUTION: return constitution
+		Enums.Stat.AGILITY:      return agility
+		Enums.Stat.SPIRIT:       return spirit
+		Enums.Stat.LUCK:         return luck
+	return 0.0
 
 
 func set_hurt_overlay(overlay: ColorRect) -> void:
@@ -128,25 +160,15 @@ func set_hurt_overlay(overlay: ColorRect) -> void:
 # --- Internal ---
 
 func _is_turn_complete() -> bool:
-	return _state == State.IDLE or _state == State.DEAD
+	return not _attack_animation_pending and (_state == State.IDLE or _state == State.DEAD)
 
 
 func _transition(next: State) -> void:
 	_state = next
-	match _state:
-		State.IDLE:      _sprite.play("idle")
-		State.ATTACKING: _anim_player.play("attack")
-		State.HIT:       _sprite.play("hurt")
-		State.DEAD:      _sprite.play("death")
 
 
-func _on_anim_player_finished(_anim_name: StringName) -> void:
-	_transition(State.IDLE)
-
-
-func _on_sprite_animation_finished() -> void:
-	if _state == State.HIT:
-		_transition(State.IDLE)
+func _on_weapon_animation_finished() -> void:
+	_attack_animation_pending = false
 
 
 func _flash_hurt_overlay() -> void:
@@ -158,5 +180,5 @@ func _flash_hurt_overlay() -> void:
 
 
 func _play_sfx(player: AudioStreamPlayer2D) -> void:
-	if player.stream != null:
+	if player != null and player.stream != null:
 		player.play()

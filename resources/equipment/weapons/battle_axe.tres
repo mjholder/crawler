@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://b2df62wmsyqmd"]
+
+[ext_resource type="Script" uid="uid://bkgb8ckvvwyft" path="res://scripts/weapon_data.gd" id="1_84utr"]
+[ext_resource type="Texture2D" uid="uid://drbota0c0gcff" path="res://assets/sprites/BattleAxeWindupFiltered.png" id="2_ra6pu"]
+[ext_resource type="Texture2D" uid="uid://dbv4prm15qp3l" path="res://assets/sprites/BattleAxeSwingFiltered.png" id="3_o157q"]
+[ext_resource type="Texture2D" uid="uid://bx8qgjpp08r0n" path="res://assets/sprites/BattleAxeIdleFiltered.png" id="4_sggdg"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_p4cbs"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_ra6pu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_o157q")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_sggdg")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[resource]
+script = ExtResource("1_84utr")
+item_name = "Battle Axe"
+description = "One Handed axe"
+sprite_frames = SubResource("SpriteFrames_p4cbs")
+stat_modifiers = {
+0: 10.0
+}
