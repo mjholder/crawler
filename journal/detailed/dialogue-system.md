@@ -17,7 +17,7 @@ Dialogue is a **UI subsystem**, not an Event. It does not go through the event p
 
 | File | Role |
 |---|---|
-| `scripts/dialogue_consequences.gd` | Consequence dispatcher — methods are callable by keyword |
+| `scripts/dialogue_consequences.gd` | Consequence dispatcher — child node of the game scene; methods are callable by keyword |
 | `scripts/dialogue_panel.gd` | Panel logic — node navigation, rendering, consequence dispatch |
 | `scenes/dialogue_panel.tscn` | Scene for the DialoguePanel node |
 | `dialogue/` | Directory for dialogue JSON files (one file per dialogue tree) |
@@ -114,7 +114,7 @@ GUI  (CanvasLayer)
 ├── PauseMenu
 ├── CombatHUD
 └── DialoguePanel       Control             [dialogue_panel.gd]
-    ├── Background      NinePatchRect
+    ├── Background      ColorRect               (placeholder — swap for NinePatchRect when panel art is ready)
     ├── SpeakerLabel    Label               (hidden when speaker is null)
     ├── TextLabel       RichTextLabel
     └── ChoicesContainer    VBoxContainer
@@ -129,19 +129,20 @@ Choice buttons are created fresh on each node load and freed when the node chang
 
 `scripts/dialogue_consequences.gd`
 
-A standalone class (`extends RefCounted`). Methods defined on the class are the consequences. The dialogue system dispatches to them by name using GDScript's `call()`.
+A child node of the game scene (`extends Node`). Lives in the scene tree as a sibling of `Player`, `GUI`, etc. `game.gd` holds an `@onready` reference to it and passes it to `gui.show_dialogue()`. Methods defined on the class are the consequences. The dialogue system dispatches to them by name using GDScript's `call()`.
 
-To use in context, the caller (typically `game.gd`) instantiates this class, passes in whatever game references the methods need via `_init()`, and hands the instance to `show_dialogue()`. New consequence types are new methods — no other file changes.
+New consequence types are new methods — no other file changes.
 
 ```gdscript
 class_name DialogueConsequences
-extends RefCounted
+extends Node
 
 # --- Setup ---
 
-# Receives game references needed by consequence methods.
-func _init(game: Game) -> void:
-    pass  # store refs as needed
+var _game: Game
+
+func _ready() -> void:
+    _game = get_parent() as Game
 
 # --- Dispatch ---
 
@@ -246,13 +247,14 @@ enum TurnState { NO_TURN, PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, DIA
 ### Dialogue entry and exit
 
 ```gdscript
+@onready var _dialogue_consequences: DialogueConsequences = $DialogueConsequences
+
 var _pre_dialogue_state: Enums.TurnState
 
 func start_dialogue(data: Dictionary) -> void:
     _pre_dialogue_state = state
     state = Enums.TurnState.DIALOGUE
-    var consequences := DialogueConsequences.new(self)
-    _gui.show_dialogue(data, consequences)
+    _gui.show_dialogue(data, _dialogue_consequences)
 
 func _on_dialogue_complete() -> void:
     state = _pre_dialogue_state
@@ -283,7 +285,7 @@ signal dialogue_requested(data: Dictionary)
 ## Signal Flow
 
 **Dialogue starts (from event):**
-`event.dialogue_requested(data)` → `game.gd._on_dialogue_requested()` → `game.gd.start_dialogue(data)` → `_gui.show_dialogue(data, consequences)`
+`event.dialogue_requested(data)` → `game.gd._on_dialogue_requested()` → `game.gd.start_dialogue(data)` → `_gui.show_dialogue(data, _dialogue_consequences)`
 
 **Node loads with consequence:**
 `_load_node()` → `consequences.execute(action, value)` → consequence method runs → node renders
@@ -300,6 +302,6 @@ signal dialogue_requested(data: Dictionary)
 
 - **Terminal node UX** — Continue button that closes, or does a short delay auto-advance? Keep it a button for now; revisit during UI polish.
 - **Speaker portraits** — SpeakerLabel is text-only. Reserve a `PortraitTexture` node in the panel tree when building the scene so there's a slot for it later without rearchitecting.
-- **DialogueConsequences references** — Does `_init(game: Game)` give it enough access, or will some consequences need the active event reference too? If so, add `set_event(event: Event)` as an optional call before `show_dialogue`.
+- **DialogueConsequences references** — `_ready()` casts the parent to `Game`, giving access to the player and current event. If a consequence needs the active event reference at dispatch time, read `_game.current_event` directly rather than passing it separately.
 - **Dialogue file location** — `res://dialogue/` flat, or organised by area/NPC? Flat is fine until the count grows.
 - **Blocking consequences** — Not needed now. If a future consequence needs to pause and await a result (e.g. a skill check), add a `consequence_resolved` signal to `DialogueConsequences` and have `_load_node` await it before rendering. Design that when the use case arrives.

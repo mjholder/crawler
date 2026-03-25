@@ -194,5 +194,31 @@ icon = ExtResource("7_u5sy4")
 [node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
 layout_mode = 0
 
+[node name="DialoguePanel" type="Control" parent="GUI" unique_id=1753475285]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Background" type="ColorRect" parent="GUI/DialoguePanel" unique_id=308607430]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SpeakerLabel" type="Label" parent="GUI/DialoguePanel" unique_id=220640129]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="TextLabel" type="RichTextLabel" parent="GUI/DialoguePanel" unique_id=95561426]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ChoicesContainer" type="VBoxContainer" parent="GUI/DialoguePanel" unique_id=1455659392]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
 [connection signal="pressed" from="GUI/MainMenu/StartButton" to="GUI" method="_on_start_button_pressed"]
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]
