@@ -19,7 +19,6 @@ Dialogue is a **UI subsystem**, not an Event. It does not go through the event p
 |---|---|
 | `scripts/dialogue_consequences.gd` | Consequence dispatcher — child node of the game scene; methods are callable by keyword |
 | `scripts/dialogue_panel.gd` | Panel logic — node navigation, rendering, consequence dispatch |
-| `scenes/dialogue_panel.tscn` | Scene for the DialoguePanel node |
 | `dialogue/` | Directory for dialogue JSON files (one file per dialogue tree) |
 
 ---
@@ -106,7 +105,7 @@ A node with an empty `choices` array shows a **Continue** button. Pressing it en
 
 ## Node Tree
 
-Added as a child of `GUI` in `game.tscn`. Hidden by default.
+Added directly to the `GUI` node in `game.tscn`. Hidden by default. No separate scene file.
 
 ```
 GUI  (CanvasLayer)
