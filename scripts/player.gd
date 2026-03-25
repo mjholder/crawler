@@ -30,7 +30,6 @@ var _attack_animation_pending: bool = false
 var _hurt_overlay: ColorRect = null
 
 # --- Node References ---
-@onready var _attack_player: AudioStreamPlayer2D = $SFX/AttackPlayer
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
 @onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
 

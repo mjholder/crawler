@@ -220,5 +220,4 @@ layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[connection signal="pressed" from="GUI/MainMenu/StartButton" to="GUI" method="_on_start_button_pressed"]
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]
