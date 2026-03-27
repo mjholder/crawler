@@ -83,10 +83,6 @@ func start_game() -> void:
 		var weapon_instance := debug_weapon_scene.instantiate() as Weapon
 		weapon_instance.data = preload("res://resources/equipment/weapons/battle_axe.tres")
 		player.equip(Enums.Slot.WEAPON, weapon_instance)
-	if debug_dialogue_json != "":
-		var file := FileAccess.open(debug_dialogue_json, FileAccess.READ)
-		var data: Dictionary = JSON.parse_string(file.get_as_text())
-		_gui.show_dialogue(data, _dialogue_consequences)
 
 
 # --- Participant Setup ---
@@ -147,6 +143,15 @@ func _on_event_complete() -> void:
 		for enemy in ce._enemies:
 			_gui.remove_enemy_health_bar(enemy)
 		_gui.hide_combat_hud()
+		if debug_dialogue_json != "":
+			var file := FileAccess.open(debug_dialogue_json, FileAccess.READ)
+			var data: Dictionary = JSON.parse_string(file.get_as_text())
+			_gui.show_dialogue(data, _dialogue_consequences)
+			return
+	_finish_event()
+
+
+func _finish_event() -> void:
 	current_event.queue_free()
 	current_event = null
 	state = Enums.TurnState.NO_TURN
@@ -161,7 +166,7 @@ func _on_player_attacked(damage: float) -> void:
 # --- Dialogue ---
 
 func _on_gui_dialogue_complete() -> void:
-	_on_event_complete()
+	_finish_event()
 
 
 # --- Turn Flow ---

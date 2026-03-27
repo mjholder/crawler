@@ -31,8 +31,8 @@ func _load_node(node_id: String) -> void:
 	var node: Dictionary = _data["nodes"][node_id]
 
 	if node["consequence"] != null:
-		var c: Dictionary = node["consequence"]
-		_consequences.execute(c["action"], c["value"])
+		var consequences: Dictionary = node["consequence"]
+		_consequences.execute(consequences["action"], consequences["value"])
 
 	_render_node(node)
 
