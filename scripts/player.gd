@@ -73,7 +73,6 @@ func execute_action(action_name: String) -> void:
 # --- Action Implementations ---
 
 func _do_attack() -> void:
-	_play_sfx(_attack_player)
 	if _equipped.has(Enums.Slot.WEAPON):
 		_attack_animation_pending = true
 	print("  Player attacks for %.1f damage!" % _calculate_damage())

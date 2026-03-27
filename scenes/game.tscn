@@ -6,10 +6,12 @@
 [ext_resource type="PackedScene" uid="uid://brbnfv00v65s2" path="res://scenes/skeleton.tscn" id="3_p57ef"]
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="4_vtaks"]
+[ext_resource type="Script" uid="uid://5dudvo0rnvqu" path="res://scripts/dialogue_consequences.gd" id="5_dinhu"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
 [ext_resource type="Texture2D" uid="uid://brv2m764g5v4n" path="res://icon.svg" id="7_u5sy4"]
 [ext_resource type="Script" uid="uid://kw77gbksi4x4" path="res://scripts/gui.gd" id="8_gui"]
 [ext_resource type="PackedScene" uid="uid://ciyvvtls2c4cd" path="res://scenes/health_bar.tscn" id="9_hbar"]
+[ext_resource type="Script" uid="uid://b1ry2py3hwthj" path="res://scripts/dialogue_panel.gd" id="12_kvuet"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -22,6 +24,10 @@ debug_combat_event = ExtResource("2_iywne")
 debug_enemy_scene = ExtResource("3_p57ef")
 debug_enemy_count = 3
 debug_weapon_scene = ExtResource("4_vtaks")
+debug_dialogue_json = "res://resources/dialogue/test_dialogue.json"
+
+[node name="DialogueCondsequences" type="Node" parent="." unique_id=1082987239]
+script = ExtResource("5_dinhu")
 
 [node name="Background" type="CanvasLayer" parent="." unique_id=77366099]
 layer = -1
@@ -38,6 +44,14 @@ expand_mode = 3
 
 [node name="Player" parent="." unique_id=1592968138 instance=ExtResource("3_player")]
 z_index = 4
+player_name = null
+max_health = null
+strength = null
+constitution = null
+agility = null
+spirit = null
+luck = null
+base_damage = null
 
 [node name="EventContainer" type="Node" parent="." unique_id=1731107034]
 
@@ -196,28 +210,79 @@ layout_mode = 0
 
 [node name="DialoguePanel" type="Control" parent="GUI" unique_id=1753475285]
 layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("12_kvuet")
 
 [node name="Background" type="ColorRect" parent="GUI/DialoguePanel" unique_id=308607430]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.14767182, 0.14767179, 0.14767179, 0.21568628)
 
 [node name="SpeakerLabel" type="Label" parent="GUI/DialoguePanel" unique_id=220640129]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 420.0
+offset_top = 120.0
+offset_right = -420.0
+offset_bottom = 143.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 64
+text = "TEST"
 
 [node name="TextLabel" type="RichTextLabel" parent="GUI/DialoguePanel" unique_id=95561426]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 420.0
+offset_top = -330.0
+offset_right = -420.0
+offset_bottom = 170.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/normal_font_size = 24
+text = " Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas et libero vulputate, maximus libero id, lacinia sapien. Maecenas eget dui est. Praesent sed tincidunt est. Nunc quis convallis nunc. Vivamus eget iaculis metus, et pharetra turpis. Curabitur ac diam vitae lacus gravida sodales non at magna. Mauris interdum ut neque eget euismod. Curabitur auctor sollicitudin nisl, at condimentum purus congue in. Curabitur diam purus, mattis sed felis vitae, condimentum porta urna. Phasellus massa magna, commodo et elit quis, fermentum consectetur arcu. Proin quis hendrerit nulla, in tincidunt libero. Curabitur congue efficitur neque, quis rutrum lectus facilisis non. Morbi sit amet massa leo. "
 
 [node name="ChoicesContainer" type="VBoxContainer" parent="GUI/DialoguePanel" unique_id=1455659392]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 420.0
+offset_top = -580.0
+offset_right = -420.0
+offset_bottom = -434.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 10
+
+[node name="TestButton" type="Button" parent="GUI/DialoguePanel/ChoicesContainer" unique_id=1848228524]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Choice A"
+alignment = 0
+
+[node name="TestButton2" type="Button" parent="GUI/DialoguePanel/ChoicesContainer" unique_id=70693981]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Choice B"
+alignment = 0
+
+[node name="TestButton3" type="Button" parent="GUI/DialoguePanel/ChoicesContainer" unique_id=839597156]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Choice C"
+alignment = 0
 
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]

@@ -16,6 +16,11 @@ No commitment implied — this is a thinking space.
 
 <!-- Add ideas below, newest first -->
 
+**Idea:** Group dialogue UI components in a shared container
+**Added:** 2026-03-25
+**Notes:** Instead of placing dialogue UI nodes individually, wrap them in a container so they scale together as a unit. Makes it easier to maintain consistent proportions when adjusting resolution or layout.
+**Status:** `worth exploring`
+
 **Idea:** Roguelike Run Structure
 **Added:** 2026-02-22
 **Notes:**

@@ -5,6 +5,7 @@ extends CanvasLayer
 signal start_requested
 signal quit_to_main_requested
 signal attack_requested
+signal dialogue_complete
 
 # --- Node References ---
 @onready var _main_menu: Control = $MainMenu
@@ -15,6 +16,7 @@ signal attack_requested
 @onready var _enemy_hud: Control = $CombatHUD/EnemyHUD
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
+@onready var _dialogue_panel: DialoguePanel = $DialoguePanel
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -30,6 +32,8 @@ func _ready() -> void:
 	_main_menu.hide()
 	_pause_menu.hide()
 	_combat_hud.hide()
+	_dialogue_panel.hide()
+	_dialogue_panel.dialogue_complete.connect(_on_dialogue_complete)
 
 
 # --- Navigation ---
@@ -104,6 +108,18 @@ func set_player_turn(is_player_turn: bool) -> void:
 
 func log_message(text: String) -> void:
 	_combat_log.append_text(text + "\n")
+
+
+# --- Dialogue ---
+
+func show_dialogue(data: Dictionary, consequences: DialogueConsequences) -> void:
+	_dialogue_panel.load_dialogue(data, consequences)
+	_dialogue_panel.show()
+
+
+func _on_dialogue_complete() -> void:
+	_dialogue_panel.hide()
+	dialogue_complete.emit()
 
 
 func _on_quit_button_pressed() -> void:

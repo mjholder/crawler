@@ -8,6 +8,7 @@ extends Node2D
 @export var debug_enemy_scene: PackedScene
 @export var debug_enemy_count: int = 1
 @export var debug_weapon_scene: PackedScene
+@export var debug_dialogue_json: String = ""
 
 # --- Screen Transform ---
 var screen_size: Vector2
@@ -34,6 +35,7 @@ var current_event: Event = null
 # --- GUI ---
 
 @onready var _gui: GUI = $GUI
+@onready var _dialogue_consequences: DialogueConsequences = $DialogueCondsequences
 
 
 func _ready() -> void:
@@ -49,6 +51,7 @@ func _ready() -> void:
 	_gui.start_requested.connect(start_game)
 	_gui.quit_to_main_requested.connect(quit_to_main)
 	_gui.attack_requested.connect(attack_action)
+	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
 	_gui.show_main_menu()
 
 
@@ -80,6 +83,10 @@ func start_game() -> void:
 		var weapon_instance := debug_weapon_scene.instantiate() as Weapon
 		weapon_instance.data = preload("res://resources/equipment/weapons/battle_axe.tres")
 		player.equip(Enums.Slot.WEAPON, weapon_instance)
+	if debug_dialogue_json != "":
+		var file := FileAccess.open(debug_dialogue_json, FileAccess.READ)
+		var data: Dictionary = JSON.parse_string(file.get_as_text())
+		_gui.show_dialogue(data, _dialogue_consequences)
 
 
 # --- Participant Setup ---
@@ -149,6 +156,12 @@ func _on_event_complete() -> void:
 func _on_player_attacked(damage: float) -> void:
 	print("[PLAYER] Takes %.0f damage" % damage)
 	player.take_damage(damage)
+
+
+# --- Dialogue ---
+
+func _on_gui_dialogue_complete() -> void:
+	_on_event_complete()
 
 
 # --- Turn Flow ---

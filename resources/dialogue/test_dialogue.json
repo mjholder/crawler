@@ -1,0 +1,25 @@
+{
+  "nodes": {
+    "0": {
+      "speaker": "Merchant",
+      "text": "Welcome, traveller. What can I do for you?",
+      "choices": [
+        { "text": "I need supplies.", "next": "1" },
+        { "text": "Nothing, just passing through.", "next": "2" }
+      ],
+      "consequence": null
+    },
+    "1": {
+      "speaker": "Merchant",
+      "text": "Here, take this gold for your journey. Safe travels.",
+      "choices": [],
+      "consequence": { "action": "give_gold", "value": 10 }
+    },
+    "2": {
+      "speaker": "Merchant",
+      "text": "Safe travels then.",
+      "choices": [],
+      "consequence": null
+    }
+  }
+}
