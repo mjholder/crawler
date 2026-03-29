@@ -9,6 +9,7 @@ extends Node2D
 @export var debug_enemy_count: int = 1
 @export var debug_weapon_scene: PackedScene
 @export var debug_dialogue_json: String = ""
+@export var debug_dialogue_scene: PackedScene
 
 # --- Screen Transform ---
 var screen_size: Vector2
@@ -18,6 +19,7 @@ var screen_center: Vector2
 
 var state: Enums.TurnState = Enums.TurnState.NO_TURN
 var round_number: int = 0
+var _pre_dialogue_state: Enums.TurnState = Enums.TurnState.NO_TURN
 
 # --- Music ---
 
@@ -49,6 +51,7 @@ func _ready() -> void:
 		$Music/BGM.play()
 
 	_gui.start_requested.connect(start_game)
+	_gui.start_dialogue_requested.connect(start_dialogue_game)
 	_gui.quit_to_main_requested.connect(quit_to_main)
 	_gui.attack_requested.connect(attack_action)
 	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
@@ -72,6 +75,13 @@ func attack_action() -> void:
 		return
 	_gui.set_player_turn(false)
 	player.execute_action("attack")
+
+
+func start_dialogue_game() -> void:
+	_gui.start_game()
+	if debug_dialogue_scene != null:
+		var event_instance := debug_dialogue_scene.instantiate() as DialogueEvent
+		start_event(event_instance)
 
 
 func start_game() -> void:
@@ -127,6 +137,9 @@ func start_event(event: Event) -> void:
 		_gui.show_combat_hud()
 		_gui.set_player_turn(false)
 		_start_combat_music()
+	elif event is DialogueEvent:
+		var de := event as DialogueEvent
+		de.dialogue_requested.connect(_on_dialogue_requested)
 	current_event.start()
 	if event is CombatEvent:
 		_start_player_turn()
@@ -148,6 +161,9 @@ func _on_event_complete() -> void:
 			var data: Dictionary = JSON.parse_string(file.get_as_text())
 			_gui.show_dialogue(data, _dialogue_consequences)
 			return
+	elif current_event is DialogueEvent:
+		var de := current_event as DialogueEvent
+		de.dialogue_requested.disconnect(_on_dialogue_requested)
 	_finish_event()
 
 
@@ -156,6 +172,7 @@ func _finish_event() -> void:
 	current_event = null
 	state = Enums.TurnState.NO_TURN
 	_start_exploration_music()
+	_gui.return_to_main_menu()
 
 
 func _on_player_attacked(damage: float) -> void:
@@ -165,8 +182,22 @@ func _on_player_attacked(damage: float) -> void:
 
 # --- Dialogue ---
 
+func start_dialogue(data: Dictionary) -> void:
+	_pre_dialogue_state = state
+	state = Enums.TurnState.DIALOGUE
+	_gui.show_dialogue(data, _dialogue_consequences)
+
+
+func _on_dialogue_requested(data: Dictionary) -> void:
+	start_dialogue(data)
+
+
 func _on_gui_dialogue_complete() -> void:
-	_finish_event()
+	state = _pre_dialogue_state
+	if current_event is DialogueEvent:
+		(current_event as DialogueEvent).on_dialogue_complete()
+	else:
+		_finish_event()
 
 
 # --- Turn Flow ---

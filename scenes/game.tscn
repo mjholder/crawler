@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="4_vtaks"]
 [ext_resource type="Script" uid="uid://5dudvo0rnvqu" path="res://scripts/dialogue_consequences.gd" id="5_dinhu"]
+[ext_resource type="PackedScene" uid="uid://nqeiejuuf4s4" path="res://scenes/dialogue_event.tscn" id="5_kvuet"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
 [ext_resource type="Texture2D" uid="uid://brv2m764g5v4n" path="res://icon.svg" id="7_u5sy4"]
 [ext_resource type="Script" uid="uid://kw77gbksi4x4" path="res://scripts/gui.gd" id="8_gui"]
@@ -25,6 +26,7 @@ debug_enemy_scene = ExtResource("3_p57ef")
 debug_enemy_count = 3
 debug_weapon_scene = ExtResource("4_vtaks")
 debug_dialogue_json = "res://resources/dialogue/test_dialogue.json"
+debug_dialogue_scene = ExtResource("5_kvuet")
 
 [node name="DialogueCondsequences" type="Node" parent="." unique_id=1082987239]
 script = ExtResource("5_dinhu")
@@ -101,12 +103,20 @@ offset_right = 300.0
 offset_bottom = 350.0
 text = "Start"
 
-[node name="QuitButton" type="Button" parent="GUI/MainMenu" unique_id=100000004]
+[node name="StartDialogueButton" type="Button" parent="GUI/MainMenu" unique_id=100000010]
 layout_mode = 1
 offset_left = 100.0
 offset_top = 370.0
 offset_right = 300.0
 offset_bottom = 420.0
+text = "Test Dialogue"
+
+[node name="QuitButton" type="Button" parent="GUI/MainMenu" unique_id=100000004]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 440.0
+offset_right = 300.0
+offset_bottom = 490.0
 text = "Quit"
 
 [node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]

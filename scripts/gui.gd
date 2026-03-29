@@ -3,6 +3,7 @@ extends CanvasLayer
 
 # --- Signals ---
 signal start_requested
+signal start_dialogue_requested
 signal quit_to_main_requested
 signal attack_requested
 signal dialogue_complete
@@ -26,6 +27,7 @@ var _enemy_bars: Dictionary = {}
 
 func _ready() -> void:
 	$MainMenu/StartButton.pressed.connect(_on_start_button_pressed)
+	$MainMenu/StartDialogueButton.pressed.connect(_on_start_dialogue_button_pressed)
 	$MainMenu/QuitButton.pressed.connect(_on_quit_button_pressed)
 	$PauseMenu/ResumeButton.pressed.connect(handle_esc)
 	$PauseMenu/QuitToMainButton.pressed.connect(_on_quit_to_main_button_pressed)
@@ -132,6 +134,10 @@ func _on_attack_button_pressed() -> void:
 
 func _on_start_button_pressed() -> void:
 	start_requested.emit()
+
+
+func _on_start_dialogue_button_pressed() -> void:
+	start_dialogue_requested.emit()
 
 
 func _on_quit_to_main_button_pressed() -> void:

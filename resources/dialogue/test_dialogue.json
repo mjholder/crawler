@@ -1,25 +1,48 @@
 {
+  "name": "wandering_stranger",
   "nodes": {
     "0": {
-      "speaker": "Merchant",
-      "text": "Welcome, traveller. What can I do for you?",
+      "speaker": "Stranger",
+      "text": "A hooded figure steps out of the shadows and blocks your path, studying you with calm eyes.",
+      "consequence": null,
       "choices": [
-        { "text": "I need supplies.", "next": "1" },
-        { "text": "Nothing, just passing through.", "next": "2" }
-      ],
-      "consequence": null
+        { "text": "Step aside. Let me pass.", "next": "0-0" },
+        { "text": "Who are you?", "next": "0-1" },
+        { "text": "I have no time for this.", "next": "0-2" }
+      ]
     },
-    "1": {
-      "speaker": "Merchant",
-      "text": "Here, take this gold for your journey. Safe travels.",
-      "choices": [],
-      "consequence": { "action": "give_gold", "value": 10 }
+    "0-0": {
+      "speaker": "Stranger",
+      "text": "The stranger holds your gaze for a moment, then steps aside without a word.",
+      "consequence": { "action": "set_flag", "value": "stranger_ignored" },
+      "choices": []
     },
-    "2": {
-      "speaker": "Merchant",
-      "text": "Safe travels then.",
-      "choices": [],
-      "consequence": null
+    "0-1": {
+      "speaker": "Stranger",
+      "text": "A scout. I've been watching this floor for three days. There are things down here you haven't seen yet.",
+      "consequence": null,
+      "choices": [
+        { "text": "What did you find?", "next": "0-1-0" },
+        { "text": "I don't care.", "next": "0-1-1" }
+      ]
+    },
+    "0-1-0": {
+      "speaker": "Stranger",
+      "text": "Pressure plate, third corridor east. Whoever built this place didn't want company. Watch your step.",
+      "consequence": { "action": "set_flag", "value": "heard_trap_warning" },
+      "choices": []
+    },
+    "0-1-1": {
+      "speaker": null,
+      "text": "The stranger shrugs and slips back into the shadows.",
+      "consequence": null,
+      "choices": []
+    },
+    "0-2": {
+      "speaker": null,
+      "text": "The stranger nods once and steps aside, vanishing into the dark as if they were never there.",
+      "consequence": { "action": "set_flag", "value": "stranger_dismissed" },
+      "choices": []
     }
   }
 }

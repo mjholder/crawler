@@ -141,6 +141,75 @@ Waves are out of scope for the initial implementation. When added, CombatEvent r
 
 ---
 
+---
+
+## DialogueEvent
+
+**Date:** 2026-03-29
+
+### Node Tree
+
+```
+DialogueEvent       Node2D          scripts/dialogue_event.gd
+```
+
+Root node only — no children. Dialogue rendering lives entirely in GUI (`DialoguePanel`). `DialogueEvent` is a thin event wrapper that loads data and hands it off.
+
+### Signal Contract
+
+| Signal | Emitted when |
+|---|---|
+| `dialogue_requested(data: Dictionary)` | Event enters RUNNING — carries the loaded dialogue tree |
+| `event_complete` | Inherited from Event; emitted when dialogue is confirmed complete |
+
+### Methods game.gd calls on DialogueEvent
+
+| Method | When called |
+|---|---|
+| `on_dialogue_complete()` | Called from `_on_gui_dialogue_complete()` when the player dismisses the final dialogue node |
+
+### Phase Flow
+
+`start()` calls `_on_setup()` (load JSON from `dialogue_json_path`) then immediately `_on_running()` (emit `dialogue_requested`). The event stays in RUNNING while the player navigates dialogue. When the panel emits `dialogue_complete`, `game.gd` restores the turn state and calls `on_dialogue_complete()`, which calls `_advance_phase()` — this transitions RUNNING → RESOLUTION → COMPLETE atomically, emitting `event_complete`.
+
+`_on_resolution()` is not overridden. Nothing to do between dialogue ending and event completing at this stage.
+
+### How game.gd wires it (in `start_event()`)
+
+```gdscript
+elif event is DialogueEvent:
+    var de := event as DialogueEvent
+    de.dialogue_requested.connect(_on_dialogue_requested)
+```
+
+`_on_dialogue_requested(data)` saves the current turn state to `_pre_dialogue_state`, sets state to `DIALOGUE`, and calls `_gui.show_dialogue(data, _dialogue_consequences)`.
+
+Cleanup in `_on_event_complete()`:
+```gdscript
+elif current_event is DialogueEvent:
+    (current_event as DialogueEvent).dialogue_requested.disconnect(_on_dialogue_requested)
+```
+
+### Signal Flow
+
+```
+game.start_event(dialogue_event)
+  → de.dialogue_requested.connect(_on_dialogue_requested)
+  → de.start()
+    → _on_setup(): load JSON
+    → _on_running(): emit dialogue_requested(data)
+  → game._on_dialogue_requested(data) → start_dialogue(data)
+    → save state, set DIALOGUE, gui.show_dialogue()
+  → [player navigates dialogue tree]
+  → gui.dialogue_complete → game._on_gui_dialogue_complete()
+    → restore state
+    → de.on_dialogue_complete() → _advance_phase()
+      → RESOLUTION → COMPLETE → event_complete.emit()
+  → game._on_event_complete() → disconnect, _finish_event()
+```
+
+---
+
 ## Signal Flow Summary
 
 **Enemy attacks player:**

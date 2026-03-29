@@ -2,7 +2,7 @@ class_name Enums
 
 # --- Turn Flow ---
 
-enum TurnState { NO_TURN, PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED }
+enum TurnState { NO_TURN, PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, DIALOGUE }
 
 # --- Equipment ---
 
