@@ -5,4 +5,4 @@
 
 [node name="DialogueEvent" unique_id=1038327731 instance=ExtResource("1_faref")]
 script = ExtResource("2_3rc3e")
-dialogue_json_path = "res://resources/dialogue/test_dialogue.json"
+event_json_path = "res://resources/events/dialogue/example.json"

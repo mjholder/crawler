@@ -11,6 +11,10 @@ enum Phase { SETUP, RUNNING, RESOLUTION, COMPLETE }
 
 var phase: Phase = Phase.SETUP
 
+# --- Globals ---
+
+var rewards: Dictionary = {}
+
 # --- Public API ---
 
 func start() -> void:

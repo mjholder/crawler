@@ -7,21 +7,31 @@ signal dialogue_requested(data: Dictionary)
 
 # --- Data ---
 
-@export var dialogue_json_path: String = ""
+@export var event_json_path: String = ""
 
 var _data: Dictionary
 
 # --- Phase Hooks ---
 
 func _on_setup() -> void:
-	if dialogue_json_path == "":
-		push_warning("DialogueEvent: dialogue_json_path not set")
+	if event_json_path == "":
+		push_warning("DialogueEvent: event_json_path not set")
 		return
-	var file := FileAccess.open(dialogue_json_path, FileAccess.READ)
-	if file == null:
-		push_warning("DialogueEvent: could not open '%s'" % dialogue_json_path)
+	var event_file := FileAccess.open(event_json_path, FileAccess.READ)
+	if event_file == null:
+		push_warning("DialogueEvent: could not open '%s'" % event_json_path)
 		return
-	_data = JSON.parse_string(file.get_as_text())
+	var event_data: Dictionary = JSON.parse_string(event_file.get_as_text())
+	rewards = event_data.get("rewards", {})
+	var dialogue_path: String = event_data.get("dialogue", "")
+	if dialogue_path == "":
+		push_warning("DialogueEvent: event JSON missing 'dialogue' key")
+		return
+	var dialogue_file := FileAccess.open(dialogue_path, FileAccess.READ)
+	if dialogue_file == null:
+		push_warning("DialogueEvent: could not open dialogue '%s'" % dialogue_path)
+		return
+	_data = JSON.parse_string(dialogue_file.get_as_text())
 
 
 func _on_running() -> void:

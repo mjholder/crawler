@@ -1,0 +1,8 @@
+{
+	"name": "debug_dialogue",
+	"dialogue": "res://resources/dialogue/test_dialogue.json",
+	"rewards": {
+		"experience": 10,
+		"gold": 5
+	}
+}

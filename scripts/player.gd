@@ -24,6 +24,8 @@ enum State { IDLE, DEAD }
 
 var _state: State = State.IDLE
 var health: float
+var gold: int = 0
+var experience: int = 0
 var is_dead: bool = false
 var _turn_pending: bool = false
 var _attack_animation_pending: bool = false
@@ -77,6 +79,16 @@ func _do_attack() -> void:
 		_attack_animation_pending = true
 	print("  Player attacks for %.1f damage!" % _calculate_damage())
 	attack.emit(_calculate_damage())
+
+
+# --- Rewards ---
+
+func add_gold(amount: int) -> void:
+	gold += amount
+
+
+func add_experience(amount: int) -> void:
+	experience += amount
 
 
 # --- Combat ---

@@ -13,7 +13,6 @@ signal enemy_turns_complete
 
 @export var combat_json_path: String = ""
 
-var rewards: Dictionary = {}
 var _dialogue_triggers: Dictionary = {}
 var _total_expected_enemies: int = 0
 

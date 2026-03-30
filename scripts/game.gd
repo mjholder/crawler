@@ -136,7 +136,6 @@ func start_event(event: Event) -> void:
 
 func _on_event_complete() -> void:
 	print("[GAME] Event complete")
-	# TODO: receive a result payload once the Event API is finalised
 	if current_event is CombatEvent:
 		var ce := current_event as CombatEvent
 		ce.player_attacked.disconnect(_on_player_attacked)
@@ -147,10 +146,10 @@ func _on_event_complete() -> void:
 		for enemy in ce._enemies:
 			_gui.remove_enemy_health_bar(enemy)
 		_gui.hide_combat_hud()
-		_apply_rewards(ce.rewards)
 	elif current_event is DialogueEvent:
 		var de := current_event as DialogueEvent
 		de.dialogue_requested.disconnect(_on_dialogue_requested)
+	_apply_rewards(current_event.rewards)
 	_finish_event()
 
 
@@ -280,8 +279,11 @@ func quit_to_main() -> void:
 func _apply_rewards(r: Dictionary) -> void:
 	var xp: int = r.get("experience", 0)
 	var gold: int = r.get("gold", 0)
-	print("[GAME] Rewards: %d XP, %d gold" % [xp, gold])
-	# TODO: apply to player when reward system exists
+	if xp > 0:
+		player.add_experience(xp)
+	if gold > 0:
+		player.add_gold(gold)
+	print("[GAME] Rewards applied: %d XP, %d gold" % [xp, gold])
 
 
 func _scale_sprite_to_viewport(sprite: AnimatedSprite2D) -> void:
