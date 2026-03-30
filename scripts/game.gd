@@ -118,19 +118,8 @@ func start_event(event: Event) -> void:
 	if event is CombatEvent:
 		print("[GAME] Starting Combat Event")
 		var ce := event as CombatEvent
-
-		if debug_start_combat and debug_enemy_scene != null:
-			for i in range(debug_enemy_count):
-				var enemy_instance = debug_enemy_scene.instantiate() as Skeleton
-				enemy_instance.position = _calculate_enemy_position(i, debug_enemy_count)
-				_scale_sprite_to_viewport(enemy_instance.get_node("Sprite"))
-				ce.add_enemy(enemy_instance)
-				_gui.add_enemy_health_bar(enemy_instance)
-				enemy_instance.damaged.connect(func(_amt: float) -> void:
-					_gui.update_enemy_health_bar(enemy_instance, enemy_instance.health))
-				enemy_instance.died.connect(func() -> void:
-					_gui.remove_enemy_health_bar(enemy_instance))
-
+		ce.enemy_added.connect(_on_combat_enemy_added)
+		ce.dialogue_trigger_fired.connect(_on_combat_dialogue_trigger)
 		ce.player_attacked.connect(_on_player_attacked)
 		ce.enemy_turns_complete.connect(_on_enemy_turns_complete)
 		player.attack.connect(_on_player_attack_action)
@@ -141,7 +130,7 @@ func start_event(event: Event) -> void:
 		var de := event as DialogueEvent
 		de.dialogue_requested.connect(_on_dialogue_requested)
 	current_event.start()
-	if event is CombatEvent:
+	if event is CombatEvent and state != Enums.TurnState.DIALOGUE:
 		_start_player_turn()
 
 
@@ -152,15 +141,13 @@ func _on_event_complete() -> void:
 		var ce := current_event as CombatEvent
 		ce.player_attacked.disconnect(_on_player_attacked)
 		ce.enemy_turns_complete.disconnect(_on_enemy_turns_complete)
+		ce.enemy_added.disconnect(_on_combat_enemy_added)
+		ce.dialogue_trigger_fired.disconnect(_on_combat_dialogue_trigger)
 		player.attack.disconnect(_on_player_attack_action)
 		for enemy in ce._enemies:
 			_gui.remove_enemy_health_bar(enemy)
 		_gui.hide_combat_hud()
-		if debug_dialogue_json != "":
-			var file := FileAccess.open(debug_dialogue_json, FileAccess.READ)
-			var data: Dictionary = JSON.parse_string(file.get_as_text())
-			_gui.show_dialogue(data, _dialogue_consequences)
-			return
+		_apply_rewards(ce.rewards)
 	elif current_event is DialogueEvent:
 		var de := current_event as DialogueEvent
 		de.dialogue_requested.disconnect(_on_dialogue_requested)
@@ -192,10 +179,31 @@ func _on_dialogue_requested(data: Dictionary) -> void:
 	start_dialogue(data)
 
 
+func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
+	var index := (current_event as CombatEvent)._enemies.size() - 1
+	enemy.position = _calculate_enemy_position(index, total_expected)
+	_scale_sprite_to_viewport(enemy.get_node("Sprite"))
+	_gui.add_enemy_health_bar(enemy)
+	enemy.damaged.connect(func(_amt: float) -> void:
+		_gui.update_enemy_health_bar(enemy, enemy.health))
+	enemy.died.connect(func() -> void:
+		_gui.remove_enemy_health_bar(enemy))
+
+
+func _on_combat_dialogue_trigger(_trigger_name: String, data: Dictionary) -> void:
+	start_dialogue(data)
+
+
 func _on_gui_dialogue_complete() -> void:
 	state = _pre_dialogue_state
 	if current_event is DialogueEvent:
 		(current_event as DialogueEvent).on_dialogue_complete()
+	elif current_event is CombatEvent:
+		var ce := current_event as CombatEvent
+		if ce.phase == Event.Phase.RESOLUTION:
+			ce.on_dialogue_complete()
+		elif state == Enums.TurnState.NO_TURN:
+			_start_player_turn()
 	else:
 		_finish_event()
 
@@ -223,6 +231,8 @@ func _run_enemy_turns() -> void:
 
 
 func _on_enemy_turns_complete() -> void:
+	if state == Enums.TurnState.DIALOGUE:
+		return
 	_start_player_turn()
 
 
@@ -266,6 +276,13 @@ func quit_to_main() -> void:
 
 
 # --- Helper Functions ---
+
+func _apply_rewards(r: Dictionary) -> void:
+	var xp: int = r.get("experience", 0)
+	var gold: int = r.get("gold", 0)
+	print("[GAME] Rewards: %d XP, %d gold" % [xp, gold])
+	# TODO: apply to player when reward system exists
+
 
 func _scale_sprite_to_viewport(sprite: AnimatedSprite2D) -> void:
 	var texture := sprite.sprite_frames.get_frame_texture("idle", 0)
