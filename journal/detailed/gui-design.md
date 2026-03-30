@@ -36,6 +36,12 @@ GUI  (CanvasLayer, layer 4)  [gui.gd]
     ├── ActionMenu  (Control)
     │   └── AttackButton  (Button)              # current stub; expands to full action list later
     └── CombatLog  (RichTextLabel)
+│
+└── DialoguePanel   (Control)               [dialogue_panel.gd] hidden by default; see dialogue-system.md
+    ├── Background      (ColorRect)
+    ├── SpeakerLabel    (Label)
+    ├── TextLabel       (RichTextLabel)
+    └── ChoicesContainer    (VBoxContainer)
 ```
 
 **Notes:**

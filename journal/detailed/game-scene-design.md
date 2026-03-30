@@ -30,8 +30,8 @@ Game                Node2D              scripts/game.gd
     ├── CombatHUD   Control             shown during CombatEvent, hidden otherwise
     │   ├── PlayerHUD   Control         player health bar and name
     │   ├── EnemyHUD    Control         enemy health bar and name
-    │   └── ActionMenu  Control         player action buttons
-    └── CombatLog   RichTextLabel       scrolling history of combat events
+    │   ├── ActionMenu  Control         player action buttons
+    │   └── CombatLog   RichTextLabel   scrolling history of combat events (inside CombatHUD — shows/hides with it)
 ```
 
 ---
@@ -154,8 +154,8 @@ func start_event(event: Event) -> void:
     # ...
     if event is CombatEvent:
         var ce := event as CombatEvent
-        ce.player_attacked.connect($GUI/CombatLog._on_player_attacked)
-        ce.player_attack_resolved.connect($GUI/CombatLog._on_player_attack_resolved)
+        ce.player_attacked.connect(_on_player_attacked)      # game.gd applies damage, routes to gui.log_message()
+        ce.player_attack_resolved.connect(_on_player_attack_resolved)  # game.gd routes to gui.log_message()
 ```
 
 UI never references `game.gd`. `game.gd` passes signal connections to UI only when wiring per-event participants.
@@ -178,12 +178,12 @@ UI never references `game.gd`. `game.gd` passes signal connections to UI only wh
 
 | Signal | Source | Listener | Connected in |
 |---|---|---|---|
-| `damaged(amount)` | Player | PlayerHUD | `_ready()` |
-| `died` | Player | PlayerHUD | `_ready()` |
-| `damaged(amount)` | Enemy | EnemyHUD | `start_event()` |
-| `died` | Enemy | EnemyHUD | `start_event()` |
-| `player_attacked(damage)` | CombatEvent | CombatLog | `start_event()` |
-| `player_attack_resolved(enemy, damage)` | CombatEvent | CombatLog | `start_event()` |
+| `damaged(amount)` | Player | `gui.update_player_health()` via game.gd | `set_player()` |
+| `died` | Player | PlayerHUD (via gui.gd) | `set_player()` |
+| `damaged(amount)` | Enemy | enemy's health bar in EnemyHUD (via gui.gd) | `start_event()` |
+| `died` | Enemy | `gui.remove_enemy_health_bar(enemy)` via game.gd | `start_event()` |
+| `player_attacked(damage)` | CombatEvent | game.gd → `gui.log_message()` | `start_event()` |
+| `player_attack_resolved(enemy, damage)` | CombatEvent | game.gd → `gui.log_message()` | `start_event()` |
 
 ---
 

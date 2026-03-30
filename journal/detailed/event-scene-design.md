@@ -65,7 +65,7 @@ Music and ambient audio live on `Game`, not on events.
 2. Calls `$Enemies.add_child(enemy)` to place the enemy in the scene tree
 3. Connects `enemy.died` → `_on_enemy_died()`
 
-`enemy.attacked` is connected in `_on_setup()` so the signal is live when the event starts.
+`enemy.attack` is connected in `_on_setup()` so the signal is live when the event starts.
 
 ### `receive_player_attack(enemy: Enemy, damage: float)`
 
@@ -213,7 +213,7 @@ game.start_event(dialogue_event)
 ## Signal Flow Summary
 
 **Enemy attacks player:**
-`enemy.attacked` → CombatEvent re-emits `player_attacked(damage)` → game.gd → `player.take_damage(damage)`
+`enemy.attack(damage)` → CombatEvent re-emits `player_attacked(damage)` → game.gd → `player.take_damage(damage)`
 
 **Player attacks enemy:**
 game.gd calls `receive_player_attack(target_enemy, damage)` → `target_enemy.take_damage(damage)` + CombatEvent emits `player_attack_resolved(enemy, damage)`
