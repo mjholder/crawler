@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://skchkevent01"]
+
+[ext_resource type="PackedScene" uid="uid://bv3pm4lwaif3v" path="res://scenes/event.tscn" id="1_faref"]
+[ext_resource type="Script" path="res://scripts/skill_check_event.gd" id="2_skce"]
+
+[node name="SkillCheckEvent" instance=ExtResource("1_faref")]
+script = ExtResource("2_skce")
+event_json_path = "res://resources/events/skill_check/example.json"

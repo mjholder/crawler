@@ -1,0 +1,8 @@
+{
+	"name": "sneak_past_guard",
+	"label": "Sneak past the guard",
+	"stat": "AGILITY",
+	"rewards": { "experience": 15, "gold": 0 },
+	"on_success": "",
+	"on_failure": ""
+}

@@ -8,11 +8,13 @@
 [ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="4_vtaks"]
 [ext_resource type="Script" uid="uid://5dudvo0rnvqu" path="res://scripts/dialogue_consequences.gd" id="5_dinhu"]
 [ext_resource type="PackedScene" uid="uid://nqeiejuuf4s4" path="res://scenes/dialogue_event.tscn" id="5_kvuet"]
+[ext_resource type="PackedScene" path="res://scenes/skill_check_event.tscn" id="6_ir15t"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
 [ext_resource type="Texture2D" uid="uid://brv2m764g5v4n" path="res://icon.svg" id="7_u5sy4"]
 [ext_resource type="Script" uid="uid://kw77gbksi4x4" path="res://scripts/gui.gd" id="8_gui"]
 [ext_resource type="PackedScene" uid="uid://ciyvvtls2c4cd" path="res://scenes/health_bar.tscn" id="9_hbar"]
 [ext_resource type="Script" uid="uid://b1ry2py3hwthj" path="res://scripts/dialogue_panel.gd" id="12_kvuet"]
+[ext_resource type="Script" uid="uid://dqjg77kuidypf" path="res://scripts/skill_check_panel.gd" id="13_skcp"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -27,6 +29,7 @@ debug_enemy_count = 3
 debug_weapon_scene = ExtResource("4_vtaks")
 debug_dialogue_json = "res://resources/dialogue/test_dialogue.json"
 debug_dialogue_scene = ExtResource("5_kvuet")
+debug_skill_check_scene = ExtResource("6_ir15t")
 
 [node name="DialogueCondsequences" type="Node" parent="." unique_id=1082987239]
 script = ExtResource("5_dinhu")
@@ -111,12 +114,20 @@ offset_right = 300.0
 offset_bottom = 420.0
 text = "Test Dialogue"
 
-[node name="QuitButton" type="Button" parent="GUI/MainMenu" unique_id=100000004]
+[node name="StartSkillCheckButton" type="Button" parent="GUI/MainMenu" unique_id=200000012]
 layout_mode = 1
 offset_left = 100.0
 offset_top = 440.0
 offset_right = 300.0
 offset_bottom = 490.0
+text = "Test Skill Check"
+
+[node name="QuitButton" type="Button" parent="GUI/MainMenu" unique_id=100000004]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 510.0
+offset_right = 300.0
+offset_bottom = 560.0
 text = "Quit"
 
 [node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
@@ -294,5 +305,75 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Choice C"
 alignment = 0
+
+[node name="SkillCheckPanel" type="Control" parent="GUI" unique_id=200000001]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("13_skcp")
+
+[node name="Background" type="ColorRect" parent="GUI/SkillCheckPanel" unique_id=200000002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.14767182, 0.14767179, 0.14767179, 0.6)
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/SkillCheckPanel" unique_id=200000003]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -160.0
+offset_right = 220.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/SkillCheckPanel/PanelContainer" unique_id=200000004]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GUI/SkillCheckPanel/PanelContainer/VBoxContainer" unique_id=200000005]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatNameLabel" type="Label" parent="GUI/SkillCheckPanel/PanelContainer/VBoxContainer/HBoxContainer" unique_id=200000006]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "AGILITY"
+
+[node name="StatValueLabel" type="Label" parent="GUI/SkillCheckPanel/PanelContainer/VBoxContainer/HBoxContainer" unique_id=200000007]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "50"
+
+[node name="PromptLabel" type="Label" parent="GUI/SkillCheckPanel/PanelContainer/VBoxContainer" unique_id=200000008]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
+
+[node name="RollResultLabel" type="Label" parent="GUI/SkillCheckPanel/PanelContainer/VBoxContainer" unique_id=200000009]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+
+[node name="RollButton" type="Button" parent="GUI/SkillCheckPanel/PanelContainer/VBoxContainer" unique_id=200000010]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Roll"
+
+[node name="ContinueButton" type="Button" parent="GUI/SkillCheckPanel/PanelContainer/VBoxContainer" unique_id=200000011]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Continue"
 
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]

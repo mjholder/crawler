@@ -10,6 +10,7 @@ extends Node2D
 @export var debug_weapon_scene: PackedScene
 @export var debug_dialogue_json: String = ""
 @export var debug_dialogue_scene: PackedScene
+@export var debug_skill_check_scene: PackedScene
 
 # --- Screen Transform ---
 var screen_size: Vector2
@@ -52,9 +53,11 @@ func _ready() -> void:
 
 	_gui.start_requested.connect(start_game)
 	_gui.start_dialogue_requested.connect(start_dialogue_game)
+	_gui.start_skill_check_requested.connect(start_skill_check_game)
 	_gui.quit_to_main_requested.connect(quit_to_main)
 	_gui.attack_requested.connect(attack_action)
 	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
+	_gui.skill_check_complete.connect(_on_gui_skill_check_complete)
 	_gui.show_main_menu()
 
 
@@ -81,6 +84,13 @@ func start_dialogue_game() -> void:
 	_gui.start_game()
 	if debug_dialogue_scene != null:
 		var event_instance := debug_dialogue_scene.instantiate() as DialogueEvent
+		start_event(event_instance)
+
+
+func start_skill_check_game() -> void:
+	_gui.start_game()
+	if debug_skill_check_scene != null:
+		var event_instance := debug_skill_check_scene.instantiate() as SkillCheckEvent
 		start_event(event_instance)
 
 
@@ -129,6 +139,10 @@ func start_event(event: Event) -> void:
 	elif event is DialogueEvent:
 		var de := event as DialogueEvent
 		de.dialogue_requested.connect(_on_dialogue_requested)
+	elif event is SkillCheckEvent:
+		var sce := event as SkillCheckEvent
+		sce.skill_check_requested.connect(_on_skill_check_requested)
+		sce.dialogue_requested.connect(_on_dialogue_requested)
 	current_event.start()
 	if event is CombatEvent and state != Enums.TurnState.DIALOGUE:
 		_start_player_turn()
@@ -149,6 +163,10 @@ func _on_event_complete() -> void:
 	elif current_event is DialogueEvent:
 		var de := current_event as DialogueEvent
 		de.dialogue_requested.disconnect(_on_dialogue_requested)
+	elif current_event is SkillCheckEvent:
+		var sce := current_event as SkillCheckEvent
+		sce.skill_check_requested.disconnect(_on_skill_check_requested)
+		sce.dialogue_requested.disconnect(_on_dialogue_requested)
 	_apply_rewards(current_event.rewards)
 	_finish_event()
 
@@ -178,6 +196,16 @@ func _on_dialogue_requested(data: Dictionary) -> void:
 	start_dialogue(data)
 
 
+func _on_skill_check_requested(stat: Enums.Stat, label: String) -> void:
+	var stat_value: float = player.get_effective_stat(stat)
+	_gui.show_skill_check(Enums.Stat.keys()[stat], label, stat_value)
+
+
+func _on_gui_skill_check_complete(success: bool) -> void:
+	if current_event is SkillCheckEvent:
+		(current_event as SkillCheckEvent).on_skill_check_complete(success)
+
+
 func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 	var index := (current_event as CombatEvent)._enemies.size() - 1
 	enemy.position = _calculate_enemy_position(index, total_expected)
@@ -197,6 +225,8 @@ func _on_gui_dialogue_complete() -> void:
 	state = _pre_dialogue_state
 	if current_event is DialogueEvent:
 		(current_event as DialogueEvent).on_dialogue_complete()
+	elif current_event is SkillCheckEvent:
+		(current_event as SkillCheckEvent).on_dialogue_complete()
 	elif current_event is CombatEvent:
 		var ce := current_event as CombatEvent
 		if ce.phase == Event.Phase.RESOLUTION:

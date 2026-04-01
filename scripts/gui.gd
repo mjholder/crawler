@@ -4,9 +4,11 @@ extends CanvasLayer
 # --- Signals ---
 signal start_requested
 signal start_dialogue_requested
+signal start_skill_check_requested
 signal quit_to_main_requested
 signal attack_requested
 signal dialogue_complete
+signal skill_check_complete(success: bool)
 
 # --- Node References ---
 @onready var _main_menu: Control = $MainMenu
@@ -18,6 +20,7 @@ signal dialogue_complete
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
+@onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -28,6 +31,7 @@ var _enemy_bars: Dictionary = {}
 func _ready() -> void:
 	$MainMenu/StartButton.pressed.connect(_on_start_button_pressed)
 	$MainMenu/StartDialogueButton.pressed.connect(_on_start_dialogue_button_pressed)
+	$MainMenu/StartSkillCheckButton.pressed.connect(_on_start_skill_check_button_pressed)
 	$MainMenu/QuitButton.pressed.connect(_on_quit_button_pressed)
 	$PauseMenu/ResumeButton.pressed.connect(handle_esc)
 	$PauseMenu/QuitToMainButton.pressed.connect(_on_quit_to_main_button_pressed)
@@ -36,6 +40,8 @@ func _ready() -> void:
 	_combat_hud.hide()
 	_dialogue_panel.hide()
 	_dialogue_panel.dialogue_complete.connect(_on_dialogue_complete)
+	_skill_check_panel.hide()
+	_skill_check_panel.skill_check_complete.connect(_on_skill_check_complete)
 
 
 # --- Navigation ---
@@ -124,6 +130,18 @@ func _on_dialogue_complete() -> void:
 	dialogue_complete.emit()
 
 
+# --- Skill Check ---
+
+func show_skill_check(stat_name: String, label: String, stat_value: float) -> void:
+	_skill_check_panel.setup(stat_name, label, stat_value)
+	_skill_check_panel.show()
+
+
+func _on_skill_check_complete(success: bool) -> void:
+	_skill_check_panel.hide()
+	skill_check_complete.emit(success)
+
+
 func _on_quit_button_pressed() -> void:
 	get_tree().quit()
 
@@ -138,6 +156,10 @@ func _on_start_button_pressed() -> void:
 
 func _on_start_dialogue_button_pressed() -> void:
 	start_dialogue_requested.emit()
+
+
+func _on_start_skill_check_button_pressed() -> void:
+	start_skill_check_requested.emit()
 
 
 func _on_quit_to_main_button_pressed() -> void:
