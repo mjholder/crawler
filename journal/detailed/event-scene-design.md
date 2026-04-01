@@ -210,6 +210,132 @@ game.start_event(dialogue_event)
 
 ---
 
+## SkillCheckEvent
+
+**Date:** 2026-03-31
+
+### Node Tree
+
+```
+SkillCheckEvent     Node2D          scripts/skill_check_event.gd
+```
+
+Root node only — no children. The roll UI lives entirely in GUI (`SkillCheckPanel`). `SkillCheckEvent` loads event data and coordinates the phase flow; it never touches the player or the UI directly.
+
+### Signal Contract
+
+| Signal | Emitted when |
+|---|---|
+| `skill_check_requested(stat: Enums.Stat, label: String)` | Event enters RUNNING — carries the stat to roll against and the prompt text |
+| `dialogue_requested(data: Dictionary)` | RESOLUTION fires optional success/failure dialogue |
+| `event_complete` | Inherited from Event; emitted at end of COMPLETE phase |
+
+### Methods game.gd calls on SkillCheckEvent
+
+| Method | When called |
+|---|---|
+| `on_skill_check_complete(success: bool)` | Called from `_on_gui_skill_check_complete()` after the player rolls and presses Continue |
+| `on_dialogue_complete()` | Called from `_on_gui_dialogue_complete()` when RESOLUTION dialogue is dismissed |
+
+### Phase Flow
+
+`start()` runs `_on_setup()` (load JSON, parse `_stat`, `_label`, `_on_success_path`, `_on_failure_path`, `rewards`) then `_on_running()` (emit `skill_check_requested`). The event stays in RUNNING while the player rolls.
+
+When game.gd calls `on_skill_check_complete(success)`, the result is stored and `_set_phase(Phase.RESOLUTION)` is called directly — **not** `_advance_phase()`. The base `_advance_phase()` jumps RUNNING → RESOLUTION → COMPLETE atomically; calling `_set_phase` one step at a time lets `_on_resolution()` pause and fire dialogue before COMPLETE.
+
+`_on_resolution()` picks `_on_success_path` or `_on_failure_path` based on the stored result. If the path is non-empty, it loads the dialogue JSON and emits `dialogue_requested`. If the path is empty, it calls `_set_phase(Phase.COMPLETE)` directly.
+
+After optional dialogue is dismissed, game.gd calls `on_dialogue_complete()` → `_set_phase(Phase.COMPLETE)` → `event_complete` emits.
+
+### JSON Format
+
+```json
+{
+  "name": "sneak_past_guard",
+  "label": "Sneak past the guard",
+  "stat": "AGILITY",
+  "rewards": { "experience": 15, "gold": 0 },
+  "on_success": "res://resources/dialogue/sneak_success.json",
+  "on_failure": "res://resources/dialogue/sneak_failure.json"
+}
+```
+
+`stat` maps to an `Enums.Stat` key via `Enums.Stat[stat_key]`. `on_success` and `on_failure` are optional — leave empty to skip result dialogue.
+
+### Roll Mechanic
+
+d100 roll-under: `randi_range(1, 100) <= int(effective_stat)`. A stat of 50 gives a 50% chance. The roll happens in `SkillCheckPanel`, not in the event — the event only receives the boolean result.
+
+`game.gd` is the only place `player.get_effective_stat()` is called. `_on_skill_check_requested()` reads the value and passes it to `gui.show_skill_check()` as a plain float. The event never holds a player reference.
+
+### SkillCheckPanel Node Tree
+
+```
+SkillCheckPanel     Control             scripts/skill_check_panel.gd
+└── Background      ColorRect           dim overlay
+└── PanelContainer  PanelContainer      centered card
+    └── VBoxContainer
+        ├── HBoxContainer
+        │   ├── StatNameLabel   Label   e.g. "AGILITY"
+        │   └── StatValueLabel  Label   e.g. "65"
+        ├── PromptLabel         Label   e.g. "Sneak past the guard"
+        ├── RollResultLabel     Label   hidden until rolled; "Rolled: 42 — SUCCESS"
+        ├── RollButton          Button  disabled after first press
+        └── ContinueButton      Button  hidden until roll resolves
+```
+
+`setup(stat_name, label, stat_value)` fully resets the panel state (re-enables Roll, hides result/continue) so it is safe to reuse across multiple skill check events in a session.
+
+### How game.gd wires it (in `start_event()`)
+
+```gdscript
+elif event is SkillCheckEvent:
+    var sce := event as SkillCheckEvent
+    sce.skill_check_requested.connect(_on_skill_check_requested)
+    sce.dialogue_requested.connect(_on_dialogue_requested)
+```
+
+`_on_skill_check_requested(stat, label)` calls `player.get_effective_stat(stat)` and passes the value to `_gui.show_skill_check(Enums.Stat.keys()[stat], label, stat_value)`.
+
+Cleanup in `_on_event_complete()`:
+```gdscript
+elif current_event is SkillCheckEvent:
+    var sce := current_event as SkillCheckEvent
+    sce.skill_check_requested.disconnect(_on_skill_check_requested)
+    sce.dialogue_requested.disconnect(_on_dialogue_requested)
+```
+
+`dialogue_requested` reuses the existing `_on_dialogue_requested` handler unchanged. The `_on_gui_dialogue_complete()` handler adds an `elif current_event is SkillCheckEvent` branch to call `on_dialogue_complete()`.
+
+### Signal Flow
+
+```
+game.start_event(skill_check_event)
+  → sce.skill_check_requested.connect(_on_skill_check_requested)
+  → sce.dialogue_requested.connect(_on_dialogue_requested)
+  → sce.start()
+    → _on_setup(): load JSON, parse stat/label/paths/rewards
+    → _on_running(): emit skill_check_requested(_stat, _label)
+  → game._on_skill_check_requested(stat, label)
+    → player.get_effective_stat(stat) → stat_value
+    → gui.show_skill_check("AGILITY", label, stat_value)
+  → [player rolls, panel shows result]
+  → gui.skill_check_complete(success) → game._on_gui_skill_check_complete(success)
+    → sce.on_skill_check_complete(success)
+      → store _success, _set_phase(RESOLUTION)
+      → _on_resolution(): load and emit dialogue_requested OR _set_phase(COMPLETE)
+
+  [if dialogue fires:]
+  → game._on_dialogue_requested(data) → gui.show_dialogue()
+  → [player dismisses dialogue]
+  → gui.dialogue_complete → game._on_gui_dialogue_complete()
+    → sce.on_dialogue_complete() → _set_phase(COMPLETE) → event_complete.emit()
+
+  → game._on_event_complete() → disconnect signals, _apply_rewards(), _finish_event()
+```
+
+---
+
 ## Signal Flow Summary
 
 **Enemy attacks player:**
