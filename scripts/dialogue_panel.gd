@@ -28,7 +28,6 @@ func load_dialogue(data: Dictionary, consequences: DialogueConsequences) -> void
 
 func _load_node(node_id: String) -> void:
 	_current_node_id = node_id
-	print(_data)
 	var node: Dictionary = _data["nodes"][node_id]
 
 	if node["consequence"] != null:

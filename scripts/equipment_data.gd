@@ -7,3 +7,4 @@ extends Resource
 @export var equip_sfx: AudioStream
 @export var unequip_sfx: AudioStream
 @export var stat_modifiers: Dictionary  # Enums.Stat → float
+@export var scene: PackedScene  # Equipment or Weapon scene to instantiate

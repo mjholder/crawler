@@ -17,7 +17,7 @@ enum Stat {
 	# e.g. { 0: 10.0 } adds +10 STRENGTH
 }
 
-enum Slot { WEAPON, ARMOR }
+enum Slot { WEAPON, HANDS, FEET, LEGS, TORSO, HEAD }
 
 # --- World Map ---
 

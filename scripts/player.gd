@@ -36,18 +36,20 @@ var _hurt_overlay: ColorRect = null
 # --- Node References ---
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
 @onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
+@onready var _inventory: Inventory = $Inventory
 
 # --- Actions ---
 # Maps action name -> Callable.
 # Register new actions with register_action(); call them via execute_action().
 var _actions: Dictionary = {}
-var _equipped: Dictionary = {}  # Enums.Slot → Equipment
 
 
 func _ready() -> void:
 	health = max_health
 	_register_actions()
 	_transition(State.IDLE)
+	_inventory.slot_changed.connect(_on_slot_changed)
+	_inventory.ring_changed.connect(_on_ring_changed)
 
 
 func _process(_delta: float) -> void:
@@ -77,7 +79,7 @@ func execute_action(action_name: String) -> void:
 # --- Action Implementations ---
 
 func _do_attack() -> void:
-	if _equipped.has(Enums.Slot.WEAPON):
+	if _inventory.get_equipped(Enums.Slot.WEAPON) != null:
 		_attack_animation_pending = true
 	print("  Player attacks for %.1f damage!" % _calculate_damage())
 	attack.emit(_calculate_damage())
@@ -129,30 +131,52 @@ func _calculate_damage() -> float:
 
 # --- Equipment ---
 
-func equip(slot: Enums.Slot, item: Equipment) -> void:
-	if _equipped.has(slot):
-		var old: Equipment = _equipped[slot]
-		old.play_unequip()
-		old._on_unequipped()
-		if slot == Enums.Slot.WEAPON:
-			attack.disconnect((old as Weapon)._on_player_attacked)
-			(old as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
-		remove_child(old)
-	_equipped[slot] = item
-	add_child(item)
-	item.play_equip()
-	item._on_equipped()
+func _on_slot_changed(slot: Enums.Slot, new_data: EquipmentData, old_data: EquipmentData) -> void:
+	if old_data != null:
+		_teardown_equipment(slot, old_data)
+	if new_data != null:
+		_setup_equipment(slot, new_data)
+
+
+func _on_ring_changed(_index: int, new_data: EquipmentData, old_data: EquipmentData) -> void:
+	if old_data != null:
+		_teardown_equipment(null, old_data)
+	if new_data != null:
+		_setup_equipment(null, new_data)
+
+
+func _setup_equipment(slot, data: EquipmentData) -> void:
+	if data.scene == null:
+		return
+	var node := data.scene.instantiate() as Equipment
+	node.data = data
+	add_child(node)
+	node.play_equip()
+	node._on_equipped()
 	if slot == Enums.Slot.WEAPON:
-		print("[PLAYER] Equipped weapon: %s" % item.data.item_name)
-		attack.connect((item as Weapon)._on_player_attacked)
-		(item as Weapon).animation_finished.connect(_on_weapon_animation_finished)
+		print("[PLAYER] Equipped weapon: %s" % data.item_name)
+		attack.connect((node as Weapon)._on_player_attacked)
+		(node as Weapon).animation_finished.connect(_on_weapon_animation_finished)
+
+
+func _teardown_equipment(slot, data: EquipmentData) -> void:
+	for child in get_children():
+		if child is Equipment and child.data == data:
+			child.play_unequip()
+			child._on_unequipped()
+			if slot == Enums.Slot.WEAPON:
+				attack.disconnect((child as Weapon)._on_player_attacked)
+				(child as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
+			child.queue_free()
+			return
 
 
 func get_effective_stat(stat: Enums.Stat) -> float:
 	var base: float = _get_base_stat(stat)
 	var bonus: float = 0.0
-	for item in _equipped.values():
-		bonus += item.get_modifier(stat)
+	for data in _inventory.get_all_equipped():
+		if data.stat_modifiers.has(stat):
+			bonus += data.stat_modifiers[stat]
 	return base + bonus
 
 
