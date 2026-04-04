@@ -35,6 +35,12 @@ var player: Player
 
 var current_event: Event = null
 
+# --- World Map ---
+
+var _pending_event_configs: Array[Dictionary] = []
+var _event_index: int = 0
+var _active_world_node: WorldMapNode = null
+
 # --- GUI ---
 
 @onready var _gui: GUI = $GUI
@@ -58,6 +64,7 @@ func _ready() -> void:
 	_gui.attack_requested.connect(attack_action)
 	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
 	_gui.skill_check_complete.connect(_on_gui_skill_check_complete)
+	_gui.node_selected.connect(_on_world_node_selected)
 	_gui.show_main_menu()
 
 
@@ -96,13 +103,7 @@ func start_skill_check_game() -> void:
 
 func start_game() -> void:
 	_gui.start_game()
-	if debug_start_combat and debug_combat_event != null:
-		var event_instance = debug_combat_event.instantiate() as CombatEvent
-		start_event(event_instance)
-	if debug_start_combat and debug_weapon_scene != null:
-		var weapon_instance := debug_weapon_scene.instantiate() as Weapon
-		weapon_instance.data = preload("res://resources/equipment/weapons/battle_axe.tres")
-		player.equip(Enums.Slot.WEAPON, weapon_instance)
+	_gui.show_world_map()
 
 
 # --- Participant Setup ---
@@ -175,8 +176,39 @@ func _finish_event() -> void:
 	current_event.queue_free()
 	current_event = null
 	state = Enums.TurnState.NO_TURN
+	if _active_world_node != null:
+		_start_next_dungeon_event()
+	else:
+		_start_exploration_music()
+		_gui.return_to_main_menu()
+
+
+# --- World Map ---
+
+func _on_world_node_selected(node: WorldMapNode) -> void:
+	_active_world_node = node
+	_pending_event_configs = node.generate_event_configs()
+	_event_index = 0
+	_start_next_dungeon_event()
+
+
+func _start_next_dungeon_event() -> void:
+	if _event_index >= _pending_event_configs.size():
+		_on_dungeon_complete()
+		return
+	var config: Dictionary = _pending_event_configs[_event_index]
+	_event_index += 1
+	var event := (config["scene"] as PackedScene).instantiate() as Event
+	event.initialize(config["data"])
+	start_event(event)
+
+
+func _on_dungeon_complete() -> void:
 	_start_exploration_music()
-	_gui.return_to_main_menu()
+	_gui.world_map_on_dungeon_complete(_active_world_node)
+	_pending_event_configs = []
+	_event_index = 0
+	_active_world_node = null
 
 
 func _on_player_attacked(damage: float) -> void:

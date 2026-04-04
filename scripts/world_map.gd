@@ -28,7 +28,7 @@ func _ready() -> void:
 func on_dungeon_complete(completed_node: WorldMapNode) -> void:
 	completed_node.set_state(Enums.NodeState.COMPLETED)
 	for path in completed_node.connected_nodes:
-		var next := get_node(path) as WorldMapNode
+		var next := completed_node.get_node(path) as WorldMapNode
 		if next and next.state == Enums.NodeState.LOCKED:
 			next.set_state(Enums.NodeState.AVAILABLE)
 

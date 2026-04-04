@@ -72,8 +72,8 @@ func generate_event_configs() -> Array[Dictionary]:
 		if not config.is_empty():
 			configs.append(config)
 
-	var boss_data := _load_json(miniboss_json_path)
-	configs.append({ "scene": miniboss_scene, "data": boss_data })
+		var boss_data := _load_json(miniboss_json_path)
+		configs.append({ "scene": miniboss_scene, "data": boss_data })
 
 	return configs
 

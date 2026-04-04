@@ -9,6 +9,7 @@ signal quit_to_main_requested
 signal attack_requested
 signal dialogue_complete
 signal skill_check_complete(success: bool)
+signal node_selected(node: WorldMapNode)
 
 # --- Node References ---
 @onready var _main_menu: Control = $MainMenu
@@ -21,6 +22,7 @@ signal skill_check_complete(success: bool)
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
 @onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
+@onready var _world_map: WorldMap = $WorldMap
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -42,6 +44,8 @@ func _ready() -> void:
 	_dialogue_panel.dialogue_complete.connect(_on_dialogue_complete)
 	_skill_check_panel.hide()
 	_skill_check_panel.skill_check_complete.connect(_on_skill_check_complete)
+	_world_map.hide()
+	_world_map.node_selected.connect(_on_world_map_node_selected)
 
 
 # --- Navigation ---
@@ -116,6 +120,26 @@ func set_player_turn(is_player_turn: bool) -> void:
 
 func log_message(text: String) -> void:
 	_combat_log.append_text(text + "\n")
+
+
+# --- World Map ---
+
+func show_world_map() -> void:
+	_world_map.show()
+
+
+func hide_world_map() -> void:
+	_world_map.hide()
+
+
+func world_map_on_dungeon_complete(completed_node: WorldMapNode) -> void:
+	_world_map.on_dungeon_complete(completed_node)
+	_world_map.show()
+
+
+func _on_world_map_node_selected(node: WorldMapNode) -> void:
+	_world_map.hide()
+	node_selected.emit(node)
 
 
 # --- Dialogue ---

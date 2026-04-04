@@ -15,6 +15,7 @@
 [ext_resource type="PackedScene" uid="uid://ciyvvtls2c4cd" path="res://scenes/health_bar.tscn" id="9_hbar"]
 [ext_resource type="Script" uid="uid://b1ry2py3hwthj" path="res://scripts/dialogue_panel.gd" id="12_kvuet"]
 [ext_resource type="Script" uid="uid://dqjg77kuidypf" path="res://scripts/skill_check_panel.gd" id="13_skcp"]
+[ext_resource type="PackedScene" uid="uid://b0sqp1dfwigqy" path="res://scenes/world_map.tscn" id="16_ca42v"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -83,7 +84,6 @@ script = ExtResource("8_gui")
 _health_bar_scene = ExtResource("9_hbar")
 
 [node name="MainMenu" type="Control" parent="GUI" unique_id=100000001]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -130,6 +130,13 @@ offset_top = 510.0
 offset_right = 300.0
 offset_bottom = 560.0
 text = "Quit"
+
+[node name="WorldMap" parent="GUI" unique_id=703812870 instance=ExtResource("16_ca42v")]
+visible = false
+offset_left = 834.0
+offset_top = 337.0
+offset_right = -830.0
+offset_bottom = -387.0
 
 [node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
 visible = false

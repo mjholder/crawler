@@ -1,6 +1,9 @@
 [gd_scene format=3 uid="uid://o26fovqauqw5"]
 
 [ext_resource type="Script" uid="uid://ddvuukyrrvlmo" path="res://scripts/world_map_node.gd" id="1_riajm"]
+[ext_resource type="PackedScene" uid="uid://bltmvkwkf82bn" path="res://scenes/combat_event.tscn" id="2_sjq6o"]
+[ext_resource type="PackedScene" uid="uid://nqeiejuuf4s4" path="res://scenes/dialogue_event.tscn" id="3_sjxoa"]
+[ext_resource type="PackedScene" uid="uid://skchkevent01" path="res://scenes/skill_check_event.tscn" id="4_ynur4"]
 
 [node name="WorldMapNode" type="Control" unique_id=2077379646]
 layout_mode = 3
@@ -10,6 +13,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_riajm")
+combat_scene = ExtResource("2_sjq6o")
+combat_json_dir = "res://resources/events/combat/"
+debug_combat_json_path = "res://resources/events/combat/example.json"
+dialogue_scene = ExtResource("3_sjxoa")
+dialogue_json_dir = "res://resources/events/dialogue/"
+debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
+skill_check_scene = ExtResource("4_ynur4")
+skill_check_json_dir = "res://resources/events/skill_check/"
+debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
+miniboss_scene = ExtResource("2_sjq6o")
+miniboss_json_path = "res://resources/events/combat/example.json"
 
 [node name="NodeButton" type="TextureButton" parent="." unique_id=1138311797]
 layout_mode = 0

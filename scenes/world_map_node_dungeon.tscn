@@ -15,3 +15,11 @@ texture_available = ExtResource("2_ytvmy")
 texture_locked = ExtResource("3_3c8kt")
 texture_completed = ExtResource("4_fpowt")
 metadata/_custom_type_script = "uid://ddvuukyrrvlmo"
+
+[node name="NodeButton" type="TextureButton" parent="." unique_id=1661125493]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture_normal = ExtResource("2_ytvmy")
+
+[connection signal="pressed" from="NodeButton" to="." method="_on_node_button_pressed"]
