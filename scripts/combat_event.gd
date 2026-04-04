@@ -11,8 +11,7 @@ signal enemy_turns_complete
 
 # --- Config ---
 
-@export var combat_json_path: String = ""
-
+var _init_data: Dictionary = {}
 var _dialogue_triggers: Dictionary = {}
 var _total_expected_enemies: int = 0
 
@@ -22,19 +21,21 @@ var _enemies: Array[Enemy] = []
 var _turn_queue: Array[Enemy] = []
 
 
+# --- Public API ---
+
+func initialize(data: Dictionary) -> void:
+	_init_data = data
+
+
 # --- Setup ---
 
 func _on_setup() -> void:
-	if combat_json_path == "":
+	if _init_data.is_empty():
+		push_warning("CombatEvent: initialize() was not called before start()")
 		return
-	var file := FileAccess.open(combat_json_path, FileAccess.READ)
-	if file == null:
-		push_warning("CombatEvent: could not open '%s'" % combat_json_path)
-		return
-	var data: Dictionary = JSON.parse_string(file.get_as_text())
-	rewards = data.get("rewards", {})
-	_dialogue_triggers = data.get("dialogue_triggers", {})
-	var enemy_entries: Array = data.get("enemies", [])
+	rewards = _init_data.get("rewards", {})
+	_dialogue_triggers = _init_data.get("dialogue_triggers", {})
+	var enemy_entries: Array = _init_data.get("enemies", [])
 	for entry in enemy_entries:
 		_total_expected_enemies += entry.get("count", 1)
 	for entry in enemy_entries:

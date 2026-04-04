@@ -8,25 +8,15 @@ signal dialogue_requested(data: Dictionary)
 
 # --- Data ---
 
-@export var event_json_path: String = ""
-
 var _stat: Enums.Stat
 var _label: String
 var _on_success_path: String
 var _on_failure_path: String
 var _success: bool
 
-# --- Phase Hooks ---
+# --- Public API ---
 
-func _on_setup() -> void:
-	if event_json_path == "":
-		push_warning("SkillCheckEvent: event_json_path not set")
-		return
-	var event_file := FileAccess.open(event_json_path, FileAccess.READ)
-	if event_file == null:
-		push_warning("SkillCheckEvent: could not open '%s'" % event_json_path)
-		return
-	var data: Dictionary = JSON.parse_string(event_file.get_as_text())
+func initialize(data: Dictionary) -> void:
 	rewards = data.get("rewards", {})
 	_label = data.get("label", "")
 	_on_success_path = data.get("on_success", "")
@@ -37,6 +27,11 @@ func _on_setup() -> void:
 		_stat = Enums.Stat.LUCK
 		return
 	_stat = Enums.Stat[stat_key]
+
+# --- Phase Hooks ---
+
+func _on_setup() -> void:
+	pass
 
 
 func _on_running() -> void:

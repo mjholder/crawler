@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://d1irr22r3o36q"]
+
+[ext_resource type="Script" uid="uid://ddvuukyrrvlmo" path="res://scripts/world_map_node.gd" id="1_rjn6h"]
+[ext_resource type="Texture2D" uid="uid://dvwr1khgn0iqm" path="res://assets/resources/shop-unvisited.tres" id="2_amtnd"]
+[ext_resource type="Texture2D" uid="uid://buqyaly5xs4is" path="res://assets/resources/shop-locked.tres" id="3_4slwb"]
+[ext_resource type="Texture2D" uid="uid://bxu2nddklnt8q" path="res://assets/resources/shop-visited.tres" id="4_8ldfk"]
+
+[node name="WorldMapNodeShop" type="Control" unique_id=514620726]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_rjn6h")
+node_type = 1
+texture_available = ExtResource("2_amtnd")
+texture_locked = ExtResource("3_4slwb")
+texture_completed = ExtResource("4_8ldfk")
+metadata/_custom_type_script = "uid://ddvuukyrrvlmo"

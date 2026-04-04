@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="4_vtaks"]
 [ext_resource type="Script" uid="uid://5dudvo0rnvqu" path="res://scripts/dialogue_consequences.gd" id="5_dinhu"]
 [ext_resource type="PackedScene" uid="uid://nqeiejuuf4s4" path="res://scenes/dialogue_event.tscn" id="5_kvuet"]
-[ext_resource type="PackedScene" path="res://scenes/skill_check_event.tscn" id="6_ir15t"]
+[ext_resource type="PackedScene" uid="uid://skchkevent01" path="res://scenes/skill_check_event.tscn" id="6_ir15t"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
 [ext_resource type="Texture2D" uid="uid://brv2m764g5v4n" path="res://icon.svg" id="7_u5sy4"]
 [ext_resource type="Script" uid="uid://kw77gbksi4x4" path="res://scripts/gui.gd" id="8_gui"]
@@ -83,6 +83,7 @@ script = ExtResource("8_gui")
 _health_bar_scene = ExtResource("9_hbar")
 
 [node name="MainMenu" type="Control" parent="GUI" unique_id=100000001]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -131,6 +132,7 @@ offset_bottom = 560.0
 text = "Quit"
 
 [node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -164,6 +166,7 @@ offset_bottom = 320.0
 text = "Quit to Main Menu"
 
 [node name="CombatHUD" type="Control" parent="GUI" unique_id=1958488847]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -230,6 +233,7 @@ icon = ExtResource("7_u5sy4")
 layout_mode = 0
 
 [node name="DialoguePanel" type="Control" parent="GUI" unique_id=1753475285]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

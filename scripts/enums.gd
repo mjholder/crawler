@@ -18,3 +18,8 @@ enum Stat {
 }
 
 enum Slot { WEAPON, ARMOR }
+
+# --- World Map ---
+
+enum NodeType { DUNGEON, SHOP, REST }
+enum NodeState { LOCKED, AVAILABLE, COMPLETED }

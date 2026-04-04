@@ -1,0 +1,94 @@
+[gd_scene format=3 uid="uid://b0sqp1dfwigqy"]
+
+[ext_resource type="Texture2D" uid="uid://bnm7iaexjbl5t" path="res://assets/sprites/map-no-nodes.png" id="1_oru6e"]
+[ext_resource type="Script" uid="uid://bu1g3a1ifp8yy" path="res://scripts/world_map.gd" id="1_qqero"]
+[ext_resource type="PackedScene" uid="uid://diohdjsg4s5j2" path="res://scenes/world_map_node_rest.tscn" id="3_qj3iy"]
+[ext_resource type="PackedScene" uid="uid://br6bt78br4bmu" path="res://scenes/world_map_node_dungeon.tscn" id="4_sh0tg"]
+[ext_resource type="PackedScene" uid="uid://d1irr22r3o36q" path="res://scenes/world_map_node_shop.tscn" id="5_27p3u"]
+
+[node name="WorldMap" type="Control" unique_id=703812870]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_qqero")
+initial_nodes = Array[NodePath]([NodePath("NodeContainer/WorldMapNodeRest")])
+
+[node name="Background" type="TextureRect" parent="." unique_id=439935502]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("1_oru6e")
+
+[node name="NodeContainer" type="Node" parent="." unique_id=429582960]
+
+[node name="WorldMapNodeRest" parent="NodeContainer" unique_id=1762047024 instance=ExtResource("3_qj3iy")]
+offset_left = 102.0
+offset_top = 301.0
+offset_right = 142.0
+offset_bottom = 341.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon"), NodePath("../WorldMapNodeDungeon2")])
+
+[node name="WorldMapNodeDungeon" parent="NodeContainer" unique_id=376924348 instance=ExtResource("4_sh0tg")]
+offset_left = 42.0
+offset_top = 221.0
+offset_right = 82.0
+offset_bottom = 261.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeRest3"), NodePath("../WorldMapNodeShop")])
+
+[node name="WorldMapNodeDungeon2" parent="NodeContainer" unique_id=319778267 instance=ExtResource("4_sh0tg")]
+offset_left = 170.0
+offset_top = 227.0
+offset_right = 210.0
+offset_bottom = 267.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon3")])
+
+[node name="WorldMapNodeRest3" parent="NodeContainer" unique_id=694722775 instance=ExtResource("3_qj3iy")]
+offset_left = 40.0
+offset_top = 159.0
+offset_right = 80.0
+offset_bottom = 199.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon4")])
+
+[node name="WorldMapNodeShop" parent="NodeContainer" unique_id=514620726 instance=ExtResource("5_27p3u")]
+offset_left = 79.0
+offset_top = 166.0
+offset_right = 119.0
+offset_bottom = 206.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon4")])
+
+[node name="WorldMapNodeDungeon3" parent="NodeContainer" unique_id=1084603042 instance=ExtResource("4_sh0tg")]
+offset_left = 177.0
+offset_top = 156.0
+offset_right = 217.0
+offset_bottom = 196.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeShop2"), NodePath("../WorldMapNodeShop2")])
+
+[node name="WorldMapNodeDungeon4" parent="NodeContainer" unique_id=455926292 instance=ExtResource("4_sh0tg")]
+offset_left = 48.0
+offset_top = 85.0
+offset_right = 88.0
+offset_bottom = 125.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon5")])
+
+[node name="WorldMapNodeRest2" parent="NodeContainer" unique_id=33038508 instance=ExtResource("3_qj3iy")]
+offset_left = 128.0
+offset_top = 87.0
+offset_right = 168.0
+offset_bottom = 127.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon5")])
+
+[node name="WorldMapNodeShop2" parent="NodeContainer" unique_id=1512652345 instance=ExtResource("5_27p3u")]
+offset_left = 179.0
+offset_top = 94.0
+offset_right = 219.0
+offset_bottom = 134.0
+connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon5")])
+
+[node name="WorldMapNodeDungeon5" parent="NodeContainer" unique_id=560920750 instance=ExtResource("4_sh0tg")]
+offset_left = 110.0
+offset_top = 13.0
+offset_right = 150.0
+offset_bottom = 53.0

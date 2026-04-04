@@ -17,6 +17,10 @@ var rewards: Dictionary = {}
 
 # --- Public API ---
 
+func initialize(data: Dictionary) -> void:
+	pass
+
+
 func start() -> void:
 	_set_phase(Phase.SETUP)
 	_set_phase(Phase.RUNNING)

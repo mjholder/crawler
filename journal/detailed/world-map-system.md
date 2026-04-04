@@ -157,49 +157,60 @@ func _on_node_button_pressed() -> void:
         node_selected.emit(self)
 ```
 
-### `generate_events() -> Array[Event]`
+### `generate_event_configs() -> Array[Dictionary]`
 
-Called by `game.gd` when the player selects the node. Builds an event list: `dungeon_depth - 1` random events from the pool, then the miniboss.
+Called by `game.gd` when the player selects the node. Returns a list of config dicts — `dungeon_depth - 1` random entries from the pool, then the miniboss. `game.gd` owns instantiation; the node only produces data.
+
+Each config dict has the shape: `{ "scene": PackedScene, "data": Dictionary }`.
 
 ```gdscript
-func generate_events() -> Array[Event]:
-    var events: Array[Event] = []
+func generate_event_configs() -> Array[Dictionary]:
+    var configs: Array[Dictionary] = []
 
     for i in range(dungeon_depth - 1):
-        var event := _create_random_event()
-        if event:
-            events.append(event)
+        var config := _build_random_event_config()
+        if not config.is_empty():
+            configs.append(config)
 
-    var boss := _create_event(miniboss_scene, _load_json(miniboss_json_path))
-    if boss:
-        events.append(boss)
+    var boss_data := _load_json(miniboss_json_path)
+    configs.append({ "scene": miniboss_scene, "data": boss_data })
 
-    return events
+    return configs
 
-func _create_random_event() -> Event:
+func _build_random_event_config() -> Dictionary:
     var candidates: Array[Dictionary] = []
-    if combat_scene and not combat_json_dir.is_empty():
-        candidates.append({ "scene": combat_scene, "dir": combat_json_dir })
-    if dialogue_scene and not dialogue_json_dir.is_empty():
-        candidates.append({ "scene": dialogue_scene, "dir": dialogue_json_dir })
-    if skill_check_scene and not skill_check_json_dir.is_empty():
-        candidates.append({ "scene": skill_check_scene, "dir": skill_check_json_dir })
+    if combat_scene:
+        candidates.append({ "scene": combat_scene, "dir": combat_json_dir, "debug": debug_combat_json_path })
+    if dialogue_scene:
+        candidates.append({ "scene": dialogue_scene, "dir": dialogue_json_dir, "debug": debug_dialogue_json_path })
+    if skill_check_scene:
+        candidates.append({ "scene": skill_check_scene, "dir": skill_check_json_dir, "debug": debug_skill_check_json_path })
 
     if candidates.is_empty():
-        return null
+        return {}
 
     var pick: Dictionary = candidates[randi() % candidates.size()]
     var files := _get_json_files(pick["dir"])
+
+    var path: String
     if files.is_empty():
-        return null
+        push_warning("[WorldMapNode] No JSON files found in '%s' — falling back to debug file." % pick["dir"])
+        path = pick["debug"]
+    else:
+        path = files[randi() % files.size()]
 
-    var data := _load_json(files[randi() % files.size()])
-    return _create_event(pick["scene"], data)
+    return { "scene": pick["scene"], "data": _load_json(path) }
+```
 
-func _create_event(scene: PackedScene, data: Dictionary) -> Event:
-    var event := scene.instantiate() as Event
-    event.initialize(data)
-    return event
+Each event type gets a paired debug fallback export:
+
+```gdscript
+@export var debug_combat_json_path: String
+@export var debug_dialogue_json_path: String
+@export var debug_skill_check_json_path: String
+```
+
+These are set in the editor to point at the existing example JSON files. They are only used when a type's `json_dir` yields no files.
 
 func _get_json_files(dir_path: String) -> Array[String]:
     var files: Array[String] = []
@@ -288,7 +299,7 @@ func _on_node_selected(node: WorldMapNode) -> void:
 ### New State
 
 ```gdscript
-var _pending_events: Array[Event] = []
+var _pending_event_configs: Array[Dictionary] = []
 var _event_index: int = 0
 var _active_world_node: WorldMapNode = null
 ```
@@ -306,17 +317,19 @@ _gui.node_selected.connect(_on_world_node_selected)
 ```gdscript
 func _on_world_node_selected(node: WorldMapNode) -> void:
     _active_world_node = node
-    _pending_events = node.generate_events()
+    _pending_event_configs = node.generate_event_configs()
     _event_index = 0
     _gui.hide_world_map()
     _start_next_dungeon_event()
 
 func _start_next_dungeon_event() -> void:
-    if _event_index >= _pending_events.size():
+    if _event_index >= _pending_event_configs.size():
         _on_dungeon_complete()
         return
-    var event := _pending_events[_event_index]
+    var config := _pending_event_configs[_event_index]
     _event_index += 1
+    var event := (config["scene"] as PackedScene).instantiate() as Event
+    event.initialize(config["data"])
     $EventContainer.add_child(event)
     start_event(event)
 
@@ -325,7 +338,7 @@ func _on_dungeon_complete() -> void:
     if _active_world_node:
         _gui.world_map_on_dungeon_complete(_active_world_node)
     _active_world_node = null
-    _pending_events.clear()
+    _pending_event_configs.clear()
     _event_index = 0
 ```
 
@@ -334,7 +347,7 @@ func _on_dungeon_complete() -> void:
 After existing cleanup (signal disconnect, `queue_free`, etc.), add:
 
 ```gdscript
-if not _pending_events.is_empty() and _event_index <= _pending_events.size():
+if not _pending_event_configs.is_empty() and _event_index <= _pending_event_configs.size():
     _start_next_dungeon_event()
 ```
 
@@ -377,10 +390,12 @@ func _on_world_map_node_selected(node: WorldMapNode) -> void:
   → gui._on_world_map_node_selected(node)
     → node_selected.emit(node)
   → game._on_world_node_selected(node)
-    → node.generate_events() → _pending_events
+    → node.generate_event_configs() → _pending_event_configs
     → gui.hide_world_map()
     → _start_next_dungeon_event()
-      → start_event(_pending_events[0])
+      → instantiate event from config[0], add_child to EventContainer
+      → event.initialize(config["data"])
+      → start_event(event)
 ```
 
 **Dungeon runs to completion:**
@@ -408,5 +423,5 @@ func _on_world_map_node_selected(node: WorldMapNode) -> void:
 - **Start node** — Currently auto-completed by unlocking `initial_nodes` directly. If the start node needs to be a scene with its own content (intro cutscene, tutorial), revisit the `_ready()` init logic.
 - **Dungeon modifiers** — `WorldMapNode` should eventually carry a modifier that applies a buff/debuff before events start. Reserve a field (`@export var modifier: Resource`) but leave it null for now.
 - **Pool weighting** — `_create_random_event()` picks uniformly across available types. If certain event types should appear more or less often, a weighted pool (e.g. `Array[Dictionary]` with a `weight: int` field) could replace the uniform draw.
-- **Empty pool guard** — If a type's `json_dir` is empty or has no files, that type is silently skipped. A warning log in `_create_random_event()` would help catch misconfigured nodes during development.
-- **Event ownership** — `generate_events()` instantiates `Event` nodes that are not yet in the scene tree. `game.gd` adds them via `$EventContainer.add_child(event)` before calling `start_event()`. Make sure events do not reference scene-tree-dependent nodes in their constructors.
+- **Empty pool guard** — ~~Resolved~~. If a type's `json_dir` yields no files, `_build_random_event_config()` falls back to the paired `debug_*_json_path` export and logs a `push_warning()`. Set debug paths to the existing example JSON files in the editor.
+- **Event ownership** — ~~Resolved~~. `generate_event_configs()` returns plain data — no nodes are instantiated. `game.gd` instantiates each event from the config dict in `_start_next_dungeon_event()`, adds it to `$EventContainer`, calls `initialize()`, then passes it to `start_event()`.

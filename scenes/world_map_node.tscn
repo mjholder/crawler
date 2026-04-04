@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://o26fovqauqw5"]
+
+[ext_resource type="Script" uid="uid://ddvuukyrrvlmo" path="res://scripts/world_map_node.gd" id="1_riajm"]
+
+[node name="WorldMapNode" type="Control" unique_id=2077379646]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_riajm")
+
+[node name="NodeButton" type="TextureButton" parent="." unique_id=1138311797]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+
+[connection signal="pressed" from="NodeButton" to="." method="_on_node_button_pressed"]
