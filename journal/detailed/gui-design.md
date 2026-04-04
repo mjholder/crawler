@@ -1,8 +1,8 @@
 # GUI Implementation Design
 
 **Project:** Crawler
-**Date:** 2026-03-13
-**Scope:** Main Menu, Pause Menu, and Combat HUD. Does not specify full menu contents — those will be detailed when the systems they surface (inventory, settings, etc.) are built.
+**Date:** 2026-03-13 (updated 2026-04-04)
+**Scope:** Main Menu, Pause Menu, PlayerHUD (persistent), CombatHUD, WorldMap, DialoguePanel, SkillCheckPanel. Does not specify full menu contents — those will be detailed when the systems they surface (inventory, settings, etc.) are built.
 
 ---
 
@@ -14,41 +14,45 @@ The established architecture decision applies: `gui.gd` exposes an **intent-base
 
 ---
 
-## Mock Node Tree
+## Node Tree
 
 ```
 GUI  (CanvasLayer, layer 4)  [gui.gd]
 ├── MainMenu  (Control)
 │   ├── Title  (Label)
 │   ├── StartButton  (Button)
+│   ├── StartDialogueButton  (Button)      # debug entry point
+│   ├── StartSkillCheckButton  (Button)    # debug entry point
 │   └── QuitButton  (Button)
 │
+├── WorldMap  (WorldMap)                   [world_map.gd] hidden by default; shown after start
+│
+├── PlayerHUD  (Control)                   # persistent — visible during all non-menu game states
+│   ├── PlayerHealthLabel  (Label)         # "80 / 100"
+│   ├── PlayerHealthBar  (ProgressBar)
+│   ├── PlayerGoldLabel  (Label)           # "Gold: 0"
+│   └── PlayerXPLabel  (Label)            # "XP: 0"
+│
 ├── PauseMenu  (Control)
-│   ├── Overlay  (ColorRect)          # darkens the game world behind the menu
+│   ├── Overlay  (ColorRect)              # darkens the game world behind the menu
 │   ├── ResumeButton  (Button)
 │   └── QuitToMainButton  (Button)
 │
-└── CombatHUD  (Control)
-    ├── PlayerHUD  (Control)
-    │   ├── PlayerHealthLabel  (Label)          # "80 / 100" — current stub
-    │   └── PlayerHealthBar  (ProgressBar)      # to be added
-    ├── EnemyHUD  (Control)                     # stub; enemy health bars added dynamically at runtime
-    ├── ActionMenu  (Control)
-    │   └── AttackButton  (Button)              # current stub; expands to full action list later
-    └── CombatLog  (RichTextLabel)
+├── CombatHUD  (Control)                   # shown only during CombatEvent
+│   ├── EnemyHUD  (Control)               # health_bar.tscn instances added/removed at runtime
+│   ├── ActionMenu  (Control)
+│   │   └── AttackButton  (Button)
+│   └── CombatLog  (RichTextLabel)
 │
-└── DialoguePanel   (Control)               [dialogue_panel.gd] hidden by default; see dialogue-system.md
-    ├── Background      (ColorRect)
-    ├── SpeakerLabel    (Label)
-    ├── TextLabel       (RichTextLabel)
-    └── ChoicesContainer    (VBoxContainer)
+├── DialoguePanel  (DialoguePanel)         [dialogue_panel.gd] hidden by default; see dialogue-system.md
+│
+└── SkillCheckPanel  (SkillCheckPanel)     [skill_check_panel.gd] hidden by default
 ```
 
 **Notes:**
-- `MainMenu` and `PauseMenu` are hidden by default. `CombatHUD` is hidden until a `CombatEvent` starts.
-- `EnemyHUD` children are spawned and freed at runtime — one `health_bar.tscn` instance per living enemy, driven by `game.gd` via `gui.gd` API calls.
-- `CombatLog` currently lives as a direct child of `GUI` in the scene. It should be moved inside `CombatHUD` — it is combat-scoped and should show/hide with it.
-- **Enemy health bars belong to `EnemyHUD`, not to enemy scenes.** The `HealthBar` node currently in `skeleton.tscn` should be removed. `health_bar.tscn` is reused as the instantiated bar inside `EnemyHUD`.
+- `PlayerHUD` is a sibling of `CombatHUD`, not a child of it. It persists across world map, combat, dialogue, and skill check screens — only hidden on the main menu.
+- `EnemyHUD` children are spawned and freed at runtime — one `health_bar.tscn` instance per living enemy.
+- `CombatLog` lives inside `CombatHUD` and clears when a new combat starts.
 
 ---
 
@@ -78,14 +82,25 @@ Shown over any game state when ESC is pressed. `game.gd` calls `gui.handle_esc()
 
 `QuitToMainButton.pressed` is a second outbound signal from GUI to `game.gd`. Wire in `game.gd`.
 
-### CombatHUD
+### PlayerHUD
 
-Shown during a `CombatEvent`, hidden outside of combat. Driven entirely by `game.gd` method calls.
+Visible during all non-menu game states (world map, combat, dialogue, skill check). Hidden on main menu. Driven by `game.gd` method calls.
 
 | Node | Type | Role |
 |---|---|---|
 | `PlayerHealthLabel` | Label | Text display of current / max health ("80 / 100") |
 | `PlayerHealthBar` | ProgressBar | Visual bar; `value` and `max_value` set via `update_player_health()` |
+| `PlayerGoldLabel` | Label | Gold total ("Gold: 0"); updated via `update_player_gold()` |
+| `PlayerXPLabel` | Label | XP total ("XP: 0"); updated via `update_player_xp()` |
+
+`show()` / `hide()` is called from `start_game()`, `show_main_menu()`, and `return_to_main_menu()`.
+
+### CombatHUD
+
+Shown only during a `CombatEvent`. Driven entirely by `game.gd` method calls.
+
+| Node | Type | Role |
+|---|---|---|
 | `EnemyHUD` | Control | Container; `health_bar.tscn` instances added/removed at runtime — one per living enemy |
 | `ActionMenu` | Control | Player action buttons; enabled on player turn, disabled on enemy turn |
 | `AttackButton` | Button | Current sole action; connects to `player.execute_action("attack")` via `game.gd` |
@@ -100,18 +115,40 @@ All methods called by `game.gd`. The GUI owns layout and transition logic intern
 ```gdscript
 # --- Navigation ---
 
-# Called at game start; shows MainMenu.
+# Called at game start; shows MainMenu, hides PlayerHUD.
 func show_main_menu() -> void
 
-# Called by game.gd when player confirms start. Hides MainMenu.
+# Called by game.gd when player confirms start. Hides MainMenu, shows PlayerHUD.
 func start_game() -> void
 
 # Called by game.gd on ESC input. GUI toggles PauseMenu visibility.
 # Also called internally by ResumeButton.
 func handle_esc() -> void
 
-# Called by QuitToMainButton (via game.gd). Hides all sections, shows MainMenu.
+# Called by QuitToMainButton (via game.gd). Hides all sections, shows MainMenu, hides PlayerHUD.
 func return_to_main_menu() -> void
+
+# --- World Map ---
+
+# Shows the WorldMap panel.
+func show_world_map() -> void
+
+# Hides the WorldMap panel.
+func hide_world_map() -> void
+
+# Called when a dungeon run completes. Marks the node complete on the map and re-shows it.
+func world_map_on_dungeon_complete(completed_node: WorldMapNode) -> void
+
+# --- Player HUD ---
+
+# Called whenever player.damaged fires (wired in game.gd). Updates label and bar.
+func update_player_health(current: float, maximum: float) -> void
+
+# Called whenever player.gold_changed fires. Updates gold label.
+func update_player_gold(new_total: int) -> void
+
+# Called whenever player.experience_changed fires. Updates XP label.
+func update_player_xp(new_total: int) -> void
 
 # --- Combat HUD ---
 
@@ -120,9 +157,6 @@ func show_combat_hud() -> void
 
 # Called by game.gd in _on_event_complete(). Hides CombatHUD.
 func hide_combat_hud() -> void
-
-# Called whenever player.damaged fires (wired in game.gd).
-func update_player_health(current: float, maximum: float) -> void
 
 # Called once per enemy when a CombatEvent starts. Instantiates a health_bar.tscn in EnemyHUD.
 func add_enemy_health_bar(enemy: Enemy) -> void
@@ -135,6 +169,16 @@ func set_player_turn(is_player_turn: bool) -> void
 
 # Appends a line to CombatLog.
 func log_message(text: String) -> void
+
+# --- Dialogue ---
+
+# Shows DialoguePanel and loads the given dialogue data.
+func show_dialogue(data: Dictionary, consequences: DialogueConsequences) -> void
+
+# --- Skill Check ---
+
+# Shows SkillCheckPanel configured for the given stat and difficulty label.
+func show_skill_check(stat_name: String, label: String, stat_value: float) -> void
 ```
 
 ---
@@ -145,11 +189,16 @@ All connections wired in `game.gd`. The GUI emits nothing — it receives calls 
 
 | Source | Signal | Wired to | Where connected |
 |---|---|---|---|
-| `player` | `damaged(amount)` | `gui.update_player_health(player.health, player.max_health)` | `game.gd: set_player()` |
+| `player` | `damaged(amount)` | `gui.update_player_health()` | `game.gd: set_player()` |
+| `player` | `gold_changed(new_total)` | `gui.update_player_gold()` | `game.gd: set_player()` |
+| `player` | `experience_changed(new_total)` | `gui.update_player_xp()` | `game.gd: set_player()` |
 | `enemy` (per instance) | `damaged(amount)` | update that enemy's health bar via `gui` | `game.gd: start_event()` |
 | `enemy` (per instance) | `died` | `gui.remove_enemy_health_bar(enemy)` | `game.gd: start_event()` |
+| `WorldMap` | `node_selected(node)` | `game.gd: _on_world_node_selected()` | `gui.gd: _ready()` → relayed via `node_selected` signal |
+| `DialoguePanel` | `dialogue_complete` | `game.gd: _on_gui_dialogue_complete()` | `gui.gd: _ready()` → relayed via `dialogue_complete` signal |
+| `SkillCheckPanel` | `skill_check_complete(success)` | `game.gd: _on_gui_skill_check_complete()` | `gui.gd: _ready()` → relayed via `skill_check_complete` signal |
 | `gui/MainMenu/StartButton` | `pressed` | `game.gd` start logic | `game.gd: _ready()` |
-| `gui/PauseMenu/QuitToMainButton` | `pressed` | `game.gd: _on_quit_to_main()` | `game.gd: _ready()` |
+| `gui/PauseMenu/QuitToMainButton` | `pressed` | `game.gd: quit_to_main()` | `game.gd: _ready()` |
 
 **Not wired to GUI directly:**
 - `player.attack` — routed through `CombatEvent`, not a display concern

@@ -14,9 +14,12 @@ signal node_selected(node: WorldMapNode)
 # --- Node References ---
 @onready var _main_menu: Control = $MainMenu
 @onready var _pause_menu: Control = $PauseMenu
+@onready var _player_hud: Control = $PlayerHUD
+@onready var _player_health_label: Label = $PlayerHUD/PlayerHealthLabel
+@onready var _player_health_bar: ProgressBar = $PlayerHUD/PlayerHealthBar
+@onready var _player_gold_label: Label = $PlayerHUD/PlayerGoldLabel
+@onready var _player_xp_label: Label = $PlayerHUD/PlayerXPLabel
 @onready var _combat_hud: Control = $CombatHUD
-@onready var _player_health_label: Label = $CombatHUD/PlayerHUD/PlayerHealthLabel
-@onready var _player_health_bar: ProgressBar = $CombatHUD/PlayerHUD/PlayerHealthBar
 @onready var _enemy_hud: Control = $CombatHUD/EnemyHUD
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
@@ -46,6 +49,7 @@ func _ready() -> void:
 	_skill_check_panel.skill_check_complete.connect(_on_skill_check_complete)
 	_world_map.hide()
 	_world_map.node_selected.connect(_on_world_map_node_selected)
+	_player_hud.hide()
 
 
 # --- Navigation ---
@@ -54,10 +58,12 @@ func show_main_menu() -> void:
 	_main_menu.show()
 	_pause_menu.hide()
 	_combat_hud.hide()
+	_player_hud.hide()
 
 
 func start_game() -> void:
 	_main_menu.hide()
+	_player_hud.show()
 
 
 func handle_esc() -> void:
@@ -68,6 +74,7 @@ func return_to_main_menu() -> void:
 	_pause_menu.hide()
 	_combat_hud.hide()
 	_main_menu.show()
+	_player_hud.hide()
 
 
 # --- Combat HUD ---
@@ -85,6 +92,14 @@ func update_player_health(current: float, maximum: float) -> void:
 	_player_health_label.text = "%d/%d" % [int(current), int(maximum)]
 	_player_health_bar.max_value = maximum
 	_player_health_bar.value = current
+
+
+func update_player_gold(new_total: int) -> void:
+	_player_gold_label.text = "Gold: %d" % new_total
+
+
+func update_player_xp(new_total: int) -> void:
+	_player_xp_label.text = "XP: %d" % new_total
 
 
 func add_enemy_health_bar(enemy: Enemy) -> void:

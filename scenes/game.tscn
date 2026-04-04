@@ -131,14 +131,7 @@ offset_right = 300.0
 offset_bottom = 560.0
 text = "Quit"
 
-[node name="WorldMap" parent="GUI" unique_id=703812870 instance=ExtResource("16_ca42v")]
-visible = false
-offset_left = 834.0
-offset_top = 337.0
-offset_right = -830.0
-offset_bottom = -387.0
-
-[node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
+[node name="PlayerHUD" type="Control" parent="GUI" unique_id=908196036]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -147,30 +140,42 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Overlay" type="ColorRect" parent="GUI/PauseMenu" unique_id=100000006]
+[node name="PlayerHealthLabel" type="Label" parent="GUI/PlayerHUD" unique_id=2034464028]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.5)
+offset_left = 38.0
+offset_top = 21.0
+offset_right = 298.0
+offset_bottom = 109.0
+text = "100/100"
+label_settings = SubResource("LabelSettings_u5sy4")
 
-[node name="ResumeButton" type="Button" parent="GUI/PauseMenu" unique_id=100000007]
+[node name="PlayerGoldLabel" type="Label" parent="GUI/PlayerHUD" unique_id=1470941939]
 layout_mode = 1
-offset_left = 100.0
-offset_top = 200.0
-offset_right = 300.0
-offset_bottom = 250.0
-text = "Resume"
+offset_left = 1578.0
+offset_top = 19.0
+offset_right = 1895.0
+offset_bottom = 198.0
+text = "Gold: 000
+"
+label_settings = SubResource("LabelSettings_u5sy4")
 
-[node name="QuitToMainButton" type="Button" parent="GUI/PauseMenu" unique_id=100000008]
+[node name="PlayerXPLabel" type="Label" parent="GUI/PlayerHUD" unique_id=856153206]
 layout_mode = 1
-offset_left = 100.0
-offset_top = 270.0
-offset_right = 300.0
-offset_bottom = 320.0
-text = "Quit to Main Menu"
+offset_left = 1579.0
+offset_top = 107.0
+offset_right = 1896.0
+offset_bottom = 286.0
+text = "XP: 0000"
+label_settings = SubResource("LabelSettings_u5sy4")
+
+[node name="PlayerHealthBar" type="ProgressBar" parent="GUI/PlayerHUD" unique_id=100000009]
+layout_mode = 1
+offset_left = 38.0
+offset_top = 110.0
+offset_right = 298.0
+offset_bottom = 130.0
+value = 100.0
+show_percentage = false
 
 [node name="CombatHUD" type="Control" parent="GUI" unique_id=1958488847]
 visible = false
@@ -180,32 +185,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="PlayerHUD" type="Control" parent="GUI/CombatHUD" unique_id=908196036]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="PlayerHealthLabel" type="Label" parent="GUI/CombatHUD/PlayerHUD" unique_id=2034464028]
-layout_mode = 1
-offset_left = 38.0
-offset_top = 21.0
-offset_right = 298.0
-offset_bottom = 109.0
-text = "100/100"
-label_settings = SubResource("LabelSettings_u5sy4")
-
-[node name="PlayerHealthBar" type="ProgressBar" parent="GUI/CombatHUD/PlayerHUD" unique_id=100000009]
-layout_mode = 1
-offset_left = 38.0
-offset_top = 110.0
-offset_right = 298.0
-offset_bottom = 130.0
-value = 100.0
-show_percentage = false
 
 [node name="EnemyHUD" type="Control" parent="GUI/CombatHUD" unique_id=1616746194]
 layout_mode = 1
@@ -386,5 +365,47 @@ text = "Roll"
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Continue"
+
+[node name="WorldMap" parent="GUI" unique_id=703812870 instance=ExtResource("16_ca42v")]
+visible = false
+offset_left = 548.0
+offset_top = 3.0
+offset_right = -1116.0
+offset_bottom = -721.0
+scale = Vector2(3, 3)
+
+[node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Overlay" type="ColorRect" parent="GUI/PauseMenu" unique_id=100000006]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="ResumeButton" type="Button" parent="GUI/PauseMenu" unique_id=100000007]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 200.0
+offset_right = 300.0
+offset_bottom = 250.0
+text = "Resume"
+
+[node name="QuitToMainButton" type="Button" parent="GUI/PauseMenu" unique_id=100000008]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 270.0
+offset_right = 300.0
+offset_bottom = 320.0
+text = "Quit to Main Menu"
 
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]

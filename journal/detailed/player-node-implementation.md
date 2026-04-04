@@ -162,10 +162,10 @@ func _on_weapon_animation_finished() -> void:
 |---|---|---|
 | `turn_ended` | `_process()` detects `_is_turn_complete()` after an action | `game.gd` in `set_player()` |
 | `attack(damage: float)` | `_do_attack()` | `game.gd` → `CombatEvent.receive_player_attack`; also `Weapon._on_player_attacked` |
-| `damaged(amount: float)` | `take_damage()` | `game.gd` → `_gui.update_player_health` |
+| `damaged(amount: float)` | `take_damage()` | `game.gd` → `gui.update_player_health()` |
 | `died` | `_die()` | `game.gd` in `set_player()` |
-
-No new signals are needed. The existing four cover all current communication requirements.
+| `gold_changed(new_total: int)` | `add_gold()` | `game.gd` → `gui.update_player_gold()` |
+| `experience_changed(new_total: int)` | `add_experience()` | `game.gd` → `gui.update_player_xp()` |
 
 ---
 

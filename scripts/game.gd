@@ -113,11 +113,21 @@ func set_player(p: Player) -> void:
 	player.turn_ended.connect(_on_player_turn_ended)
 	player.died.connect(_on_player_died)
 	player.damaged.connect(_on_player_damaged)
+	player.gold_changed.connect(_on_player_gold_changed)
+	player.experience_changed.connect(_on_player_experience_changed)
 	_gui.update_player_health(player.max_health, player.max_health)
 
 
 func _on_player_damaged(_amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
+
+
+func _on_player_gold_changed(new_total: int) -> void:
+	_gui.update_player_gold(new_total)
+
+
+func _on_player_experience_changed(new_total: int) -> void:
+	_gui.update_player_xp(new_total)
 
 
 # --- Event Control ---

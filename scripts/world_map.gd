@@ -36,4 +36,7 @@ func on_dungeon_complete(completed_node: WorldMapNode) -> void:
 # --- Signal Handlers ---
 
 func _on_node_selected(node: WorldMapNode) -> void:
+	for child in $NodeContainer.get_children():
+		if child is WorldMapNode and child != node and child.state == Enums.NodeState.AVAILABLE:
+			child.set_state(Enums.NodeState.LOCKED)
 	node_selected.emit(node)

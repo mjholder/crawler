@@ -1,7 +1,7 @@
 # Game Scene Design
 
-**Date:** 2026-03-07
-**Status:** Pre-implementation design
+**Date:** 2026-03-07 (updated 2026-04-04)
+**Status:** Implemented
 
 ---
 
@@ -27,11 +27,20 @@ Game                Node2D              scripts/game.gd
 ├── HurtOverlay     CanvasLayer         layer = 3; red tint flash on player damage
 │   └── HurtRect    ColorRect           full-viewport dark red, alpha = 0 at rest
 └── GUI             CanvasLayer         layer = 4; all HUD elements
-    ├── CombatHUD   Control             shown during CombatEvent, hidden otherwise
-    │   ├── PlayerHUD   Control         player health bar and name
-    │   ├── EnemyHUD    Control         enemy health bar and name
+    ├── MainMenu    Control             shown at start; hidden when game begins
+    ├── WorldMap    WorldMap            shown after start; hidden when dungeon selected
+    ├── PlayerHUD   Control             persistent — shown during all non-menu game states
+    │   ├── PlayerHealthLabel   Label
+    │   ├── PlayerHealthBar     ProgressBar
+    │   ├── PlayerGoldLabel     Label
+    │   └── PlayerXPLabel       Label
+    ├── PauseMenu   Control             toggled by ESC
+    ├── CombatHUD   Control             shown only during CombatEvent
+    │   ├── EnemyHUD    Control         enemy health bars (spawned at runtime)
     │   ├── ActionMenu  Control         player action buttons
-    │   └── CombatLog   RichTextLabel   scrolling history of combat events (inside CombatHUD — shows/hides with it)
+    │   └── CombatLog   RichTextLabel   scrolling history of combat events
+    ├── DialoguePanel   DialoguePanel   shown during dialogue sequences
+    └── SkillCheckPanel SkillCheckPanel shown during skill checks
 ```
 
 ---
@@ -170,20 +179,29 @@ UI never references `game.gd`. `game.gd` passes signal connections to UI only wh
 |---|---|---|
 | `turn_ended` | Player | `set_player()` |
 | `died` | Player | `set_player()` |
+| `damaged(amount)` | Player | `set_player()` |
+| `gold_changed(new_total)` | Player | `set_player()` |
+| `experience_changed(new_total)` | Player | `set_player()` |
 | `event_complete` | Event | `start_event()` (one-shot) |
 | `player_attacked(damage)` | CombatEvent | `start_event()` — CombatEvent only |
 | `enemy_turns_complete` | CombatEvent | `start_event()` — CombatEvent only |
+| `enemy_added` | CombatEvent | `start_event()` — CombatEvent only |
+| `dialogue_trigger_fired` | CombatEvent | `start_event()` — CombatEvent only |
+| `dialogue_requested` | DialogueEvent / SkillCheckEvent | `start_event()` |
+| `skill_check_requested` | SkillCheckEvent | `start_event()` |
+| `node_selected` | GUI (relayed from WorldMap) | `_ready()` |
+| `dialogue_complete` | GUI (relayed from DialoguePanel) | `_ready()` |
+| `skill_check_complete` | GUI (relayed from SkillCheckPanel) | `_ready()` |
 
-### Signals UI connects to
+### Signals GUI connects to (via game.gd)
 
-| Signal | Source | Listener | Connected in |
+| Signal | Source | Routed to | Connected in |
 |---|---|---|---|
-| `damaged(amount)` | Player | `gui.update_player_health()` via game.gd | `set_player()` |
-| `died` | Player | PlayerHUD (via gui.gd) | `set_player()` |
-| `damaged(amount)` | Enemy | enemy's health bar in EnemyHUD (via gui.gd) | `start_event()` |
-| `died` | Enemy | `gui.remove_enemy_health_bar(enemy)` via game.gd | `start_event()` |
-| `player_attacked(damage)` | CombatEvent | game.gd → `gui.log_message()` | `start_event()` |
-| `player_attack_resolved(enemy, damage)` | CombatEvent | game.gd → `gui.log_message()` | `start_event()` |
+| `damaged(amount)` | Player | `gui.update_player_health()` | `set_player()` |
+| `gold_changed(new_total)` | Player | `gui.update_player_gold()` | `set_player()` |
+| `experience_changed(new_total)` | Player | `gui.update_player_xp()` | `set_player()` |
+| `damaged(amount)` | Enemy | `gui.update_enemy_health_bar()` | `start_event()` (per enemy) |
+| `died` | Enemy | `gui.remove_enemy_health_bar()` | `start_event()` (per enemy) |
 
 ---
 

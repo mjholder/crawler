@@ -6,6 +6,8 @@ signal damaged(amount: float)
 signal died
 signal turn_ended
 signal attack(damage: float)
+signal gold_changed(new_total: int)
+signal experience_changed(new_total: int)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -85,10 +87,12 @@ func _do_attack() -> void:
 
 func add_gold(amount: int) -> void:
 	gold += amount
+	gold_changed.emit(gold)
 
 
 func add_experience(amount: int) -> void:
 	experience += amount
+	experience_changed.emit(experience)
 
 
 # --- Combat ---
