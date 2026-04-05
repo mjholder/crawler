@@ -3,8 +3,11 @@ extends Control
 
 # --- Node References ---
 
-@onready var _equipped_slots: VBoxContainer = $PanelContainer/VBoxContainer/EquippedSlots
-@onready var _bag_grid: GridContainer = $PanelContainer/VBoxContainer/BagGrid
+@onready var _equipped_slots: VBoxContainer = $HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots
+@onready var _bag_grid: GridContainer = $HBoxContainer/PanelContainer/VBoxContainer/BagGrid
+@onready var _detail_panel: PanelContainer = $HBoxContainer/DetailPanel
+@onready var _detail_name_label: Label = $HBoxContainer/DetailPanel/VBoxContainer/DetailNameLabel
+@onready var _detail_stats_label: Label = $HBoxContainer/DetailPanel/VBoxContainer/DetailStatsLabel
 
 # --- State ---
 
@@ -21,6 +24,7 @@ func setup(inventory: Inventory) -> void:
 	_inventory.bag_changed.connect(_refresh_bag)
 	_refresh_slots()
 	_refresh_bag()
+	_hide_detail()
 
 
 # --- Build ---
@@ -30,11 +34,15 @@ func _build_slot_buttons() -> void:
 	for i in slot_names.size():
 		var btn := Button.new()
 		btn.pressed.connect(_on_slot_button_pressed.bind(i as Enums.Slot))
+		btn.mouse_entered.connect(_on_slot_button_hovered.bind(i as Enums.Slot))
+		btn.mouse_exited.connect(_hide_detail)
 		_equipped_slots.add_child(btn)
 		_slot_buttons.append(btn)
 	for i in _inventory.max_rings:
 		var btn := Button.new()
 		btn.pressed.connect(_on_ring_button_pressed.bind(i))
+		btn.mouse_entered.connect(_on_ring_button_hovered.bind(i))
+		btn.mouse_exited.connect(_hide_detail)
 		_equipped_slots.add_child(btn)
 		_ring_buttons.append(btn)
 
@@ -59,6 +67,8 @@ func _refresh_bag() -> void:
 		var btn := Button.new()
 		btn.text = data.item_name
 		btn.pressed.connect(_on_bag_button_pressed.bind(data))
+		btn.mouse_entered.connect(_show_detail.bind(data))
+		btn.mouse_exited.connect(_hide_detail)
 		_bag_grid.add_child(btn)
 
 
@@ -91,3 +101,41 @@ func _on_bag_button_pressed(data: EquipmentData) -> void:
 		_inventory.equip_ring(data)
 	else:
 		_inventory.equip(data.slot, data)
+
+
+# --- Detail Panel ---
+
+func _on_slot_button_hovered(slot: Enums.Slot) -> void:
+	_show_detail(_inventory.get_equipped(slot))
+
+
+func _on_ring_button_hovered(index: int) -> void:
+	var rings := _inventory.get_rings()
+	_show_detail(rings[index] if index < rings.size() else null)
+
+
+func _show_detail(data: EquipmentData) -> void:
+	if data == null:
+		_hide_detail()
+		return
+	_detail_name_label.text = data.item_name
+	_detail_stats_label.text = _format_stat_modifiers(data.stat_modifiers)
+	_detail_panel.show()
+
+
+func _hide_detail() -> void:
+	_detail_panel.hide()
+
+
+func _format_stat_modifiers(modifiers: Dictionary) -> String:
+	if modifiers.is_empty():
+		return ""
+	var stat_names := Enums.Stat.keys()
+	var lines: Array[String] = []
+	for stat_key in modifiers:
+		var value: float = modifiers[stat_key]
+		var name: String = stat_names[stat_key] if stat_key < stat_names.size() else str(stat_key)
+		var sign: String = "+" if value >= 0.0 else ""
+		var formatted_value: String = str(int(value)) if value == floorf(value) else "%.1f" % value
+		lines.append(sign + formatted_value + " " + name)
+	return "\n".join(lines)

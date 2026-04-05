@@ -384,14 +384,15 @@ offset_bottom = -721.0
 scale = Vector2(3, 3)
 
 [node name="InventoryPanel" type="Control" parent="GUI" unique_id=300000001]
-visible = false
 layout_mode = 3
 anchors_preset = 0
-offset_right = 420.0
-offset_bottom = 620.0
+offset_left = 750.0
+offset_top = 190.0
+offset_right = 1380.0
+offset_bottom = 810.0
 script = ExtResource("20_invpanel")
 
-[node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel" unique_id=300000002]
+[node name="HBoxContainer" type="HBoxContainer" parent="GUI/InventoryPanel" unique_id=1186197966]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -399,26 +400,46 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="GUI/InventoryPanel/PanelContainer" unique_id=300000003]
+[node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=300000002]
+custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 
-[node name="EquipmentLabel" type="Label" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000004]
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer" unique_id=300000003]
+layout_mode = 2
+
+[node name="EquipmentLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000004]
 layout_mode = 2
 text = "EQUIPMENT"
 
-[node name="EquippedSlots" type="VBoxContainer" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000005]
+[node name="EquippedSlots" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000005]
 layout_mode = 2
 
-[node name="HSeparator" type="HSeparator" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000006]
+[node name="HSeparator" type="HSeparator" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000006]
 layout_mode = 2
 
-[node name="BagLabel" type="Label" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000007]
+[node name="BagLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000007]
 layout_mode = 2
 text = "BAG"
 
-[node name="BagGrid" type="GridContainer" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000008]
+[node name="BagGrid" type="GridContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000008]
 layout_mode = 2
 columns = 5
+
+[node name="DetailPanel" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=861729727]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel" unique_id=322018376]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DetailNameLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1280028534]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="DetailStatsLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=2089626390]
+layout_mode = 2
+autowrap_mode = 3
 
 [node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
 visible = false
