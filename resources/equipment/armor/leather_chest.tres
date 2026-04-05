@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://test_chest001"]
+
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_chest"]
+
+[resource]
+script = ExtResource("1_chest")
+item_name = "Leather Chest"
+description = "A full leather chest piece. Your best defense so far."
+stat_modifiers = {
+1: 10.0
+}
+slot = 4

@@ -53,6 +53,8 @@ func _ready() -> void:
 	set_player($Player)
 	$Player.position = screen_center
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
+	_gui.setup_inventory($Player.get_node("Inventory") as Inventory)
+	_setup_starting_equipment()
 	if _exploration_music:
 		$Music/BGM.stream = _exploration_music
 		$Music/BGM.play()
@@ -363,6 +365,17 @@ func _scale_sprite_to_viewport(sprite: AnimatedSprite2D) -> void:
 	var sprite_size := texture.get_size()
 	var scale_factor: float = min(screen_size.x / sprite_size.x, screen_size.y / sprite_size.y)
 	sprite.scale = Vector2(scale_factor, scale_factor)
+
+
+func _setup_starting_equipment() -> void:
+	var inv := player.get_node("Inventory") as Inventory
+	inv.equip(Enums.Slot.WEAPON, preload("res://resources/equipment/weapons/battle_axe.tres"))
+	inv.add_to_bag(preload("res://resources/equipment/armor/leather_helm.tres"))
+	inv.add_to_bag(preload("res://resources/equipment/armor/leather_chest.tres"))
+	inv.add_to_bag(preload("res://resources/equipment/armor/leather_pants.tres"))
+	inv.add_to_bag(preload("res://resources/equipment/armor/leather_boots.tres"))
+	inv.add_to_bag(preload("res://resources/equipment/armor/leather_gloves.tres"))
+	inv.add_to_bag(preload("res://resources/equipment/rings/iron_ring.tres"))
 
 
 func _calculate_enemy_position(index: int, total: int) -> Vector2:

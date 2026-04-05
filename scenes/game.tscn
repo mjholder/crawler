@@ -16,6 +16,7 @@
 [ext_resource type="Script" uid="uid://b1ry2py3hwthj" path="res://scripts/dialogue_panel.gd" id="12_kvuet"]
 [ext_resource type="Script" uid="uid://dqjg77kuidypf" path="res://scripts/skill_check_panel.gd" id="13_skcp"]
 [ext_resource type="PackedScene" uid="uid://b0sqp1dfwigqy" path="res://scenes/world_map.tscn" id="16_ca42v"]
+[ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -176,6 +177,14 @@ offset_right = 298.0
 offset_bottom = 130.0
 value = 100.0
 show_percentage = false
+
+[node name="InventoryButton" type="Button" parent="GUI/PlayerHUD" unique_id=300000009]
+layout_mode = 1
+offset_left = 38.0
+offset_top = 140.0
+offset_right = 180.0
+offset_bottom = 170.0
+text = "Bag"
 
 [node name="CombatHUD" type="Control" parent="GUI" unique_id=1958488847]
 visible = false
@@ -374,6 +383,43 @@ offset_right = -1116.0
 offset_bottom = -721.0
 scale = Vector2(3, 3)
 
+[node name="InventoryPanel" type="Control" parent="GUI" unique_id=300000001]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_right = 420.0
+offset_bottom = 620.0
+script = ExtResource("20_invpanel")
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel" unique_id=300000002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/InventoryPanel/PanelContainer" unique_id=300000003]
+layout_mode = 2
+
+[node name="EquipmentLabel" type="Label" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000004]
+layout_mode = 2
+text = "EQUIPMENT"
+
+[node name="EquippedSlots" type="VBoxContainer" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000005]
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000006]
+layout_mode = 2
+
+[node name="BagLabel" type="Label" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000007]
+layout_mode = 2
+text = "BAG"
+
+[node name="BagGrid" type="GridContainer" parent="GUI/InventoryPanel/PanelContainer/VBoxContainer" unique_id=300000008]
+layout_mode = 2
+columns = 5
+
 [node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
 visible = false
 layout_mode = 3
@@ -408,4 +454,5 @@ offset_right = 300.0
 offset_bottom = 320.0
 text = "Quit to Main Menu"
 
+[connection signal="pressed" from="GUI/PlayerHUD/InventoryButton" to="GUI" method="toggle_inventory"]
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]

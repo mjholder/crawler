@@ -26,6 +26,7 @@ signal node_selected(node: WorldMapNode)
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
 @onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
 @onready var _world_map: WorldMap = $WorldMap
+@onready var _inventory_panel: InventoryPanel = $InventoryPanel
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -50,6 +51,23 @@ func _ready() -> void:
 	_world_map.hide()
 	_world_map.node_selected.connect(_on_world_map_node_selected)
 	_player_hud.hide()
+	_inventory_panel.hide()
+
+
+# --- Inventory ---
+
+func setup_inventory(inventory: Inventory) -> void:
+	_inventory_panel.setup(inventory)
+
+
+func toggle_inventory() -> void:
+	_inventory_panel.visible = not _inventory_panel.visible
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("inventory"):
+		toggle_inventory()
+		get_viewport().set_input_as_handled()
 
 
 # --- Navigation ---
