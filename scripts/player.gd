@@ -3,6 +3,7 @@ extends Node2D
 
 # --- Signals ---
 signal damaged(amount: float)
+signal healed(amount: float)
 signal died
 signal turn_ended
 signal attack(damage: float)
@@ -114,6 +115,14 @@ func take_damage(amount: float) -> void:
 		_play_sfx(_hurt_player)
 
 
+func heal(amount: float) -> void:
+	if is_dead:
+		return
+	var actual := minf(amount, max_health - health)
+	health += actual
+	healed.emit(actual)
+
+
 func _die() -> void:
 	print("  [PLAYER] Died!")
 	is_dead = true
@@ -158,6 +167,7 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 	node._on_equipped()
 	if slot == Enums.Slot.WEAPON:
 		print("[PLAYER] Equipped weapon: %s" % data.item_name)
+		node.visible = false
 		attack.connect((node as Weapon)._on_player_attacked)
 		(node as Weapon).animation_finished.connect(_on_weapon_animation_finished)
 
@@ -172,6 +182,22 @@ func _teardown_equipment(slot, data: EquipmentData) -> void:
 				(child as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
 			child.queue_free()
 			return
+
+
+func get_equipped_node(slot: Enums.Slot) -> Equipment:
+	var data := _inventory.get_equipped(slot)
+	if data == null:
+		return null
+	for child in get_children():
+		if child is Equipment and child.data == data:
+			return child
+	return null
+
+
+func set_weapon_visible(show: bool) -> void:
+	var weapon := get_equipped_node(Enums.Slot.WEAPON)
+	if weapon != null:
+		weapon.visible = show
 
 
 func get_effective_stat(stat: Enums.Stat) -> float:

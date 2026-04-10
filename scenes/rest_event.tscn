@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/event.tscn" id="1_event"]
+[ext_resource type="Script" path="res://scripts/rest_event.gd" id="2_script"]
+
+[node name="RestEvent" instance=ExtResource("1_event")]
+script = ExtResource("2_script")

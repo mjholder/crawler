@@ -9,6 +9,8 @@ signal quit_to_main_requested
 signal attack_requested
 signal dialogue_complete
 signal skill_check_complete(success: bool)
+signal rest_requested
+signal rest_complete
 signal node_selected(node: WorldMapNode)
 
 # --- Node References ---
@@ -25,6 +27,7 @@ signal node_selected(node: WorldMapNode)
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
 @onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
+@onready var _rest_panel: RestPanel = $RestPanel
 @onready var _world_map: WorldMap = $WorldMap
 @onready var _inventory_panel: InventoryPanel = $InventoryPanel
 @onready var _stats_label: Label = $InventoryPanel/HBoxContainer/StatsContainer/Label
@@ -49,6 +52,9 @@ func _ready() -> void:
 	_dialogue_panel.dialogue_complete.connect(_on_dialogue_complete)
 	_skill_check_panel.hide()
 	_skill_check_panel.skill_check_complete.connect(_on_skill_check_complete)
+	_rest_panel.hide()
+	_rest_panel.rest_requested.connect(_on_rest_requested)
+	_rest_panel.rest_complete.connect(_on_rest_complete)
 	_world_map.hide()
 	_world_map.node_selected.connect(_on_world_map_node_selected)
 	_player_hud.hide()
@@ -92,8 +98,13 @@ func handle_esc() -> void:
 func return_to_main_menu() -> void:
 	_pause_menu.hide()
 	_combat_hud.hide()
-	_main_menu.show()
+	_world_map.hide()
+	_dialogue_panel.hide()
+	_skill_check_panel.hide()
+	_rest_panel.hide()
+	_inventory_panel.hide()
 	_player_hud.hide()
+	_main_menu.show()
 
 
 # --- Combat HUD ---
@@ -208,6 +219,26 @@ func show_skill_check(stat_name: String, label: String, stat_value: float) -> vo
 func _on_skill_check_complete(success: bool) -> void:
 	_skill_check_panel.hide()
 	skill_check_complete.emit(success)
+
+
+# --- Rest Panel ---
+
+func show_rest_panel(heal_amount: float) -> void:
+	_rest_panel.setup(heal_amount)
+	_rest_panel.show()
+
+
+func hide_rest_panel() -> void:
+	_rest_panel.hide()
+
+
+func _on_rest_requested() -> void:
+	rest_requested.emit()
+
+
+func _on_rest_complete() -> void:
+	_rest_panel.hide()
+	rest_complete.emit()
 
 
 func _on_quit_button_pressed() -> void:

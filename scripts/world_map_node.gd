@@ -39,6 +39,10 @@ var state: Enums.NodeState = Enums.NodeState.LOCKED
 @export var miniboss_scene: PackedScene
 @export var miniboss_json_path: String
 
+# --- Rest Config ---
+
+@export var rest_scene: PackedScene
+
 
 # --- State Management ---
 
@@ -65,6 +69,9 @@ func _on_node_button_pressed() -> void:
 # --- Event Generation ---
 
 func generate_event_configs() -> Array[Dictionary]:
+	if node_type == Enums.NodeType.REST:
+		return _build_rest_config()
+
 	var configs: Array[Dictionary] = []
 
 	for i in range(dungeon_depth - 1):
@@ -75,6 +82,12 @@ func generate_event_configs() -> Array[Dictionary]:
 		var boss_data := _load_json(miniboss_json_path)
 		configs.append({ "scene": miniboss_scene, "data": boss_data })
 
+	return configs
+
+
+func _build_rest_config() -> Array[Dictionary]:
+	var configs: Array[Dictionary] = []
+	configs.append({ "scene": rest_scene, "data": { "heal_percent": 1.0 } })
 	return configs
 
 

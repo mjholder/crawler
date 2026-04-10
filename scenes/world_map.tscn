@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://d1irr22r3o36q" path="res://scenes/world_map_node_shop.tscn" id="5_27p3u"]
 [ext_resource type="PackedScene" uid="uid://nqeiejuuf4s4" path="res://scenes/dialogue_event.tscn" id="5_55716"]
 [ext_resource type="PackedScene" uid="uid://skchkevent01" path="res://scenes/skill_check_event.tscn" id="6_0hitc"]
+[ext_resource type="PackedScene" path="res://scenes/rest_event.tscn" id="7_rest"]
 
 [node name="WorldMap" type="Control" unique_id=703812870]
 layout_mode = 3
@@ -42,6 +43,7 @@ offset_top = 301.0
 offset_right = 142.0
 offset_bottom = 341.0
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon1-1"), NodePath("../WorldMapNodeDungeon1-2")])
+rest_scene = ExtResource("7_rest")
 combat_scene = ExtResource("4_gqm84")
 combat_json_dir = "res://resources/events/combat/"
 debug_combat_json_path = "res://resources/events/combat/example.json"
@@ -99,6 +101,7 @@ offset_top = 159.0
 offset_right = 80.0
 offset_bottom = 199.0
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon3-1")])
+rest_scene = ExtResource("7_rest")
 combat_scene = ExtResource("4_gqm84")
 combat_json_dir = "res://resources/events/combat/"
 debug_combat_json_path = "res://resources/events/combat/example.json"
@@ -175,6 +178,7 @@ offset_top = 87.0
 offset_right = 168.0
 offset_bottom = 127.0
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon4")])
+rest_scene = ExtResource("7_rest")
 combat_scene = ExtResource("4_gqm84")
 combat_json_dir = "res://resources/events/combat/"
 debug_combat_json_path = "res://resources/events/combat/example.json"

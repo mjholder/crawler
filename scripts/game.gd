@@ -66,6 +66,8 @@ func _ready() -> void:
 	_gui.attack_requested.connect(attack_action)
 	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
 	_gui.skill_check_complete.connect(_on_gui_skill_check_complete)
+	_gui.rest_requested.connect(_on_gui_rest_requested)
+	_gui.rest_complete.connect(_on_gui_rest_complete)
 	_gui.node_selected.connect(_on_world_node_selected)
 	_gui.show_main_menu()
 
@@ -115,6 +117,7 @@ func set_player(p: Player) -> void:
 	player.turn_ended.connect(_on_player_turn_ended)
 	player.died.connect(_on_player_died)
 	player.damaged.connect(_on_player_damaged)
+	player.healed.connect(_on_player_healed)
 	player.gold_changed.connect(_on_player_gold_changed)
 	player.experience_changed.connect(_on_player_experience_changed)
 	player.stats_changed.connect(_on_player_stats_changed)
@@ -123,6 +126,10 @@ func set_player(p: Player) -> void:
 
 
 func _on_player_damaged(_amount: float) -> void:
+	_gui.update_player_health(player.health, player.max_health)
+
+
+func _on_player_healed(_amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
 
 
@@ -155,6 +162,7 @@ func start_event(event: Event) -> void:
 		_gui.show_combat_hud()
 		_gui.set_player_turn(false)
 		_start_combat_music()
+		player.set_weapon_visible(true)
 	elif event is DialogueEvent:
 		var de := event as DialogueEvent
 		de.dialogue_requested.connect(_on_dialogue_requested)
@@ -162,6 +170,9 @@ func start_event(event: Event) -> void:
 		var sce := event as SkillCheckEvent
 		sce.skill_check_requested.connect(_on_skill_check_requested)
 		sce.dialogue_requested.connect(_on_dialogue_requested)
+	elif event is RestEvent:
+		var re := event as RestEvent
+		re.rest_requested.connect(_on_rest_requested)
 	current_event.start()
 	if event is CombatEvent and state != Enums.TurnState.DIALOGUE:
 		_start_player_turn()
@@ -179,6 +190,7 @@ func _on_event_complete() -> void:
 		for enemy in ce._enemies:
 			_gui.remove_enemy_health_bar(enemy)
 		_gui.hide_combat_hud()
+		player.set_weapon_visible(false)
 	elif current_event is DialogueEvent:
 		var de := current_event as DialogueEvent
 		de.dialogue_requested.disconnect(_on_dialogue_requested)
@@ -186,6 +198,9 @@ func _on_event_complete() -> void:
 		var sce := current_event as SkillCheckEvent
 		sce.skill_check_requested.disconnect(_on_skill_check_requested)
 		sce.dialogue_requested.disconnect(_on_dialogue_requested)
+	elif current_event is RestEvent:
+		var re := current_event as RestEvent
+		re.rest_requested.disconnect(_on_rest_requested)
 	_apply_rewards(current_event.rewards)
 	_finish_event()
 
@@ -254,6 +269,23 @@ func _on_skill_check_requested(stat: Enums.Stat, label: String) -> void:
 func _on_gui_skill_check_complete(success: bool) -> void:
 	if current_event is SkillCheckEvent:
 		(current_event as SkillCheckEvent).on_skill_check_complete(success)
+
+
+# --- Rest ---
+
+func _on_rest_requested() -> void:
+	var heal_amount: float = (current_event as RestEvent).get_heal_amount(player.max_health)
+	_gui.show_rest_panel(heal_amount)
+
+
+func _on_gui_rest_requested() -> void:
+	var heal_amount: float = (current_event as RestEvent).get_heal_amount(player.max_health)
+	player.heal(heal_amount)
+
+
+func _on_gui_rest_complete() -> void:
+	_gui.hide_rest_panel()
+	(current_event as RestEvent).on_rest_complete()
 
 
 func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
@@ -350,6 +382,14 @@ func _on_player_died() -> void:
 
 
 func quit_to_main() -> void:
+	if current_event != null:
+		current_event.queue_free()
+		current_event = null
+	_pending_event_configs = []
+	_event_index = 0
+	_active_world_node = null
+	_start_exploration_music()
+	player.set_weapon_visible(false)
 	_gui.return_to_main_menu()
 	state = Enums.TurnState.NO_TURN
 
