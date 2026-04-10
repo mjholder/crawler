@@ -27,6 +27,7 @@ signal node_selected(node: WorldMapNode)
 @onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
 @onready var _world_map: WorldMap = $WorldMap
 @onready var _inventory_panel: InventoryPanel = $InventoryPanel
+@onready var _stats_label: Label = $InventoryPanel/HBoxContainer/StatsContainer/Label
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -118,6 +119,16 @@ func update_player_gold(new_total: int) -> void:
 
 func update_player_xp(new_total: int) -> void:
 	_player_xp_label.text = "XP: %d" % new_total
+
+
+func update_player_stats(stats: Dictionary) -> void:
+	var stat_names := Enums.Stat.keys()
+	var lines: Array[String] = []
+	for stat_key in Enums.Stat.values():
+		var value: float = stats.get(stat_key, 0.0)
+		var name: String = stat_names[stat_key] if stat_key < stat_names.size() else str(stat_key)
+		lines.append("%s: %d" % [name, int(value)])
+	_stats_label.text = "\n".join(lines)
 
 
 func add_enemy_health_bar(enemy: Enemy) -> void:

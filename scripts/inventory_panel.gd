@@ -66,6 +66,9 @@ func _refresh_bag() -> void:
 	for data in _inventory.get_bag():
 		var btn := Button.new()
 		btn.text = data.item_name
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.clip_text = true
+		btn.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		btn.pressed.connect(_on_bag_button_pressed.bind(data))
 		btn.mouse_entered.connect(_show_detail.bind(data))
 		btn.mouse_exited.connect(_hide_detail)

@@ -8,6 +8,7 @@ signal turn_ended
 signal attack(damage: float)
 signal gold_changed(new_total: int)
 signal experience_changed(new_total: int)
+signal stats_changed(stats: Dictionary)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -136,6 +137,7 @@ func _on_slot_changed(slot: Enums.Slot, new_data: EquipmentData, old_data: Equip
 		_teardown_equipment(slot, old_data)
 	if new_data != null:
 		_setup_equipment(slot, new_data)
+	stats_changed.emit(build_stats_dict())
 
 
 func _on_ring_changed(_index: int, new_data: EquipmentData, old_data: EquipmentData) -> void:
@@ -143,6 +145,7 @@ func _on_ring_changed(_index: int, new_data: EquipmentData, old_data: EquipmentD
 		_teardown_equipment(null, old_data)
 	if new_data != null:
 		_setup_equipment(null, new_data)
+	stats_changed.emit(build_stats_dict())
 
 
 func _setup_equipment(slot, data: EquipmentData) -> void:
@@ -178,6 +181,13 @@ func get_effective_stat(stat: Enums.Stat) -> float:
 		if data.stat_modifiers.has(stat):
 			bonus += data.stat_modifiers[stat]
 	return base + bonus
+
+
+func build_stats_dict() -> Dictionary:
+	var stats := {}
+	for stat_key in Enums.Stat.values():
+		stats[stat_key] = get_effective_stat(stat_key as Enums.Stat)
+	return stats
 
 
 func _get_base_stat(stat: Enums.Stat) -> float:

@@ -117,7 +117,9 @@ func set_player(p: Player) -> void:
 	player.damaged.connect(_on_player_damaged)
 	player.gold_changed.connect(_on_player_gold_changed)
 	player.experience_changed.connect(_on_player_experience_changed)
+	player.stats_changed.connect(_on_player_stats_changed)
 	_gui.update_player_health(player.max_health, player.max_health)
+	_gui.update_player_stats(player.build_stats_dict())
 
 
 func _on_player_damaged(_amount: float) -> void:
@@ -130,6 +132,10 @@ func _on_player_gold_changed(new_total: int) -> void:
 
 func _on_player_experience_changed(new_total: int) -> void:
 	_gui.update_player_xp(new_total)
+
+
+func _on_player_stats_changed(stats: Dictionary) -> void:
+	_gui.update_player_stats(stats)
 
 
 # --- Event Control ---

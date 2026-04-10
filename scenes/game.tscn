@@ -51,14 +51,6 @@ expand_mode = 3
 
 [node name="Player" parent="." unique_id=1592968138 instance=ExtResource("3_player")]
 z_index = 4
-player_name = null
-max_health = null
-strength = null
-constitution = null
-agility = null
-spirit = null
-luck = null
-base_damage = null
 
 [node name="EventContainer" type="Node" parent="." unique_id=1731107034]
 
@@ -384,12 +376,15 @@ offset_bottom = -721.0
 scale = Vector2(3, 3)
 
 [node name="InventoryPanel" type="Control" parent="GUI" unique_id=300000001]
+visible = false
 layout_mode = 3
 anchors_preset = 0
-offset_left = 750.0
+offset_left = 540.0
 offset_top = 190.0
 offset_right = 1380.0
 offset_bottom = 810.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
 script = ExtResource("20_invpanel")
 
 [node name="HBoxContainer" type="HBoxContainer" parent="GUI/InventoryPanel" unique_id=1186197966]
@@ -397,8 +392,17 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_right = 210.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="StatsContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=806304740]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/StatsContainer" unique_id=1928758384]
+layout_mode = 2
+size_flags_vertical = 1
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=300000002]
 custom_minimum_size = Vector2(420, 0)
