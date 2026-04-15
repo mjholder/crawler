@@ -54,12 +54,12 @@ func _ready() -> void:
 	$Player.position = screen_center
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
 	_gui.setup_inventory($Player.get_node("Inventory") as Inventory)
-	_setup_starting_equipment()
 	if _exploration_music:
 		$Music/BGM.stream = _exploration_music
 		$Music/BGM.play()
 
-	_gui.start_requested.connect(start_game)
+	_gui.character_created.connect(_on_character_created)
+	_gui.level_up_complete.connect(_on_level_up_complete)
 	_gui.start_dialogue_requested.connect(start_dialogue_game)
 	_gui.start_skill_check_requested.connect(start_skill_check_game)
 	_gui.quit_to_main_requested.connect(quit_to_main)
@@ -105,6 +105,14 @@ func start_skill_check_game() -> void:
 		start_event(event_instance)
 
 
+func _on_character_created(p_name: String, class_data: PlayerClassData) -> void:
+	player.initialize(p_name, class_data)
+	_gui.start_game()
+	_gui.show_world_map()
+	_gui.update_player_health(player.health, player.max_health)
+	_gui.update_player_stats(player.build_stats_dict())
+
+
 func start_game() -> void:
 	_gui.start_game()
 	_gui.show_world_map()
@@ -143,6 +151,7 @@ func _on_player_experience_changed(new_total: int) -> void:
 
 func _on_player_stats_changed(stats: Dictionary) -> void:
 	_gui.update_player_stats(stats)
+	_gui.update_player_health(player.health, player.max_health)
 
 
 # --- Event Control ---
@@ -202,6 +211,13 @@ func _on_event_complete() -> void:
 		var re := current_event as RestEvent
 		re.rest_requested.disconnect(_on_rest_requested)
 	_apply_rewards(current_event.rewards)
+	if player.pending_stat_points > 0:
+		_gui.show_level_up(player)
+		return
+	_finish_event()
+
+
+func _on_level_up_complete() -> void:
 	_finish_event()
 
 
@@ -411,17 +427,6 @@ func _scale_sprite_to_viewport(sprite: AnimatedSprite2D) -> void:
 	var sprite_size := texture.get_size()
 	var scale_factor: float = min(screen_size.x / sprite_size.x, screen_size.y / sprite_size.y)
 	sprite.scale = Vector2(scale_factor, scale_factor)
-
-
-func _setup_starting_equipment() -> void:
-	var inv := player.get_node("Inventory") as Inventory
-	inv.equip(Enums.Slot.WEAPON, preload("res://resources/equipment/weapons/battle_axe.tres"))
-	inv.add_to_bag(preload("res://resources/equipment/armor/leather_helm.tres"))
-	inv.add_to_bag(preload("res://resources/equipment/armor/leather_chest.tres"))
-	inv.add_to_bag(preload("res://resources/equipment/armor/leather_pants.tres"))
-	inv.add_to_bag(preload("res://resources/equipment/armor/leather_boots.tres"))
-	inv.add_to_bag(preload("res://resources/equipment/armor/leather_gloves.tres"))
-	inv.add_to_bag(preload("res://resources/equipment/rings/iron_ring.tres"))
 
 
 func _calculate_enemy_position(index: int, total: int) -> Vector2:

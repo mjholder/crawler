@@ -18,6 +18,17 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 <!-- Add entries below, newest first -->
 
+## Shop transactions route through game.gd, not the panel or the event
+
+**Decision:** For the upcoming `ShopEvent` / `ShopPanel`, all validation and state mutation for buy/sell transactions live in `game.gd`. `ShopPanel` emits intent signals (`buy_requested`, `sell_requested`, `leave_requested`) with only an `EquipmentData` payload; `GUI` re-emits them; `game.gd` reads `player.gold`, validates price and bag capacity, calls `player.spend_gold` / `player.add_gold`, mutates the bag via `inventory.add_to_bag` / `remove_from_bag`, and tells `ShopEvent` what happened via `on_buy(item)` / `on_sell(item)` so it can update its `_stock`. `ShopPanel` holds no references to `Player`, `Inventory`, or `ShopEvent`.
+**Date:** 2026-04-14
+**Context:** Designing the shop node type. The natural shortcut was to pass `player` and `shop_event` into `shop_panel.setup()` so the panel could compute prices, check the bag, and mutate state directly. This would have violated the "Passive GUI" rule (2026-03-12) and the "`game.gd` is the sole class that holds a `var player` reference" rule (2026-03-01).
+**Alternatives considered:** (a) Panel holds direct refs to player/event and performs transactions; (b) `ShopEvent` holds the player reference and `game.gd` just routes signals; (c) a transaction service class.
+**Rationale:** This matches the established `SkillCheckEvent` pattern — "`game.gd` is the only place `player.get_effective_stat()` is called… the event never holds a player reference." Keeping all policy (enough gold? bag full?) in `game.gd` means the shop behaves exactly like every other event: event requests a UI, UI emits intents, game.gd decides, game.gd tells the event the result. No new architectural patterns.
+**Trade-offs / risks:** `game.gd` grows another handler set (`_on_gui_shop_buy_requested`, etc.) and has to explicitly pass state through on every refresh (stock, bag, gold, `bag_full: bool`) rather than the panel reading from live references. Accepted — explicit data flow is easier to trace than implicit reference-based reactivity, and the pattern is already established for every other panel.
+
+---
+
 ## UI Architecture — Passive GUI with Intent-Based API
 
 **Decision:** Use a single CanvasLayer as the top-level UI node, with sections (CombatUI, PauseMenu, MainMenu, etc.) as children. A `gui.gd` script exposes an intent-based API. `game.gd` drives all UI changes via direct method calls.

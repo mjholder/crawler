@@ -10,10 +10,10 @@ signal attack(damage: float)
 signal gold_changed(new_total: int)
 signal experience_changed(new_total: int)
 signal stats_changed(stats: Dictionary)
+signal leveled_up(new_level: int)
 
 # --- Stats ---
 @export var player_name: String = "Player"
-@export var max_health: float = 100.0
 @export var strength: float = 50.0
 @export var defense: float = 50.0
 @export var constitution: float = 50.0
@@ -21,19 +21,30 @@ signal stats_changed(stats: Dictionary)
 @export var spirit: float = 50.0
 @export var luck: float = 50.0
 
-@export var base_damage: float = 10.0
+# --- Health Tuning ---
+## max_health = (effective_CON * health_modifier) + class_health_bonus
+@export var health_modifier: float = 2.0
+
+# --- XP Tuning ---
+@export var xp_base: float = 100.0
+@export var xp_growth_factor: float = 1.15
 
 # --- State Machine ---
 enum State { IDLE, DEAD }
 
 var _state: State = State.IDLE
-var health: float
+var max_health: float = 0.0
+var health: float = 0.0
 var gold: int = 0
 var experience: int = 0
+var level: int = 1
+var pending_stat_points: int = 0
 var is_dead: bool = false
 var _turn_pending: bool = false
 var _attack_animation_pending: bool = false
+var _weapon_visible: bool = false
 var _hurt_overlay: ColorRect = null
+var _class_data: PlayerClassData = null
 
 # --- Node References ---
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
@@ -47,7 +58,6 @@ var _actions: Dictionary = {}
 
 
 func _ready() -> void:
-	health = max_health
 	_register_actions()
 	_transition(State.IDLE)
 	_inventory.slot_changed.connect(_on_slot_changed)
@@ -58,6 +68,34 @@ func _process(_delta: float) -> void:
 	if _turn_pending and _is_turn_complete():
 		_turn_pending = false
 		turn_ended.emit()
+
+
+# --- Initialization ---
+
+func initialize(p_name: String, class_data: PlayerClassData) -> void:
+	_class_data = class_data
+	player_name = p_name
+	strength = class_data.strength
+	defense = class_data.defense
+	constitution = class_data.constitution
+	agility = class_data.agility
+	spirit = class_data.spirit
+	luck = class_data.luck
+	level = 1
+	experience = 0
+	pending_stat_points = 0
+	_recalculate_max_health()
+	health = max_health
+	_setup_starting_equipment(class_data)
+
+
+func _setup_starting_equipment(class_data: PlayerClassData) -> void:
+	for slot_key in class_data.starting_equipped:
+		_inventory.equip(slot_key as Enums.Slot, class_data.starting_equipped[slot_key])
+	for ring in class_data.starting_rings:
+		_inventory.equip_ring(ring)
+	for item in class_data.starting_bag:
+		_inventory.add_to_bag(item)
 
 
 # --- Actions ---
@@ -81,7 +119,8 @@ func execute_action(action_name: String) -> void:
 # --- Action Implementations ---
 
 func _do_attack() -> void:
-	if _inventory.get_equipped(Enums.Slot.WEAPON) != null:
+	var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
+	if weapon_data != null and weapon_data.scene != null:
 		_attack_animation_pending = true
 	print("  Player attacks for %.1f damage!" % _calculate_damage())
 	attack.emit(_calculate_damage())
@@ -96,7 +135,58 @@ func add_gold(amount: int) -> void:
 
 func add_experience(amount: int) -> void:
 	experience += amount
+	while experience >= xp_to_next_level():
+		experience -= xp_to_next_level()
+		_level_up()
 	experience_changed.emit(experience)
+
+
+# --- Leveling ---
+
+func xp_to_next_level() -> int:
+	return int(xp_base * pow(xp_growth_factor, level - 1))
+
+
+func _level_up() -> void:
+	level += 1
+	_apply_growth_rates()
+	pending_stat_points += 3
+	leveled_up.emit(level)
+
+
+func _apply_growth_rates() -> void:
+	if _class_data == null:
+		return
+	for stat_key in _class_data.growth_rates:
+		_add_to_base_stat(stat_key as Enums.Stat, _class_data.growth_rates[stat_key])
+	_recalculate_max_health()
+	stats_changed.emit(build_stats_dict())
+
+
+func spend_stat_point(stat: Enums.Stat) -> void:
+	if pending_stat_points <= 0:
+		return
+	_add_to_base_stat(stat, 1.0)
+	pending_stat_points -= 1
+	_recalculate_max_health()
+	stats_changed.emit(build_stats_dict())
+
+
+func unspend_stat_point(stat: Enums.Stat) -> void:
+	_add_to_base_stat(stat, -1.0)
+	pending_stat_points += 1
+	_recalculate_max_health()
+	stats_changed.emit(build_stats_dict())
+
+
+func _add_to_base_stat(stat: Enums.Stat, amount: float) -> void:
+	match stat:
+		Enums.Stat.STRENGTH:     strength += amount
+		Enums.Stat.DEFENSE:      defense += amount
+		Enums.Stat.CONSTITUTION: constitution += amount
+		Enums.Stat.AGILITY:      agility += amount
+		Enums.Stat.SPIRIT:       spirit += amount
+		Enums.Stat.LUCK:         luck += amount
 
 
 # --- Combat ---
@@ -136,16 +226,30 @@ func _apply_defense(amount: float) -> float:
 
 
 func _calculate_damage() -> float:
-	return base_damage + (get_effective_stat(Enums.Stat.STRENGTH) * 0.5)
+	return get_effective_stat(Enums.Stat.STRENGTH) * 0.5
 
 
 # --- Equipment ---
+
+func _recalculate_max_health() -> void:
+	if _class_data == null:
+		return
+	var old_max := max_health
+	var effective_con := get_effective_stat(Enums.Stat.CONSTITUTION)
+	max_health = (effective_con * health_modifier) + _class_data.class_health_bonus
+	var delta := max_health - old_max
+	if delta > 0.0:
+		health += delta
+	else:
+		health = minf(health, max_health)
+
 
 func _on_slot_changed(slot: Enums.Slot, new_data: EquipmentData, old_data: EquipmentData) -> void:
 	if old_data != null:
 		_teardown_equipment(slot, old_data)
 	if new_data != null:
 		_setup_equipment(slot, new_data)
+	_recalculate_max_health()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -154,6 +258,7 @@ func _on_ring_changed(_index: int, new_data: EquipmentData, old_data: EquipmentD
 		_teardown_equipment(null, old_data)
 	if new_data != null:
 		_setup_equipment(null, new_data)
+	_recalculate_max_health()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -167,7 +272,7 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 	node._on_equipped()
 	if slot == Enums.Slot.WEAPON:
 		print("[PLAYER] Equipped weapon: %s" % data.item_name)
-		node.visible = false
+		node.visible = _weapon_visible
 		attack.connect((node as Weapon)._on_player_attacked)
 		(node as Weapon).animation_finished.connect(_on_weapon_animation_finished)
 
@@ -195,6 +300,7 @@ func get_equipped_node(slot: Enums.Slot) -> Equipment:
 
 
 func set_weapon_visible(show: bool) -> void:
+	_weapon_visible = show
 	var weapon := get_equipped_node(Enums.Slot.WEAPON)
 	if weapon != null:
 		weapon.visible = show

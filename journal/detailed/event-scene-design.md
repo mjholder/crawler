@@ -336,6 +336,233 @@ game.start_event(skill_check_event)
 
 ---
 
+## ShopEvent
+
+**Date:** 2026-04-14
+
+### Node Tree
+
+```
+ShopEvent           Node2D          scripts/shop_event.gd
+```
+
+Root node only — no children. The shop UI lives entirely in GUI (`ShopPanel`). `ShopEvent` owns its transient stock and coordinates phase flow; it never touches the player, inventory, or the UI directly.
+
+### Signal Contract
+
+| Signal | Emitted when |
+|---|---|
+| `shop_requested(shop_name: String, stock: Array[EquipmentData], buy_mult: float, sell_mult: float)` | Enters RUNNING — hands shop identity, stock snapshot, and pricing multipliers to `game.gd` |
+| `stock_changed(stock: Array[EquipmentData])` | After `on_buy()` / `on_sell()` mutates `_stock` |
+| `event_complete` | Inherited from Event; emitted after COMPLETE |
+
+### Methods game.gd calls on ShopEvent
+
+| Method | When called |
+|---|---|
+| `initialize(data: Dictionary)` | Before `start()`. `data["shop"]` is a `ShopData` resource. |
+| `on_buy(item: EquipmentData)` | After `game.gd` has validated and applied gold+inventory changes. Removes item from `_stock`, emits `stock_changed`. |
+| `on_sell(item: EquipmentData)` | After `game.gd` has applied gold+inventory changes. Appends item to `_stock`, emits `stock_changed`. Buy-back is supported by default. |
+| `on_leave()` | Called from `_on_gui_shop_leave_requested()`. Calls `_advance_phase()` → RESOLUTION → COMPLETE. |
+| `get_buy_price(item) -> int` | Returns `round(item.price * _buy_mult)`. Used by `game.gd` for validation. |
+| `get_sell_price(item) -> int` | Returns `round(item.price * _sell_mult)`. |
+
+### Phase Flow
+
+`start()` runs `_on_setup()` (shallow-copy `shop_data.stock` into `_stock`; store `_shop_name`, `_buy_mult`, `_sell_mult`) then `_on_running()` (emit `shop_requested`). The event stays in RUNNING through any number of buy/sell transactions.
+
+`on_leave()` calls `_advance_phase()` — `RUNNING → RESOLUTION → COMPLETE` transitions atomically; `_on_resolution()` is not overridden. `rewards` stays empty — gold and items are debited/credited **inline during transactions**, not at completion.
+
+Follows the same "stay in RUNNING, advance via user-action callback" pattern as `RestEvent`.
+
+### Transaction Routing — the critical policy point
+
+All validation and state mutation lives in `game.gd`. The event never touches the player. The panel never touches the event. The panel never touches the player.
+
+**Buy flow:**
+
+```
+panel row pressed → panel.buy_requested(item)
+  → gui.shop_buy_requested(item)
+  → game._on_gui_shop_buy_requested(item):
+      price = current_event.get_buy_price(item)
+      if player.gold < price:             gui.show_shop_status("Not enough gold"); return
+      if player.inventory.is_bag_full():  gui.show_shop_status("Bag full"); return
+      player.spend_gold(price)                     # emits gold_changed
+      current_event.on_buy(item)                   # emits stock_changed
+      player.inventory.add_to_bag(item)            # emits bag_changed
+```
+
+Three subsequent signal emissions drive UI refreshes in `game.gd`:
+
+- `player.gold_changed` → `_on_player_gold_changed` branches: if `current_event is ShopEvent`, call `_gui.refresh_shop_gold(new_total)`.
+- `current_event.stock_changed` → `_on_shop_stock_changed(stock)` → `_gui.refresh_shop_stock(stock)`.
+- `inventory.bag_changed` → connected in `start_event()` only while a shop is active; calls `_gui.refresh_shop_bag(inventory.get_bag())`.
+
+**Sell flow:** mirrors in reverse — validate `item in inventory.get_bag()`, `player.add_gold(price)`, `current_event.on_sell(item)`, `inventory.remove_from_bag(item)`.
+
+`spend_gold(amount: int) -> bool` is a new method on `Player` co-located with `add_gold`; returns `false` without side effects if `gold < amount`.
+
+### Pricing
+
+`EquipmentData` gains a new field: `@export var price: int = 0` — the item's intrinsic base value. `ShopData` scales it per shop via `buy_price_multiplier` (default `1.0`) and `sell_price_multiplier` (default `0.5`). Shops compute prices on demand via `get_buy_price` / `get_sell_price`.
+
+### ShopData resource
+
+```
+scripts/shop_data.gd            # extends Resource
+    @export var shop_name: String = ""
+    @export var stock: Array[EquipmentData] = []
+    @export var buy_price_multiplier: float = 1.0
+    @export var sell_price_multiplier: float = 0.5
+```
+
+Mirrors `PlayerClassData` — one `.tres` per shop, lives under `resources/shops/`.
+
+### ShopPanel Node Tree
+
+```
+ShopPanel                           Control             scripts/shop_panel.gd
+├── Background                      ColorRect           full-rect dim overlay (color 0,0,0,0.5)
+└── HBoxContainer                   HBoxContainer       anchored center
+    ├── PanelContainer              PanelContainer      left column — the shop interior
+    │   └── VBoxContainer           VBoxContainer
+    │       ├── ShopNameLabel       Label               e.g. "Old Pete's Wares"
+    │       ├── GoldLabel           Label               e.g. "Gold: 120"
+    │       ├── ModeButtons         HBoxContainer
+    │       │   ├── BuyTabButton    Button              "Buy" (pressed by default)
+    │       │   └── SellTabButton   Button              "Sell"
+    │       ├── ItemList            VBoxContainer       rows built at runtime as Buttons
+    │       │                                           custom_minimum_size = Vector2(0, 240)
+    │       │                                           size_flags_vertical = 3 (FILL+EXPAND)
+    │       ├── StatusLabel         Label               "Bag full" / "Not enough gold" — hidden by default
+    │       └── LeaveButton         Button              "Leave"
+    └── DetailPanel                 PanelContainer      right column — mirrors InventoryPanel
+        └── VBoxContainer           VBoxContainer
+            ├── DetailNameLabel     Label
+            ├── DetailPriceLabel    Label               "Price: 45g" (mode-aware)
+            ├── DetailStatsLabel    Label               stat modifiers, autowrap on
+            └── DetailDescLabel     Label               description text, autowrap on
+```
+
+Build in `scenes/ui/shop_panel.tscn` and attach `scripts/shop_panel.gd`. Layout follows the two-column list + detail idiom established by `InventoryPanel`. A Buy/Sell mode toggle swaps what populates `ItemList` — no `TabContainer` (novel pattern in this codebase).
+
+Rendering notes — lessons from prior panels:
+
+- Set `custom_minimum_size` + `size_flags_vertical = 3` on the list container, per the 2026-04-12 `CharacterCreationPanel` fix.
+- Store direct references to runtime-created row buttons in dictionaries keyed by item, per the 2026-04-14 `LevelUpPanel` fix — do **not** use `find_child` on just-added nodes.
+
+### Row Button Behavior
+
+`ItemList` rows are `Button`s built in code (matches `InventoryPanel._refresh_bag`). Per row:
+
+- `text = "%s — %dg" % [item.item_name, price]`
+- `pressed` → emits `buy_requested(item)` or `sell_requested(item)` depending on current mode
+- `mouse_entered` → updates the right-hand detail panel
+- `disabled`: in Buy mode, true when `price > gold` **or** `bag_full == true`; in Sell mode, never disabled.
+
+`game.gd` passes a `bag_full: bool` into `refresh_stock` so the panel stays free of policy — it does not read bag size to infer enablement.
+
+### Panel API (methods — no signal connections into the panel)
+
+| Method | Purpose |
+|---|---|
+| `setup(shop_name, stock, bag, gold, buy_mult, sell_mult, bag_full)` | Full initialization; resets mode to Buy. |
+| `refresh_stock(stock, bag_full)` | Called after a buy/sell mutates shop inventory. |
+| `refresh_bag(bag, bag_full)` | Called when player bag changes. |
+| `refresh_gold(gold)` | Called when player gold changes. |
+| `show_status(msg)` | Shows/clears status line. |
+
+**Critical compliance point:** `ShopPanel` holds **no** references to `Player`, `Inventory`, or `ShopEvent`. Only plain arrays, ints, floats, and strings cross the panel boundary — matches `SkillCheckPanel` precedent (see "The event never holds a player reference" above).
+
+### How game.gd wires it (in `start_event()`)
+
+```gdscript
+elif event is ShopEvent:
+    var se := event as ShopEvent
+    se.shop_requested.connect(_on_shop_requested)
+    se.stock_changed.connect(_on_shop_stock_changed)
+    player.inventory.bag_changed.connect(_on_shop_bag_changed)
+```
+
+`_on_shop_requested(name, stock, buy_mult, sell_mult)` builds a bag snapshot via `player.inventory.get_bag()`, reads `player.gold` and `player.inventory.is_bag_full()`, and calls `_gui.show_shop(name, stock, bag, gold, buy_mult, sell_mult, bag_full)`.
+
+Cleanup in `_on_event_complete()`:
+
+```gdscript
+elif current_event is ShopEvent:
+    var se := current_event as ShopEvent
+    se.shop_requested.disconnect(_on_shop_requested)
+    se.stock_changed.disconnect(_on_shop_stock_changed)
+    player.inventory.bag_changed.disconnect(_on_shop_bag_changed)
+```
+
+`_gui.shop_buy_requested`, `shop_sell_requested`, `shop_leave_requested` are connected to `game.gd` handlers in `_ready()` alongside the existing rest/dialogue hookups. The leave handler calls `_gui.hide_shop()` then `(current_event as ShopEvent).on_leave()`.
+
+### WorldMapNode integration
+
+```gdscript
+@export var shop_scene: PackedScene
+@export var shop_data: ShopData
+
+func _build_shop_config() -> Array[Dictionary]:
+    return [{ "scene": shop_scene, "data": { "shop": shop_data } }]
+```
+
+New case in `generate_event_configs()`:
+
+```gdscript
+if node_type == Enums.NodeType.SHOP:
+    return _build_shop_config()
+```
+
+### Signal Flow
+
+```
+game.start_event(shop_event)
+  → se.shop_requested.connect(_on_shop_requested)
+  → se.stock_changed.connect(_on_shop_stock_changed)
+  → player.inventory.bag_changed.connect(_on_shop_bag_changed)
+  → se.start()
+    → _on_setup(): copy stock, buy/sell multipliers, shop_name from ShopData
+    → _on_running(): emit shop_requested(name, stock, buy_mult, sell_mult)
+  → game._on_shop_requested(...)
+    → gui.show_shop(name, stock, player.inventory.get_bag(), player.gold,
+                    buy_mult, sell_mult, player.inventory.is_bag_full())
+
+  [player clicks a buy row]
+  → panel.buy_requested(item) → gui.shop_buy_requested → game._on_gui_shop_buy_requested(item)
+    → price = se.get_buy_price(item)
+    → validate: price <= player.gold AND not inventory.is_bag_full()
+       → on fail: gui.show_shop_status("..."); return
+       → on pass:
+           player.spend_gold(price)            → gold_changed → gui.refresh_shop_gold
+           se.on_buy(item)                     → stock_changed → gui.refresh_shop_stock
+           player.inventory.add_to_bag(item)   → bag_changed → gui.refresh_shop_bag
+
+  [player clicks a sell row]
+  → panel.sell_requested(item) → gui.shop_sell_requested → game._on_gui_shop_sell_requested(item)
+    → price = se.get_sell_price(item)
+    → player.add_gold(price)                   → gold_changed → gui.refresh_shop_gold
+    → se.on_sell(item)                         → stock_changed → gui.refresh_shop_stock
+    → player.inventory.remove_from_bag(item)   → bag_changed → gui.refresh_shop_bag
+
+  [player clicks Leave]
+  → panel.leave_requested → gui.shop_leave_requested → game._on_gui_shop_leave_requested()
+    → gui.hide_shop()
+    → se.on_leave() → _advance_phase() → RESOLUTION → COMPLETE → event_complete
+  → game._on_event_complete(): disconnect all three shop signals, _apply_rewards({}), _finish_event()
+```
+
+### Open Questions
+
+- **Stock persistence across revisits.** Stock is copied into `ShopEvent` at setup and freed with the event. Future persistence would live on `WorldMapNode` and be passed through `initialize(data)` — no event-API changes needed.
+- **`price == 0` semantics.** Treat as a data bug: error-log in `_on_setup` rather than offering a free item or a silent "not for sale" state. Revisit if "quest rewards only" items become a thing.
+- **Sold items re-entering stock.** Default: yes, `on_sell` appends to `_stock` so the player can buy back. Trivial to change if it causes unwanted UX.
+- **Do shops have rewards?** Not in initial design — `rewards` dict stays empty. Gold/items are trades, not rewards.
+
+---
+
 ## Signal Flow Summary
 
 **Enemy attacks player:**

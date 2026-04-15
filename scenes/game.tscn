@@ -15,9 +15,12 @@
 [ext_resource type="PackedScene" uid="uid://ciyvvtls2c4cd" path="res://scenes/health_bar.tscn" id="9_hbar"]
 [ext_resource type="Script" uid="uid://b1ry2py3hwthj" path="res://scripts/dialogue_panel.gd" id="12_kvuet"]
 [ext_resource type="Script" uid="uid://dqjg77kuidypf" path="res://scripts/skill_check_panel.gd" id="13_skcp"]
-[ext_resource type="Script" path="res://scripts/rest_panel.gd" id="14_rstp"]
+[ext_resource type="Script" uid="uid://bdit4rf6yc7t7" path="res://scripts/rest_panel.gd" id="14_rstp"]
 [ext_resource type="PackedScene" uid="uid://b0sqp1dfwigqy" path="res://scenes/world_map.tscn" id="16_ca42v"]
+[ext_resource type="Script" uid="uid://cwnh362po6p8" path="res://scripts/character_creation_panel.gd" id="19_264po"]
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
+[ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
+[ext_resource type="Resource" uid="uid://warrior_class001" path="res://resources/classes/warrior.tres" id="22_warrior"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -368,7 +371,7 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Continue"
 
-[node name="RestPanel" type="Control" parent="GUI"]
+[node name="RestPanel" type="Control" parent="GUI" unique_id=1569553159]
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -378,7 +381,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("14_rstp")
 
-[node name="Background" type="ColorRect" parent="GUI/RestPanel"]
+[node name="Background" type="ColorRect" parent="GUI/RestPanel" unique_id=254139058]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -387,7 +390,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.14767182, 0.14767179, 0.14767179, 0.6)
 
-[node name="PanelContainer" type="PanelContainer" parent="GUI/RestPanel"]
+[node name="PanelContainer" type="PanelContainer" parent="GUI/RestPanel" unique_id=754822467]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -401,26 +404,26 @@ offset_bottom = 160.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="GUI/RestPanel/PanelContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/RestPanel/PanelContainer" unique_id=1968797753]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="TitleLabel" type="Label" parent="GUI/RestPanel/PanelContainer/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="GUI/RestPanel/PanelContainer/VBoxContainer" unique_id=329013649]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Rest Site"
 
-[node name="DescriptionLabel" type="Label" parent="GUI/RestPanel/PanelContainer/VBoxContainer"]
+[node name="DescriptionLabel" type="Label" parent="GUI/RestPanel/PanelContainer/VBoxContainer" unique_id=199060726]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 autowrap_mode = 3
 
-[node name="RestButton" type="Button" parent="GUI/RestPanel/PanelContainer/VBoxContainer"]
+[node name="RestButton" type="Button" parent="GUI/RestPanel/PanelContainer/VBoxContainer" unique_id=1157493185]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Rest"
 
-[node name="ContinueButton" type="Button" parent="GUI/RestPanel/PanelContainer/VBoxContainer"]
+[node name="ContinueButton" type="Button" parent="GUI/RestPanel/PanelContainer/VBoxContainer" unique_id=629902946]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Continue"
@@ -536,6 +539,92 @@ offset_top = 270.0
 offset_right = 300.0
 offset_bottom = 320.0
 text = "Quit to Main Menu"
+
+[node name="CharacterCreationPanel" type="Control" parent="GUI" unique_id=1828471361]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 634.0
+offset_top = 136.0
+offset_right = 1254.0
+offset_bottom = 936.0
+script = ExtResource("19_264po")
+available_classes = [ExtResource("22_warrior")]
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/CharacterCreationPanel" unique_id=490170422]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer" unique_id=1126939891]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer" unique_id=1242791280]
+layout_mode = 2
+text = "Character:"
+
+[node name="NameInput" type="LineEdit" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer" unique_id=352539529]
+layout_mode = 2
+
+[node name="ClassList" type="ItemList" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer" unique_id=588947726]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 120)
+size_flags_vertical = 3
+
+[node name="ClassInfo" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer" unique_id=2017749077]
+layout_mode = 2
+
+[node name="ClassNameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer/ClassInfo" unique_id=1248458855]
+layout_mode = 2
+
+[node name="ClassDescLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer/ClassInfo" unique_id=1680978072]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="ClassStatsLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer/ClassInfo" unique_id=1341969074]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="ContinueButton" type="Button" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer" unique_id=1686094607]
+layout_mode = 2
+text = "Continue"
+
+[node name="LevelUpPanel" type="Control" parent="GUI" unique_id=1889606457]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 639.0
+offset_top = 136.0
+offset_right = 1259.0
+offset_bottom = 936.0
+script = ExtResource("21_lvlup")
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/LevelUpPanel" unique_id=1292820667]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/LevelUpPanel/PanelContainer" unique_id=434184280]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=2086038799]
+layout_mode = 2
+
+[node name="PointsLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=421197201]
+layout_mode = 2
+
+[node name="StatsContainer" type="VBoxContainer" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=1151611754]
+layout_mode = 2
+
+[node name="ConfirmButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=1679782761]
+layout_mode = 2
+text = "Confirm"
 
 [connection signal="pressed" from="GUI/PlayerHUD/InventoryButton" to="GUI" method="toggle_inventory"]
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]

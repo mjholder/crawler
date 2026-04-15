@@ -2,7 +2,8 @@ class_name GUI
 extends CanvasLayer
 
 # --- Signals ---
-signal start_requested
+signal character_created(player_name: String, class_data: PlayerClassData)
+signal level_up_complete
 signal start_dialogue_requested
 signal start_skill_check_requested
 signal quit_to_main_requested
@@ -14,6 +15,8 @@ signal rest_complete
 signal node_selected(node: WorldMapNode)
 
 # --- Node References ---
+@onready var _character_creation: CharacterCreationPanel = $CharacterCreationPanel
+@onready var _level_up_panel: LevelUpPanel = $LevelUpPanel
 @onready var _main_menu: Control = $MainMenu
 @onready var _pause_menu: Control = $PauseMenu
 @onready var _player_hud: Control = $PlayerHUD
@@ -59,6 +62,10 @@ func _ready() -> void:
 	_world_map.node_selected.connect(_on_world_map_node_selected)
 	_player_hud.hide()
 	_inventory_panel.hide()
+	_character_creation.hide()
+	_character_creation.character_confirmed.connect(_on_character_confirmed)
+	_level_up_panel.hide()
+	_level_up_panel.level_up_confirmed.connect(_on_level_up_confirmed)
 
 
 # --- Inventory ---
@@ -241,6 +248,36 @@ func _on_rest_complete() -> void:
 	rest_complete.emit()
 
 
+# --- Character Creation ---
+
+## Shows the character creation panel. Wired once the scene is built.
+func show_character_creation() -> void:
+	_main_menu.hide()
+	_character_creation.show()
+
+
+func _on_character_confirmed(p_name: String, class_data: PlayerClassData) -> void:
+	_character_creation.hide()
+	character_created.emit(p_name, class_data)
+
+
+# --- Level-Up Panel ---
+
+## Called by game.gd when the player has pending stat points to distribute.
+func show_level_up(player: Player) -> void:
+	_level_up_panel.setup(player)
+	_level_up_panel.show()
+
+
+func hide_level_up() -> void:
+	_level_up_panel.hide()
+
+
+func _on_level_up_confirmed() -> void:
+	hide_level_up()
+	level_up_complete.emit()
+
+
 func _on_quit_button_pressed() -> void:
 	get_tree().quit()
 
@@ -250,7 +287,7 @@ func _on_attack_button_pressed() -> void:
 
 
 func _on_start_button_pressed() -> void:
-	start_requested.emit()
+	show_character_creation()
 
 
 func _on_start_dialogue_button_pressed() -> void:
