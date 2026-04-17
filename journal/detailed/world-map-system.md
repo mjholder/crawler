@@ -1,7 +1,7 @@
 # World Map System Design
 
-**Date:** 2026-04-01
-**Status:** Pre-implementation design
+**Date:** 2026-04-01 (updated 2026-04-17)
+**Status:** Implemented — except `## Boss Nodes` (see banner in that section)
 
 ---
 
@@ -43,9 +43,11 @@ The World Map lives as a persistent panel in the GUI CanvasLayer — hidden duri
 Added to `enums.gd`:
 
 ```gdscript
-enum NodeType { DUNGEON, SHOP, REST }   # SHOP and REST are stubs for now
+enum NodeType { DUNGEON, SHOP, REST }
 enum NodeState { LOCKED, AVAILABLE, COMPLETED }
 ```
+
+> **Planned:** `BOSS` is listed in `## Boss Nodes` below but is **not yet in `scripts/enums.gd`**. It will be appended when the game-end system is implemented.
 
 ---
 
@@ -419,9 +421,55 @@ func _on_world_map_node_selected(node: WorldMapNode) -> void:
 
 ## Open Questions
 
-- **End node behaviour** — The end node is a stub. What triggers when the player selects it? A boss fight, credits, run summary? Design when the scope is clearer.
+- **End node behaviour** — _Resolved 2026-04-17 (design only; not yet implemented)._ End nodes will use `NodeType.BOSS` pointing at a `BossEvent` (see `## Boss Nodes` below and `event-scene-design.md § BossEvent`). Boss defeat triggers the victory flow in `game.gd._on_boss_defeated()`; the world map is not re-shown. No credits or run summary — the victory panel is the terminal UI. Until this lands, every dungeon terminates with a `miniboss_*` combat encounter and the map is re-shown on completion.
 - **Start node** — Currently auto-completed by unlocking `initial_nodes` directly. If the start node needs to be a scene with its own content (intro cutscene, tutorial), revisit the `_ready()` init logic.
 - **Dungeon modifiers** — `WorldMapNode` should eventually carry a modifier that applies a buff/debuff before events start. Reserve a field (`@export var modifier: Resource`) but leave it null for now.
 - **Pool weighting** — `_create_random_event()` picks uniformly across available types. If certain event types should appear more or less often, a weighted pool (e.g. `Array[Dictionary]` with a `weight: int` field) could replace the uniform draw.
 - **Empty pool guard** — ~~Resolved~~. If a type's `json_dir` yields no files, `_build_random_event_config()` falls back to the paired `debug_*_json_path` export and logs a `push_warning()`. Set debug paths to the existing example JSON files in the editor.
 - **Event ownership** — ~~Resolved~~. `generate_event_configs()` returns plain data — no nodes are instantiated. `game.gd` instantiates each event from the config dict in `_start_next_dungeon_event()`, adds it to `$EventContainer`, calls `initialize()`, then passes it to `start_event()`.
+
+---
+
+## Boss Nodes
+
+**Date:** 2026-04-17
+
+> **Status: Planned — not yet implemented.** See `journal/daily/2026-04-17.md` for the implementation punch list (`NodeType.BOSS` enum addition, `boss_scene` / `boss_data_json_path` exports, `_build_boss_config()`, dispatch in `generate_event_configs()`).
+
+**Miniboss vs boss — don't confuse them.** Every DUNGEON node currently ends in a **miniboss** combat encounter (`miniboss_scene` / `miniboss_json_path` exports in `WorldMapNode`, appended in `generate_event_configs()`). That's a normal `CombatEvent` that completes, awards rewards, and returns to the world map. A **boss** (planned) is run-terminating: a dedicated `BossEvent` subclass behind `NodeType.BOSS`, emitting `boss_defeated` instead of `event_complete`. The names are similar but the behaviours are distinct — keep them separate in both code and discussion.
+
+`NodeType.BOSS` is an explicit terminator. It generates exactly one `BossEvent` config — no random pool, no miniboss appendage. Defeating it triggers the victory flow; the world map is not re-shown.
+
+### Exports (in `world_map_node.gd`)
+
+Added alongside the existing SHOP and REST sections:
+
+```gdscript
+# --- Boss Config ---
+@export var boss_scene: PackedScene           # scenes/boss_event.tscn
+@export var boss_data_json_path: String       # resources/events/boss/<name>.json
+```
+
+Reuses the existing `texture_available` / `texture_locked` / `texture_completed` exports — the editor assigns boss-distinct art per BOSS node instance. Dungeon-only exports (`dungeon_depth`, `combat_json_dir`, `miniboss_scene`, etc.) stay at defaults on BOSS instances and are simply unused.
+
+### Builder
+
+```gdscript
+func _build_boss_config() -> Array[Dictionary]:
+    return [{ "scene": boss_scene, "data": _load_json(boss_data_json_path) }]
+```
+
+### Dispatch
+
+Added to `generate_event_configs()`:
+
+```gdscript
+if node_type == Enums.NodeType.BOSS:
+    return _build_boss_config()
+```
+
+### Run Termination
+
+A BOSS node is the last node in a run by design. Defeating the boss calls `game.gd._on_boss_defeated()`, which intercepts the completion flow and shows the victory panel directly — see `event-scene-design.md § BossEvent`. `_on_dungeon_complete()` is not called; `_active_world_node` is nulled in `_on_boss_defeated()`; no `on_dungeon_complete` propagation to the map.
+
+Multiple BOSS nodes on one map are allowed mechanically (e.g. alternate-path bosses), but any `boss_defeated` signal ends the run. If future design requires non-terminating boss nodes (a mid-run mini-boss with boss-tier drops), a separate event subclass should be used rather than overloading BOSS.

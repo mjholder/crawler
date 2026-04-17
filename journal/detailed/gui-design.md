@@ -1,8 +1,8 @@
 # GUI Implementation Design
 
 **Project:** Crawler
-**Date:** 2026-03-13 (updated 2026-04-04)
-**Scope:** Main Menu, Pause Menu, PlayerHUD (persistent), CombatHUD, WorldMap, DialoguePanel, SkillCheckPanel. Does not specify full menu contents — those will be detailed when the systems they surface (inventory, settings, etc.) are built.
+**Date:** 2026-03-13 (updated 2026-04-17)
+**Scope:** Main Menu, Pause Menu, PlayerHUD (persistent), CombatHUD, WorldMap, DialoguePanel, SkillCheckPanel, ShopPanel, and the planned GameOverPanel / VictoryPanel. Does not specify full menu contents — those will be detailed when the systems they surface (inventory, settings, etc.) are built. Shop UI structure is owned by `event-scene-design.md § ShopEvent`; only the `gui.gd` relay surface is documented here.
 
 ---
 
@@ -46,8 +46,14 @@ GUI  (CanvasLayer, layer 4)  [gui.gd]
 │
 ├── DialoguePanel  (DialoguePanel)         [dialogue_panel.gd] hidden by default; see dialogue-system.md
 │
-└── SkillCheckPanel  (SkillCheckPanel)     [skill_check_panel.gd] hidden by default
+├── SkillCheckPanel  (SkillCheckPanel)     [skill_check_panel.gd] hidden by default
+│
+├── GameOverPanel  (GameOverPanel)         [game_over_panel.gd] (planned) hidden by default; shown on player death
+│
+└── VictoryPanel  (VictoryPanel)           [victory_panel.gd] (planned) hidden by default; shown on boss defeat
 ```
+
+> **Planned:** `GameOverPanel` and `VictoryPanel` are part of the 2026-04-17 game-end design and are **not yet built** in `scenes/game.tscn` or `scripts/`. See `journal/daily/2026-04-17.md` for the implementation punch list.
 
 **Notes:**
 - `PlayerHUD` is a sibling of `CombatHUD`, not a child of it. It persists across world map, combat, dialogue, and skill check screens — only hidden on the main menu.
@@ -179,6 +185,50 @@ func show_dialogue(data: Dictionary, consequences: DialogueConsequences) -> void
 
 # Shows SkillCheckPanel configured for the given stat and difficulty label.
 func show_skill_check(stat_name: String, label: String, stat_value: float) -> void
+
+# --- Shop Panel ---
+
+# Initial panel setup — shop name, full stock, bag contents, current gold,
+# per-shop buy/sell multipliers, and whether the bag is full.
+func show_shop(
+    shop_name: String,
+    stock: Array[EquipmentData],
+    bag: Array[EquipmentData],
+    gold: int,
+    buy_mult: float,
+    sell_mult: float,
+    bag_full: bool
+) -> void
+
+# Hides ShopPanel.
+func hide_shop() -> void
+
+# Called when stock_changed fires on the active ShopEvent.
+func refresh_shop_stock(stock: Array[EquipmentData], bag_full: bool) -> void
+
+# Called when bag_changed fires on player.inventory while a shop is active.
+func refresh_shop_bag(bag: Array[EquipmentData], bag_full: bool) -> void
+
+# Called when player gold changes during a shop session.
+func refresh_shop_gold(gold: int) -> void
+
+# Shows a status line on the panel ("Not enough gold", "Bag full", ...).
+func show_shop_status(msg: String) -> void
+
+# --- Game End Panels (planned — not yet implemented) ---
+
+# Shows GameOverPanel; hides combat HUD, dialogue, skill check, rest, shop, level-up, world map.
+# PlayerHUD stays visible (0 HP is meaningful feedback).
+func show_game_over() -> void
+
+# Hides GameOverPanel. Called from return_to_main_menu().
+func hide_game_over() -> void
+
+# Shows VictoryPanel; hides combat/level-up/world map. PlayerHUD stays visible.
+func show_victory() -> void
+
+# Hides VictoryPanel. Called from return_to_main_menu().
+func hide_victory() -> void
 ```
 
 ---
@@ -199,6 +249,13 @@ All connections wired in `game.gd`. The GUI emits nothing — it receives calls 
 | `SkillCheckPanel` | `skill_check_complete(success)` | `game.gd: _on_gui_skill_check_complete()` | `gui.gd: _ready()` → relayed via `skill_check_complete` signal |
 | `gui/MainMenu/StartButton` | `pressed` | `game.gd` start logic | `game.gd: _ready()` |
 | `gui/PauseMenu/QuitToMainButton` | `pressed` | `game.gd: quit_to_main()` | `game.gd: _ready()` |
+| `ShopPanel` | `buy_requested(item)` | `gui.gd` re-emits `shop_buy_requested` → `game.gd: _on_gui_shop_buy_requested()` | `gui.gd: _ready()` |
+| `ShopPanel` | `sell_requested(item)` | `gui.gd` re-emits `shop_sell_requested` → `game.gd: _on_gui_shop_sell_requested()` | `gui.gd: _ready()` |
+| `ShopPanel` | `leave_requested` | `gui.gd` re-emits `shop_leave_requested` → `game.gd: _on_gui_shop_leave_requested()` | `gui.gd: _ready()` |
+| `GameOverPanel` *(planned)* | `main_menu_requested` | `gui.gd` re-emits `quit_to_main_requested` → `game.gd: quit_to_main()` | `gui.gd: _ready()` |
+| `VictoryPanel` *(planned)* | `main_menu_requested` | `gui.gd` re-emits `quit_to_main_requested` → `game.gd: quit_to_main()` | `gui.gd: _ready()` |
+| `BossEvent` *(planned)* | `boss_defeated` | `game.gd: _on_boss_defeated()` | `game.gd: start_event()` (one-shot, when `event is BossEvent`) |
+| `Player` | `died` | `game.gd: _on_player_died()` → *(planned)* `gui.show_game_over()` | `game.gd: set_player()` |
 
 **Not wired to GUI directly:**
 - `player.attack` — routed through `CombatEvent`, not a display concern
@@ -213,5 +270,88 @@ All connections wired in `game.gd`. The GUI emits nothing — it receives calls 
 - **Enemy health bar layout** — Stacked vertically in `EnemyHUD`? Positioned near each enemy sprite? Max enemy count affects this significantly.
 - **Enemy health bar identity** — Should bars show enemy names? If enemies can share a type (e.g. two skeletons), how are they distinguished?
 - **CombatLog persistence** — Clear on each new combat, or accumulate across the whole run?
-- **Game over / victory screens** — Out of scope here, but `gui.gd` will need `show_game_over()` and `show_victory()` methods eventually. Reserve space in the section enum.
+- **Game over / victory screens** — _Designed 2026-04-17, not yet built._ See `## GameOverPanel` and `## VictoryPanel` sections below. Both follow the `RestPanel` shape (Background ColorRect + centered PanelContainer) and emit a unified `main_menu_requested` intent that `gui.gd` re-emits as the existing `quit_to_main_requested`.
 - **PauseMenu contents** — Resume and quit are the minimum. Settings, controls reference, and save/load may be added later.
+
+---
+
+## GameOverPanel
+
+**Date:** 2026-04-17
+
+> **Status: Planned — not yet implemented.** See `journal/daily/2026-04-17.md` for the implementation punch list.
+
+Shown when the player dies during any event. Fullscreen overlay with a single action — return to main menu.
+
+### Node Tree
+
+```
+GameOverPanel           Control             scripts/game_over_panel.gd
+                                            visible=false; anchors_preset=15 (full rect)
+├── Background          ColorRect           full rect; color=(0.1, 0, 0, 0.7)
+└── PanelContainer      PanelContainer      anchors_preset=8 (center); -220,-120 / 220,120
+    └── VBoxContainer   VBoxContainer       separation=16
+        ├── TitleLabel          Label       "You Died"; font_size=48
+        ├── DescriptionLabel    Label       "Your crawl ends here."; font_size=20; autowrap_mode=3
+        └── MainMenuButton      Button      "Return to Main Menu"; font_size=20
+```
+
+### Signal Contract
+
+| Signal | Emitted when |
+|---|---|
+| `main_menu_requested` | `MainMenuButton.pressed` |
+
+### Script Pattern
+
+Mirrors `rest_panel.gd`: `@onready` button ref, `_ready()` wires `pressed` → internal handler → `main_menu_requested.emit()`. No other state — the panel is purely a one-shot exit prompt.
+
+### Integration
+
+`game.gd._on_player_died()` is the single entry point. It sets `state = GAME_OVER`, calls the shared `_teardown_current_event()` helper to clean up whatever event was active, then calls `gui.show_game_over()`.
+
+`gui.show_game_over()` hides combat HUD, dialogue, skill check, rest, shop, level-up panel, and the world map. PlayerHUD stays visible so the player can see 0 HP. The panel's `main_menu_requested` signal feeds `gui.quit_to_main_requested`, which is already connected to `game.quit_to_main()`.
+
+---
+
+## VictoryPanel
+
+**Date:** 2026-04-17
+
+> **Status: Planned — not yet implemented.** See `journal/daily/2026-04-17.md` for the implementation punch list.
+
+Shown when a `BossEvent` is defeated. Same shape as GameOverPanel but with positive framing.
+
+### Node Tree
+
+```
+VictoryPanel            Control             scripts/victory_panel.gd
+                                            visible=false; anchors_preset=15
+├── Background          ColorRect           full rect; color=(0.05, 0.05, 0.15, 0.7)
+└── PanelContainer      PanelContainer      anchors_preset=8; -240,-140 / 240,140
+    └── VBoxContainer   VBoxContainer       separation=16
+        ├── TitleLabel          Label       "Victory"; font_size=48
+        ├── DescriptionLabel    Label       "The depths are quiet. For now."; font_size=20; autowrap_mode=3
+        └── MainMenuButton      Button      "Return to Main Menu"; font_size=20
+```
+
+### Signal Contract
+
+| Signal | Emitted when |
+|---|---|
+| `main_menu_requested` | `MainMenuButton.pressed` |
+
+### Integration
+
+`game.gd._on_boss_defeated()` is the entry point. It sets `state = VICTORY`, applies rewards off `current_event` first (rewards must be read before teardown), calls `_teardown_current_event()`, nulls out dungeon-progress state, then:
+
+- If `player.pending_stat_points > 0`, calls `gui.show_level_up(player)` first — the player should allocate earned points before the run ends.
+- Otherwise calls `gui.show_victory()` directly.
+
+When level-up is shown first, `_on_level_up_complete()` checks `state == VICTORY` and routes to `gui.show_victory()` instead of the normal `_finish_event()` path.
+
+The panel's `main_menu_requested` signal feeds the same `quit_to_main_requested` relay as GameOverPanel. Both panels deliberately use one unified intent — one destination, `game.quit_to_main()`.
+
+### Relationship to `_on_dungeon_complete`
+
+The victory flow deliberately does not call `_on_dungeon_complete()` or `gui.world_map_on_dungeon_complete()`. The world map is not re-shown after the run ends. `_active_world_node` is nulled directly in `_on_boss_defeated()`. If a future mode allows continuing after victory (new game plus, etc.), that path will need to call `world_map_on_dungeon_complete` explicitly before transitioning to VICTORY.

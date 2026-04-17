@@ -1,7 +1,7 @@
 # Skeleton Enemy — Scene Design
 
-**Date:** 2026-03-01
-**Status:** Designed, not yet implemented
+**Date:** 2026-03-01 (updated 2026-04-17)
+**Status:** Implemented
 
 This document covers the node tree design, rationale, and sprite/audio behaviour for the Skeleton enemy scene. It is more detailed than a `design.md` entry — the kind of reasoning you want to re-read before touching the scene months from now.
 

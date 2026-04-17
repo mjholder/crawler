@@ -1,7 +1,7 @@
 # Dialogue System Design
 
-**Date:** 2026-03-24
-**Status:** Pre-implementation design
+**Date:** 2026-03-24 (updated 2026-04-17)
+**Status:** Implemented
 
 ---
 

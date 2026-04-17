@@ -1,13 +1,13 @@
 # Event Scene Design
 
-**Date:** 2026-03-05
-**Status:** Pre-implementation design
+**Date:** 2026-03-05 (updated 2026-04-17)
+**Status:** Implemented — except `## BossEvent` (see banner in that section)
 
 ---
 
 ## Overview
 
-Captures the intended node tree and signal contract for the base `Event` scene and `CombatEvent` scene before implementation begins. Neither has a `.tscn` file yet — both exist only as scripts. This document is the source of truth for the scene structure.
+Captures the node tree and signal contract for every event subclass: base `Event`, `CombatEvent`, `DialogueEvent`, `SkillCheckEvent`, `RestEvent`, `ShopEvent`, and the planned `BossEvent`. All except `BossEvent` are built and in use. This document is the source of truth for scene structure and signal flow across event types.
 
 ---
 
@@ -563,6 +563,96 @@ game.start_event(shop_event)
 
 ---
 
+## BossEvent
+
+**Date:** 2026-04-17
+
+> **Status: Planned — not yet implemented.** See `journal/daily/2026-04-17.md` for the implementation punch list (`scripts/boss_event.gd`, `scenes/boss_event.tscn`, `resources/events/boss/debug_boss.json`, game.gd wiring).
+
+### Node Tree
+
+```
+BossEvent           Node2D (inherits combat_event.tscn)     scripts/boss_event.gd
+└── Enemies         Node (inherited)
+```
+
+Scene-inherits from `combat_event.tscn`. No new children. All enemy spawning, turn loops, dialogue-trigger handling, and per-enemy connections are reused from `CombatEvent` unchanged.
+
+### Signal Contract
+
+Adds one signal on top of CombatEvent's existing contract:
+
+| Signal | Emitted when |
+|---|---|
+| `boss_defeated` | All enemies dead — BossEvent's override of `_advance_phase()` intercepts the RUNNING → RESOLUTION transition, emits this signal, and stops. **`event_complete` is intentionally not emitted on victory.** |
+
+BossEvent still inherits and emits `enemy_added`, `player_attacked`, `player_attack_resolved`, `enemy_turns_complete`, and `dialogue_trigger_fired` — these wire automatically through the `event is CombatEvent` branch in `start_event()`. No per-signal wiring changes are needed for inherited signals.
+
+### Methods game.gd calls on BossEvent
+
+Identical to CombatEvent: `initialize`, `add_enemy`, `receive_player_attack`, `run_enemy_turns`. No new method surface.
+
+### Phase Flow
+
+`start()` runs `_on_setup()` and `_on_running()` inherited from CombatEvent. The event stays in RUNNING throughout the fight. When `_on_enemy_died()` detects all enemies dead, it calls `_advance_phase()`. BossEvent's override:
+
+```gdscript
+signal boss_defeated
+
+func _advance_phase() -> void:
+    match phase:
+        Phase.RUNNING:
+            boss_defeated.emit()
+        _:
+            super._advance_phase()
+```
+
+The event stays in RUNNING. No RESOLUTION, no COMPLETE, no `event_complete`. game.gd is responsible for reading `rewards` off the event, tearing it down, and driving the victory UI — because the boss terminates the run, the normal reward-→-next-event pipeline does not apply.
+
+### How game.gd wires it (in `start_event()`)
+
+`BossEvent is CombatEvent` evaluates to true via inheritance, so the existing CombatEvent branch runs unchanged. Add one additional connection after it:
+
+```gdscript
+if event is BossEvent:
+    (event as BossEvent).boss_defeated.connect(_on_boss_defeated, CONNECT_ONE_SHOT)
+```
+
+No cleanup branch is needed in `_on_event_complete()` — BossEvent never reaches COMPLETE on victory. CONNECT_ONE_SHOT handles disconnection automatically.
+
+Player death during a boss fight follows the same path as any other combat death: `player.died` → `_on_player_died` → `_teardown_current_event()` frees the BossEvent using the existing CombatEvent disconnect chain. Inheriting from CombatEvent means no extra teardown code is needed.
+
+### Signal Flow
+
+```
+[player attacks the final living boss enemy]
+  → current_event.receive_player_attack(enemy, damage)
+  → enemy.take_damage → enemy._die → died.emit()
+  → BossEvent._on_enemy_died() (inherited)
+    → all dead → _advance_phase()
+  → override: boss_defeated.emit()   [phase stays RUNNING]
+
+  → game._on_boss_defeated()
+    → state = VICTORY
+    → _apply_rewards(current_event.rewards)     # must run BEFORE teardown
+    → _teardown_current_event()                 # reuse shared helper
+    → null out _active_world_node / _pending_event_configs / _event_index
+    → if player.pending_stat_points > 0: gui.show_level_up(player); return
+    → gui.show_victory()
+```
+
+If level-up is shown first, `_on_level_up_complete()` branches on `state == VICTORY` to call `gui.show_victory()` instead of `_finish_event()`.
+
+### Boss JSON
+
+Mirrors the existing combat JSON shape — `{"enemies": [...], "rewards": {...}, "dialogue_triggers": {...}}`. Lives under `resources/events/boss/`. `CombatEvent.initialize()` and `_on_setup()` consume it unchanged.
+
+### Why intercept at the event layer, not at `_finish_event`
+
+Routing victory through `event_complete` → `_on_event_complete` → `_finish_event` would eventually call `_start_next_dungeon_event` on an empty queue → `_on_dungeon_complete` → `gui.world_map_on_dungeon_complete(_active_world_node)`, which marks the boss node COMPLETED and re-shows the world map. Wrong semantics for a run-ender. A dedicated `boss_defeated` signal with a matching handler keeps victory logic in one place and skips the dungeon-completion plumbing entirely.
+
+---
+
 ## Signal Flow Summary
 
 **Enemy attacks player:**
@@ -573,3 +663,9 @@ game.gd calls `receive_player_attack(target_enemy, damage)` → `target_enemy.ta
 
 **Combat ends:**
 `enemy.died` → `_on_enemy_died()` → all dead check → `_advance_phase()` → `event_complete` → game.gd
+
+**Boss defeated (planned):**
+`enemy.died` → `_on_enemy_died()` (inherited) → all dead check → `_advance_phase()` (overridden) → `boss_defeated` → game.gd `_on_boss_defeated` → VICTORY state + rewards + teardown + (optional level-up) → `gui.show_victory()`. `event_complete` is never emitted.
+
+**Player dies (planned full flow — today `GAME_OVER` is set but no UI responds):**
+`player.died` → game.gd `_on_player_died` → GAME_OVER state → `_teardown_current_event()` (shared helper) → `gui.show_game_over()`. Until the 2026-04-17 game-end work ships, `_on_player_died()` only sets the state; no teardown helper exists and the GUI does not show anything.

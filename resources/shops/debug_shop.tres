@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ShopData" format=3 uid="uid://dy5y2nanwc8sm"]
+
+[ext_resource type="Script" uid="uid://c01n2mwluug4a" path="res://scripts/shop_data.gd" id="1_l32en"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="2_nmile"]
+[ext_resource type="Resource" path="res://resources/equipment/rings/iron_ring.tres" id="3_4lbli"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather_boots.tres" id="4_vy8ti"]
+[ext_resource type="Resource" uid="uid://db1bvel3krb2" path="res://resources/equipment/armor/leather_chest.tres" id="5_4snpc"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather_gloves.tres" id="6_ddvdl"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather_helm.tres" id="7_0w417"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather_pants.tres" id="8_2gx12"]
+[ext_resource type="Resource" uid="uid://b2df62wmsyqmd" path="res://resources/equipment/weapons/battle_axe.tres" id="9_8xg62"]
+
+[resource]
+script = ExtResource("1_l32en")
+shop_name = "Pete's Wares"
+stock = Array[ExtResource("2_nmile")]([ExtResource("3_4lbli"), ExtResource("4_vy8ti"), ExtResource("5_4snpc"), ExtResource("6_ddvdl"), ExtResource("7_0w417"), ExtResource("8_2gx12"), ExtResource("9_8xg62")])

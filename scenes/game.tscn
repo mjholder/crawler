@@ -18,9 +18,11 @@
 [ext_resource type="Script" uid="uid://bdit4rf6yc7t7" path="res://scripts/rest_panel.gd" id="14_rstp"]
 [ext_resource type="PackedScene" uid="uid://b0sqp1dfwigqy" path="res://scenes/world_map.tscn" id="16_ca42v"]
 [ext_resource type="Script" uid="uid://cwnh362po6p8" path="res://scripts/character_creation_panel.gd" id="19_264po"]
+[ext_resource type="Script" path="res://scripts/player_class_data.gd" id="20_bt5mj"]
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
-[ext_resource type="Resource" uid="uid://warrior_class001" path="res://resources/classes/warrior.tres" id="22_warrior"]
+[ext_resource type="Resource" path="res://resources/classes/warrior.tres" id="22_warrior"]
+[ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -549,7 +551,7 @@ offset_top = 136.0
 offset_right = 1254.0
 offset_bottom = 936.0
 script = ExtResource("19_264po")
-available_classes = [ExtResource("22_warrior")]
+available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior")])
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/CharacterCreationPanel" unique_id=490170422]
 layout_mode = 1
@@ -570,8 +572,8 @@ text = "Character:"
 layout_mode = 2
 
 [node name="ClassList" type="ItemList" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer" unique_id=588947726]
-layout_mode = 2
 custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
 size_flags_vertical = 3
 
 [node name="ClassInfo" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/VBoxContainer" unique_id=2017749077]
@@ -625,6 +627,93 @@ layout_mode = 2
 [node name="ConfirmButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=1679782761]
 layout_mode = 2
 text = "Confirm"
+
+[node name="ShopPanel" type="Control" parent="GUI" unique_id=401685104]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 655.0
+offset_top = 170.0
+offset_right = 1275.0
+offset_bottom = 970.0
+script = ExtResource("23_e1j6l")
+
+[node name="Background" type="ColorRect" parent="GUI/ShopPanel" unique_id=1436720945]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.39215687)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GUI/ShopPanel" unique_id=896757521]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/ShopPanel/HBoxContainer" unique_id=793999606]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer" unique_id=2141776869]
+layout_mode = 2
+
+[node name="ShopNameLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=24708768]
+layout_mode = 2
+text = "Old Pete's Wares"
+
+[node name="GoldLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1852634516]
+layout_mode = 2
+text = "Gold: 120"
+
+[node name="ModeButtons" type="HBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=436701028]
+layout_mode = 2
+
+[node name="BuyTabButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer/ModeButtons" unique_id=411976625]
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "BUY"
+
+[node name="SellTabButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer/ModeButtons" unique_id=16609802]
+layout_mode = 2
+toggle_mode = true
+text = "SELL"
+
+[node name="ItemList" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1614516119]
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=872961338]
+visible = false
+layout_mode = 2
+
+[node name="LeaveButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1980216277]
+layout_mode = 2
+text = "LEAVE"
+
+[node name="DetailPanel" type="PanelContainer" parent="GUI/ShopPanel/HBoxContainer" unique_id=1604226815]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/DetailPanel" unique_id=1671773795]
+layout_mode = 2
+
+[node name="DetailNameLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=927477380]
+layout_mode = 2
+
+[node name="DetailPriceLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1143221156]
+layout_mode = 2
+
+[node name="DetailStatsLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=179962363]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="DetailDescLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1248119488]
+layout_mode = 2
+autowrap_mode = 2
 
 [connection signal="pressed" from="GUI/PlayerHUD/InventoryButton" to="GUI" method="toggle_inventory"]
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]

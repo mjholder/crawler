@@ -1,0 +1,58 @@
+class_name ShopEvent
+extends Event
+
+# --- Signals ---
+
+signal shop_requested(shop_name: String, stock: Array[EquipmentData], buy_mult: float, sell_mult: float)
+signal stock_changed(stock: Array[EquipmentData])
+
+# --- State ---
+
+var _shop_name: String = ""
+var _stock: Array[EquipmentData] = []
+var _buy_mult: float = 1.0
+var _sell_mult: float = 0.5
+
+
+# --- Event API ---
+
+func initialize(data: Dictionary) -> void:
+	var shop: ShopData = data.get("shop")
+	if shop == null:
+		return
+	_shop_name = shop.shop_name
+	_stock = shop.stock.duplicate()
+	_buy_mult = shop.buy_price_multiplier
+	_sell_mult = shop.sell_price_multiplier
+
+
+func on_buy(item: EquipmentData) -> void:
+	_stock.erase(item)
+	stock_changed.emit(_stock)
+
+
+func on_sell(item: EquipmentData) -> void:
+	_stock.append(item)
+	stock_changed.emit(_stock)
+
+
+func on_leave() -> void:
+	_advance_phase()
+
+
+func get_buy_price(item: EquipmentData) -> int:
+	return roundi(item.price * _buy_mult)
+
+
+func get_sell_price(item: EquipmentData) -> int:
+	return roundi(item.price * _sell_mult)
+
+
+# --- Extension Hooks ---
+
+func _on_setup() -> void:
+	pass
+
+
+func _on_running() -> void:
+	shop_requested.emit(_shop_name, _stock, _buy_mult, _sell_mult)

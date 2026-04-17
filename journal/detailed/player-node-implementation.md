@@ -27,7 +27,7 @@ The following diverged from this design during implementation:
 - **`Sprite` and `AnimationPlayer` were removed from the Player scene.** All visual output (attack animation, idle sprite) is owned by the equipped `Weapon` node. The Player has no sprite of its own.
 - **State machine simplified to `{ IDLE, DEAD }`.** `ATTACKING` and `HIT` were removed — with no sprite, there is nothing to animate from the Player's side. `_transition()` only sets `_state`.
 - **Turn gating uses `_attack_animation_pending` flag** instead of an `ATTACKING` state. The flag is set in `_do_attack()` when a weapon is equipped, and cleared by `_on_weapon_animation_finished()` when `Weapon.animation_finished` fires.
-- **`equip_weapon(frames: SpriteFrames)` was replaced by `equip(slot: Enums.Slot, item: Equipment)`.** The new method handles child node management, signal wiring, and audio in one place.
+- **`equip_weapon(frames: SpriteFrames)` was replaced first by a Player-owned `equip()`, and later by the `Inventory` node.** Storage, equip/unequip, and ring slots now live on `Inventory` under the Player — see `inventory-system.md`. The Player reacts to `Inventory.slot_changed` / `ring_changed` to instantiate and free `Equipment` child nodes in `_setup_equipment()` / `_teardown_equipment()`.
 - **Signal is named `attack`, not `attacked`.**
 
 The sections below retain their original design rationale where still relevant, with corrections inline.
@@ -202,7 +202,7 @@ func _do_attack() -> void:
 
 var _hurt_overlay: ColorRect = null      # set via set_hurt_overlay() from game.gd
 var _attack_animation_pending: bool = false
-var _equipped: Dictionary = {}           # Enums.Slot → Equipment
+# Equipment storage lives on the Inventory node — see inventory-system.md.
 ```
 
 `_hurt_overlay` is not wired in `_ready()` — `game.gd` passes a reference via `set_hurt_overlay($HurtOverlay/HurtRect)` after the player is in the tree. This avoids world-space positioning issues from a `ColorRect` child of the Player node.
@@ -216,7 +216,7 @@ func _ready() -> void:
     _transition(State.IDLE)
 ```
 
-`_on_weapon_animation_finished` is connected dynamically inside `equip()` when a weapon is equipped, not in `_ready()`.
+`_on_weapon_animation_finished` is connected dynamically inside `_setup_equipment()` when a `WEAPON`-slot node is created (and disconnected in `_teardown_equipment()`), not in `_ready()`.
 
 ---
 
@@ -240,7 +240,7 @@ attack_damage  = 10.0
 
 ## Future Considerations
 
-- **Multiple equipment slots:** `equip(slot: Enums.Slot, item: Equipment)` already handles multiple slots — adding a new slot means adding an entry to `Enums.Slot` and optionally handling its signal wiring in `equip()`. No structural changes to the Player node tree are needed since each equipped item manages its own visuals as a child node.
+- **Multiple equipment slots:** `Inventory.equip()` already handles all six named slots plus rings — adding a new slot means adding an entry to `Enums.Slot` and optionally extending signal wiring in `player._setup_equipment()`. No structural changes to the Player node tree are needed since each equipped item manages its own visuals as a child node.
 - **Action-to-animation coupling:** Today each action callable directly calls `_transition()`. If many actions share animation logic, a mapping (`Dictionary[String, State]`) could centralise this — but not worth adding until there are three or more actions.
 - **Visual effects:** Tween `_sprite.scale` for a punch on attack, tween `_sprite.modulate` for a flash on hurt. All done with `create_tween()` in the relevant handler, no structural changes needed.
 - **Adding SFX:** Assign an `AudioStream` to any player node in the inspector. No code changes needed.

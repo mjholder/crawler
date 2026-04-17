@@ -37,3 +37,4 @@ stat_modifiers = {
 0: 10.0
 }
 scene = ExtResource("5_weapon")
+price = 80

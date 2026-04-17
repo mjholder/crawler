@@ -40,8 +40,12 @@ Game                Node2D              scripts/game.gd
     │   ├── ActionMenu  Control         player action buttons
     │   └── CombatLog   RichTextLabel   scrolling history of combat events
     ├── DialoguePanel   DialoguePanel   shown during dialogue sequences
-    └── SkillCheckPanel SkillCheckPanel shown during skill checks
+    ├── SkillCheckPanel SkillCheckPanel shown during skill checks
+    ├── GameOverPanel   GameOverPanel   (planned) shown on player death; single "Return to Main Menu" button
+    └── VictoryPanel    VictoryPanel    (planned) shown on boss defeat; single "Return to Main Menu" button
 ```
+
+> **Planned:** `GameOverPanel` and `VictoryPanel` are part of the 2026-04-17 game-end design and are **not yet built**. See `journal/daily/2026-04-17.md` for the implementation punch list and `gui-design.md § GameOverPanel / VictoryPanel` for the node-tree spec.
 
 ---
 
@@ -192,6 +196,8 @@ UI never references `game.gd`. `game.gd` passes signal connections to UI only wh
 | `node_selected` | GUI (relayed from WorldMap) | `_ready()` |
 | `dialogue_complete` | GUI (relayed from DialoguePanel) | `_ready()` |
 | `skill_check_complete` | GUI (relayed from SkillCheckPanel) | `_ready()` |
+| `boss_defeated` *(planned)* | BossEvent | `start_event()` — BossEvent only, CONNECT_ONE_SHOT |
+| `quit_to_main_requested` *(partial — end-panel sources are planned)* | GUI (relayed from GameOverPanel / VictoryPanel `main_menu_requested`; also from PauseMenu today) | `_ready()` |
 
 ### Signals GUI connects to (via game.gd)
 

@@ -10,3 +10,4 @@ extends Resource
 @export var scene: PackedScene  # Equipment or Weapon scene to instantiate
 @export var slot: Enums.Slot = Enums.Slot.WEAPON
 @export var is_ring: bool = false
+@export var price: int = 0

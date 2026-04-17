@@ -43,6 +43,11 @@ var state: Enums.NodeState = Enums.NodeState.LOCKED
 
 @export var rest_scene: PackedScene
 
+# --- Shop Config ---
+
+@export var shop_scene: PackedScene
+@export var shop_data: ShopData
+
 
 # --- State Management ---
 
@@ -71,6 +76,8 @@ func _on_node_button_pressed() -> void:
 func generate_event_configs() -> Array[Dictionary]:
 	if node_type == Enums.NodeType.REST:
 		return _build_rest_config()
+	if node_type == Enums.NodeType.SHOP:
+		return _build_shop_config()
 
 	var configs: Array[Dictionary] = []
 
@@ -83,6 +90,10 @@ func generate_event_configs() -> Array[Dictionary]:
 		configs.append({ "scene": miniboss_scene, "data": boss_data })
 
 	return configs
+
+
+func _build_shop_config() -> Array[Dictionary]:
+	return [{ "scene": shop_scene, "data": { "shop": shop_data } }]
 
 
 func _build_rest_config() -> Array[Dictionary]:

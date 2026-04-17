@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://test_chest001"]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://db1bvel3krb2"]
 
 [ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_chest"]
 
@@ -10,3 +10,4 @@ stat_modifiers = {
 1: 10.0
 }
 slot = 4
+price = 60

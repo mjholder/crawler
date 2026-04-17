@@ -1,7 +1,7 @@
 # Player Classes & Leveling — Design
 
-**Date:** 2026-04-11
-**Status:** Pre-implementation
+**Date:** 2026-04-11 (updated 2026-04-17)
+**Status:** Implemented
 
 This document covers the player class system (selection, starting configuration) and the leveling system (XP curve, stat growth, level-up UI). Together these replace the hardcoded starting stats and equipment in `game.gd` with a data-driven class resource and add character progression.
 

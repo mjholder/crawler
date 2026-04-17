@@ -133,6 +133,14 @@ func add_gold(amount: int) -> void:
 	gold_changed.emit(gold)
 
 
+func spend_gold(amount: int) -> bool:
+	if gold < amount:
+		return false
+	gold -= amount
+	gold_changed.emit(gold)
+	return true
+
+
 func add_experience(amount: int) -> void:
 	experience += amount
 	while experience >= xp_to_next_level():

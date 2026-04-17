@@ -1,7 +1,7 @@
 # Inventory System — Design
 
-**Date:** 2026-04-04
-**Status:** Pre-implementation
+**Date:** 2026-04-04 (updated 2026-04-17)
+**Status:** Implemented
 
 This document covers the architecture of the inventory system: the `Inventory` node that acts as the single API for all item management, the expanded slot model, how storage is represented, and the changes required to `Player` and `EquipmentData`.
 

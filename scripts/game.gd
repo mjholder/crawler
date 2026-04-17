@@ -69,6 +69,9 @@ func _ready() -> void:
 	_gui.rest_requested.connect(_on_gui_rest_requested)
 	_gui.rest_complete.connect(_on_gui_rest_complete)
 	_gui.node_selected.connect(_on_world_node_selected)
+	_gui.shop_buy_requested.connect(_on_gui_shop_buy_requested)
+	_gui.shop_sell_requested.connect(_on_gui_shop_sell_requested)
+	_gui.shop_leave_requested.connect(_on_gui_shop_leave_requested)
 	_gui.show_main_menu()
 
 
@@ -143,6 +146,8 @@ func _on_player_healed(_amount: float) -> void:
 
 func _on_player_gold_changed(new_total: int) -> void:
 	_gui.update_player_gold(new_total)
+	if current_event is ShopEvent:
+		_gui.refresh_shop_gold(new_total)
 
 
 func _on_player_experience_changed(new_total: int) -> void:
@@ -182,6 +187,11 @@ func start_event(event: Event) -> void:
 	elif event is RestEvent:
 		var re := event as RestEvent
 		re.rest_requested.connect(_on_rest_requested)
+	elif event is ShopEvent:
+		var se := event as ShopEvent
+		se.shop_requested.connect(_on_shop_requested)
+		se.stock_changed.connect(_on_shop_stock_changed)
+		player.get_node("Inventory").bag_changed.connect(_on_shop_bag_changed)
 	current_event.start()
 	if event is CombatEvent and state != Enums.TurnState.DIALOGUE:
 		_start_player_turn()
@@ -210,6 +220,11 @@ func _on_event_complete() -> void:
 	elif current_event is RestEvent:
 		var re := current_event as RestEvent
 		re.rest_requested.disconnect(_on_rest_requested)
+	elif current_event is ShopEvent:
+		var se := current_event as ShopEvent
+		se.shop_requested.disconnect(_on_shop_requested)
+		se.stock_changed.disconnect(_on_shop_stock_changed)
+		player.get_node("Inventory").bag_changed.disconnect(_on_shop_bag_changed)
 	_apply_rewards(current_event.rewards)
 	if player.pending_stat_points > 0:
 		_gui.show_level_up(player)
@@ -302,6 +317,58 @@ func _on_gui_rest_requested() -> void:
 func _on_gui_rest_complete() -> void:
 	_gui.hide_rest_panel()
 	(current_event as RestEvent).on_rest_complete()
+
+
+# --- Shop ---
+
+func _on_shop_requested(shop_name: String, stock: Array[EquipmentData], buy_mult: float, sell_mult: float) -> void:
+	var inventory: Inventory = player.get_node("Inventory")
+	_gui.show_shop(shop_name, stock, inventory.get_bag(), player.gold, buy_mult, sell_mult, inventory.is_bag_full())
+
+
+func _on_shop_stock_changed(stock: Array[EquipmentData]) -> void:
+	var inventory: Inventory = player.get_node("Inventory")
+	_gui.refresh_shop_stock(stock, inventory.is_bag_full())
+
+
+func _on_shop_bag_changed() -> void:
+	var inventory: Inventory = player.get_node("Inventory")
+	_gui.refresh_shop_bag(inventory.get_bag(), inventory.is_bag_full())
+
+
+func _on_gui_shop_buy_requested(item: EquipmentData) -> void:
+	if not current_event is ShopEvent:
+		return
+	var se := current_event as ShopEvent
+	var inventory: Inventory = player.get_node("Inventory")
+	var price := se.get_buy_price(item)
+	if player.gold < price:
+		_gui.show_shop_status("Not enough gold")
+		return
+	if inventory.is_bag_full():
+		_gui.show_shop_status("Bag full")
+		return
+	_gui.show_shop_status("")
+	player.spend_gold(price)
+	se.on_buy(item)
+	inventory.add_to_bag(item)
+
+
+func _on_gui_shop_sell_requested(item: EquipmentData) -> void:
+	if not current_event is ShopEvent:
+		return
+	var se := current_event as ShopEvent
+	var inventory: Inventory = player.get_node("Inventory")
+	var price := se.get_sell_price(item)
+	player.add_gold(price)
+	se.on_sell(item)
+	inventory.remove_from_bag(item)
+
+
+func _on_gui_shop_leave_requested() -> void:
+	_gui.hide_shop()
+	if current_event is ShopEvent:
+		(current_event as ShopEvent).on_leave()
 
 
 func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:

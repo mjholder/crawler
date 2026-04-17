@@ -13,6 +13,9 @@ signal skill_check_complete(success: bool)
 signal rest_requested
 signal rest_complete
 signal node_selected(node: WorldMapNode)
+signal shop_buy_requested(item: EquipmentData)
+signal shop_sell_requested(item: EquipmentData)
+signal shop_leave_requested
 
 # --- Node References ---
 @onready var _character_creation: CharacterCreationPanel = $CharacterCreationPanel
@@ -34,6 +37,7 @@ signal node_selected(node: WorldMapNode)
 @onready var _world_map: WorldMap = $WorldMap
 @onready var _inventory_panel: InventoryPanel = $InventoryPanel
 @onready var _stats_label: Label = $InventoryPanel/HBoxContainer/StatsContainer/Label
+@onready var _shop_panel: ShopPanel = $ShopPanel
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -66,6 +70,10 @@ func _ready() -> void:
 	_character_creation.character_confirmed.connect(_on_character_confirmed)
 	_level_up_panel.hide()
 	_level_up_panel.level_up_confirmed.connect(_on_level_up_confirmed)
+	_shop_panel.hide()
+	_shop_panel.buy_requested.connect(func(item: EquipmentData) -> void: shop_buy_requested.emit(item))
+	_shop_panel.sell_requested.connect(func(item: EquipmentData) -> void: shop_sell_requested.emit(item))
+	_shop_panel.leave_requested.connect(func() -> void: shop_leave_requested.emit())
 
 
 # --- Inventory ---
@@ -109,6 +117,7 @@ func return_to_main_menu() -> void:
 	_dialogue_panel.hide()
 	_skill_check_panel.hide()
 	_rest_panel.hide()
+	_shop_panel.hide()
 	_inventory_panel.hide()
 	_player_hud.hide()
 	_main_menu.show()
@@ -276,6 +285,41 @@ func hide_level_up() -> void:
 func _on_level_up_confirmed() -> void:
 	hide_level_up()
 	level_up_complete.emit()
+
+
+# --- Shop Panel ---
+
+func show_shop(
+	shop_name: String,
+	stock: Array[EquipmentData],
+	bag: Array[EquipmentData],
+	gold: int,
+	buy_mult: float,
+	sell_mult: float,
+	bag_full: bool
+) -> void:
+	_shop_panel.setup(shop_name, stock, bag, gold, buy_mult, sell_mult, bag_full)
+	_shop_panel.show()
+
+
+func hide_shop() -> void:
+	_shop_panel.hide()
+
+
+func refresh_shop_stock(stock: Array[EquipmentData], bag_full: bool) -> void:
+	_shop_panel.refresh_stock(stock, bag_full)
+
+
+func refresh_shop_bag(bag: Array[EquipmentData], bag_full: bool) -> void:
+	_shop_panel.refresh_bag(bag, bag_full)
+
+
+func refresh_shop_gold(gold: int) -> void:
+	_shop_panel.refresh_gold(gold)
+
+
+func show_shop_status(msg: String) -> void:
+	_shop_panel.show_status(msg)
 
 
 func _on_quit_button_pressed() -> void:

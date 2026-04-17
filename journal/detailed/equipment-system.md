@@ -1,9 +1,11 @@
 # Equipment System — Design
 
-**Date:** 2026-03-21
+**Date:** 2026-03-21 (updated 2026-04-17)
 **Status:** Implemented
 
-This document covers the architecture of the equipment system: the shared `Enums` class, the `EquipmentData` resource hierarchy, the `Equipment` base node and its `Weapon` subclass, and how the Player integrates equipped items into stat calculations and visual feedback.
+This document covers the architecture of the equipment system: the shared `Enums` class, the `EquipmentData` resource hierarchy, and the `Equipment` base node and its `Weapon` subclass.
+
+Storage (named slots, rings, bag), equip/unequip flow, and the `Inventory` node API live in `inventory-system.md` — this doc stops at the Equipment node and its `EquipmentData`.
 
 ---
 
@@ -23,21 +25,20 @@ A dedicated file with `class_name Enums` holds all game-wide enumerations. Neith
 class_name Enums
 
 enum Stat {
-    STRENGTH,
-    DEFENSE,
-    CONSTITUTION,
-    AGILITY,
-    SPIRIT,
-    LUCK
+    STRENGTH,     # 0
+    DEFENSE,      # 1
+    CONSTITUTION, # 2
+    AGILITY,      # 3
+    SPIRIT,       # 4
+    LUCK          # 5
 }
 
-enum Slot {
-    WEAPON,
-    ARMOR
-}
+enum Slot { WEAPON, HANDS, FEET, LEGS, TORSO, HEAD }
 ```
 
-**Why a shared file:** Both `Player` and `Equipment` need `Stat` and `Slot`. Placing them on either class creates an awkward ownership dependency. A neutral `Enums` class avoids that. Turn state and any other future game-wide enums can be added here as the project grows — e.g. `game.gd`'s local `State` enum could migrate here when it needs to be referenced from outside.
+Numeric keys are used when assigning `stat_modifiers` in `.tres` files — e.g. `{ 0: 10.0 }` adds +10 STRENGTH. Six named body slots cover all non-ring equipment; rings are managed separately as a fixed-size array on `Inventory` (see `inventory-system.md`).
+
+**Why a shared file:** Both `Player` and `Equipment` need `Stat` and `Slot`. Placing them on either class creates an awkward ownership dependency. A neutral `Enums` class avoids that. Turn state (`TurnState`) and world-map enums (`NodeType`, `NodeState`) also live here.
 
 ---
 
@@ -57,6 +58,10 @@ extends Resource
 @export var equip_sfx: AudioStream
 @export var unequip_sfx: AudioStream
 @export var stat_modifiers: Dictionary  # Enums.Stat → float
+@export var scene: PackedScene          # Equipment or Weapon scene to instantiate
+@export var slot: Enums.Slot = Enums.Slot.WEAPON
+@export var is_ring: bool = false
+@export var price: int = 0
 ```
 
 `stat_modifiers` uses `Enums.Stat` keys. An armor piece that grants +15 defense and +5 constitution would be:
@@ -66,6 +71,13 @@ extends Resource
 ```
 
 Omitted stats contribute zero — no entry needed for unmodified stats.
+
+Added fields:
+
+- `scene` — the `PackedScene` the `Inventory → Player` pipeline instantiates when this item is equipped (see `inventory-system.md` § Equipment Node Lifecycle). Weapons point at `weapon.tscn`; non-weapon gear points at `equipment.tscn`.
+- `slot` — which named slot this data targets. Ignored when `is_ring == true`.
+- `is_ring` — routes equip calls through `Inventory.equip_ring` rather than a named slot.
+- `price` — base value used by `ShopEvent` to compute buy/sell prices (see `event-scene-design.md § ShopEvent`). `0` means "not priced"; shops treat that as a data bug.
 
 ### `WeaponData extends EquipmentData`
 
@@ -203,46 +215,29 @@ The Player connects `attack` → `weapon._on_player_attacked()` when equipping. 
 
 ## Player Integration
 
-### Slot dictionary
+### Storage and equip flow — delegated to Inventory
 
-```gdscript
-var _equipped: Dictionary = {}  # Enums.Slot → Equipment
-```
+Storage (named slots, rings, bag) lives on the `Inventory` node under `Player`. The Player reacts to `Inventory`'s `slot_changed` and `ring_changed` signals to instantiate and free `Equipment` node children — see `inventory-system.md` § Equipment Node Lifecycle for the full pattern.
 
-### `equip()`
-
-```gdscript
-func equip(slot: Enums.Slot, item: Equipment) -> void:
-    if _equipped.has(slot):
-        var old: Equipment = _equipped[slot]
-        old.play_unequip()
-        old._on_unequipped()
-        if slot == Enums.Slot.WEAPON:
-            attack.disconnect((old as Weapon)._on_player_attacked)
-            (old as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
-        remove_child(old)
-    _equipped[slot] = item
-    add_child(item)
-    item.play_equip()
-    item._on_equipped()
-    if slot == Enums.Slot.WEAPON:
-        attack.connect((item as Weapon)._on_player_attacked)
-        (item as Weapon).animation_finished.connect(_on_weapon_animation_finished)
-```
-
-Signal wiring is handled inside `equip()` — no external wiring needed. The Player owns the connection because it owns the signal.
+Weapon signal wiring lives in `player._setup_equipment()`: when a `WEAPON`-slot node is created, the Player connects `attack` → `weapon._on_player_attacked` and `weapon.animation_finished` → `_on_weapon_animation_finished`. The mirror disconnects happen in `_teardown_equipment()`.
 
 ### Effective stat calculation
 
+`get_effective_stat()` reads `EquipmentData.stat_modifiers` directly via the inventory — it does not iterate Equipment nodes:
+
 ```gdscript
 func get_effective_stat(stat: Enums.Stat) -> float:
-    var base: float = _get_base_stat(stat)
-    var bonus: float = 0.0
-    for item in _equipped.values():
-        bonus += item.get_modifier(stat)
+    var base := _get_base_stat(stat)
+    var bonus := 0.0
+    for data in _inventory.get_all_equipped():
+        if data.stat_modifiers.has(stat):
+            bonus += data.stat_modifiers[stat]
     return base + bonus
+```
 
+`_get_base_stat()` is the single point that reads the Player's raw `@export` floats:
 
+```gdscript
 func _get_base_stat(stat: Enums.Stat) -> float:
     match stat:
         Enums.Stat.STRENGTH:     return strength
@@ -254,21 +249,7 @@ func _get_base_stat(stat: Enums.Stat) -> float:
     return 0.0
 ```
 
-`_calculate_damage()` and `_apply_defense()` call `get_effective_stat()` instead of reading the raw floats directly:
-
-```gdscript
-func _calculate_damage() -> float:
-    return base_damage + (get_effective_stat(Enums.Stat.STRENGTH) * 0.5)
-
-func _apply_defense(amount: float) -> float:
-    return maxf(amount - get_effective_stat(Enums.Stat.DEFENSE), 0.0)
-```
-
-Base stats on the Player remain as `@export` floats. `get_effective_stat()` adds the layer on top without changing how those values are set or inspected.
-
-### Removing `equip_weapon()`
-
-The existing `equip_weapon(frames: SpriteFrames)` on `player.gd` is replaced by `equip(slot, item)`. The new method handles visuals, audio, signal wiring, and old-item teardown in one place.
+`_calculate_damage()` and `_apply_defense()` call `get_effective_stat()` rather than reading the raw floats directly. Reading from `EquipmentData` instead of `Equipment` nodes means stat math works even when an item has no scene (e.g. rings without visuals).
 
 ---
 
@@ -276,8 +257,8 @@ The existing `equip_weapon(frames: SpriteFrames)` on `player.gd` is replaced by 
 
 | Signal | Emitted by | Connected to | Wired by |
 |---|---|---|---|
-| `attack(damage: float)` | `player.gd` | `weapon._on_player_attacked()` | `player.equip()` |
-| `animation_finished` | `weapon.gd` | `player._on_weapon_animation_finished()` | `player.equip()` |
+| `attack(damage: float)` | `player.gd` | `weapon._on_player_attacked()` | `player._setup_equipment()` / `_teardown_equipment()` |
+| `animation_finished` | `weapon.gd` | `player._on_weapon_animation_finished()` | `player._setup_equipment()` / `_teardown_equipment()` |
 
 `Weapon.animation_finished` was added during implementation to give `player.gd` a stable, parameter-free hook for turn gating. It fires internally when the attack `AnimatedSprite2D` animation ends, decoupling the Player from the sprite wiring details.
 
@@ -299,8 +280,7 @@ For the basic single-phase attack, the `AnimatedSprite2D` is driven directly (`_
 ## Open Questions
 
 - **Armor visuals:** Armor may have no meaningful animation — does it need a `Sprite` and `AnimationPlayer` at all, or should those be optional? For now the base scene includes them; an empty `SpriteFrames` is benign.
-- **Unequip destination:** `equip()` currently calls `remove_child()` on the old item. Should it be freed, or returned to an inventory node? Left open until the inventory system is designed.
-- **Slot expansion:** Adding a new slot (ring, off-hand, etc.) means adding an entry to `Enums.Slot` and optionally handling its signal wiring in `equip()`. No structural changes to `Equipment` or its subclasses.
+- **Ring scenes:** Rings may not need a scene at all (no animation, no equip sound). If `EquipmentData.scene` is null, `player._setup_equipment()` should guard and skip node instantiation — the stat layer still works because it reads from `EquipmentData.stat_modifiers`.
 
 ---
 
@@ -308,5 +288,5 @@ For the basic single-phase attack, the `AnimatedSprite2D` is driven directly (`_
 
 - **ArmorData / armor.gd:** `Armor extends Equipment` with no additions initially — purely stat modifiers. A block action or damage-reduction hook could be added to `armor.gd` when that mechanic is designed.
 - **Active abilities from equipment:** If a piece of gear should register a new action on the Player (e.g. a staff unlocking "Cast"), `_on_equipped()` / `_on_unequipped()` hooks are the right place — the weapon calls `player.register_action()` on equip and deregisters on unequip. The Player is passed in via those hooks when that system is needed.
-- **Multiple items of the same slot:** `equip()` already handles displacement — the old item is removed before the new one is added. Swapping is free.
+- **Multiple items of the same slot:** `Inventory.equip()` handles displacement — the old item is sent to the bag before the new one is installed. Swapping is free.
 - **Stat system evolution:** `_get_base_stat()` on the Player is the single point that reads raw `@export` floats. When the stat system matures, only that method changes.
