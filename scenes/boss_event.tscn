@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://c7ijg8k6e50p1"]
+
+[ext_resource type="Script" uid="uid://do6if0peo3sdy" path="res://scripts/boss_event.gd" id="1_dm6as"]
+
+[node name="BossEvent" type="Node2D" unique_id=775861904]
+script = ExtResource("1_dm6as")
+metadata/_custom_type_script = "uid://c01glhmr8jyh2"
+
+[node name="Enemies" type="Node" parent="."]

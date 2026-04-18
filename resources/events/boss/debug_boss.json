@@ -1,0 +1,20 @@
+{
+	"waves": [
+		{ "enemies": [{ "scene": "res://scenes/skeleton.tscn", "count": 1 }] },
+		{ "enemies": [{ "scene": "res://scenes/skeleton.tscn", "count": 1 }] },
+		{
+			"enemies": [{ "scene": "res://scenes/skeleton.tscn", "count": 1 }],
+			"on_clear_trigger": "on_mid"
+		},
+		{ "enemies": [{ "scene": "res://scenes/skeleton_lord.tscn", "count": 1 }] }
+	],
+	"dialogue_triggers": {
+		"on_start": "res://resources/dialogue/boss_intro.json",
+		"on_mid": "res://resources/dialogue/boss_mid.json",
+		"on_victory": "res://resources/dialogue/boss_victory.json"
+	},
+	"rewards": {
+		"experience": 150,
+		"gold": 75
+	}
+}

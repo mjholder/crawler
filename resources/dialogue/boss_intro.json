@@ -1,0 +1,27 @@
+{
+  "name": "boss_intro",
+  "nodes": {
+    "0": {
+      "speaker": null,
+      "text": "The passage opens into a vaulted ossuary. Bones line the walls from floor to ceiling, arranged with deliberate care. At the far end, a robed figure sits motionless on a throne of femurs.",
+      "consequence": null,
+      "choices": [
+        { "text": "...", "next": "1" }
+      ]
+    },
+    "1": {
+      "speaker": "Skeleton Lord",
+      "text": "Another warm thing. They keep sending warm things.",
+      "consequence": null,
+      "choices": [
+        { "text": "...", "next": "2" }
+      ]
+    },
+    "2": {
+      "speaker": "Skeleton Lord",
+      "text": "Kill it. Kill it slowly. I want to watch it stop.",
+      "consequence": null,
+      "choices": []
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "boss_mid",
+  "nodes": {
+    "0": {
+      "speaker": "Skeleton Lord",
+      "text": "Hm.",
+      "consequence": null,
+      "choices": [
+        { "text": "...", "next": "1" }
+      ]
+    },
+    "1": {
+      "speaker": "Skeleton Lord",
+      "text": "You are not dying fast enough.",
+      "consequence": null,
+      "choices": [
+        { "text": "...", "next": "2" }
+      ]
+    },
+    "2": {
+      "speaker": null,
+      "text": "The figure rises from its throne. Joints crack and scrape as it straightens to full height. Its eye sockets ignite with pale blue light.",
+      "consequence": null,
+      "choices": []
+    }
+  }
+}

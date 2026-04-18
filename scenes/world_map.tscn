@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://scenes/rest_event.tscn" id="7_rest"]
 [ext_resource type="Resource" uid="uid://dy5y2nanwc8sm" path="res://resources/shops/debug_shop.tres" id="10_0hitc"]
 [ext_resource type="PackedScene" uid="uid://cn4eqadpt0dkx" path="res://scenes/shop_event.tscn" id="10_6a477"]
+[ext_resource type="PackedScene" uid="uid://c7ijg8k6e50p1" path="res://scenes/boss_event.tscn" id="12_1xmgx"]
 
 [node name="WorldMap" type="Control" unique_id=703812870]
 layout_mode = 3
@@ -213,6 +214,8 @@ skill_check_json_dir = "res://resources/events/skill_check/"
 debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
 miniboss_scene = ExtResource("4_gqm84")
 miniboss_json_path = "res://resources/events/combat/example.json"
+shop_scene = ExtResource("10_6a477")
+shop_data = ExtResource("10_0hitc")
 
 [node name="WorldMapNodeDungeon4" parent="NodeContainer" unique_id=560920750 instance=ExtResource("4_sh0tg")]
 layout_mode = 0
@@ -220,6 +223,7 @@ offset_left = 110.0
 offset_top = 13.0
 offset_right = 150.0
 offset_bottom = 53.0
+node_type = 3
 combat_scene = ExtResource("4_gqm84")
 combat_json_dir = "res://resources/events/combat/"
 debug_combat_json_path = "res://resources/events/combat/example.json"
@@ -231,3 +235,5 @@ skill_check_json_dir = "res://resources/events/skill_check/"
 debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
 miniboss_scene = ExtResource("4_gqm84")
 miniboss_json_path = "res://resources/events/combat/example.json"
+boss_scene = ExtResource("12_1xmgx")
+boss_data_json_path = "res://resources/events/boss/debug_boss.json"

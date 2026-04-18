@@ -20,6 +20,11 @@ var _total_expected_enemies: int = 0
 var _enemies: Array[Enemy] = []
 var _turn_queue: Array[Enemy] = []
 
+# --- Waves ---
+
+var _waves: Array = []
+var _current_wave_index: int = -1
+
 
 # --- Public API ---
 
@@ -35,13 +40,59 @@ func _on_setup() -> void:
 		return
 	rewards = _init_data.get("rewards", {})
 	_dialogue_triggers = _init_data.get("dialogue_triggers", {})
-	var enemy_entries: Array = _init_data.get("enemies", [])
-	for entry in enemy_entries:
+
+	var waves_data: Array = _init_data.get("waves", [])
+	if not waves_data.is_empty():
+		_waves = waves_data
+	else:
+		# Legacy flat format: spawn all enemies immediately in setup
+		var enemy_entries: Array = _init_data.get("enemies", [])
+		for entry in enemy_entries:
+			_total_expected_enemies += entry.get("count", 1)
+		for entry in enemy_entries:
+			var scene_path: String = entry.get("scene", "")
+			if scene_path == "":
+				push_warning("CombatEvent: enemy entry missing 'scene'")
+				continue
+			var packed := load(scene_path) as PackedScene
+			if packed == null:
+				push_warning("CombatEvent: could not load scene '%s'" % scene_path)
+				continue
+			for i in range(entry.get("count", 1)):
+				add_enemy(packed.instantiate() as Enemy)
+
+
+func _on_running() -> void:
+	_fire_trigger("on_start")
+	if not _waves.is_empty() and not _dialogue_triggers.has("on_start"):
+		_start_next_wave()
+
+
+# --- Wave Control ---
+
+func _start_next_wave() -> void:
+	_current_wave_index += 1
+	if _current_wave_index >= _waves.size():
+		push_warning("CombatEvent: _start_next_wave() called past end of waves array")
+		return
+
+	var wave: Dictionary = _waves[_current_wave_index]
+	var entries: Array = wave.get("enemies", [])
+
+	# Free dead enemies from the previous wave so they clear from screen
+	for e in _enemies:
+		if e.is_dead:
+			e.queue_free()
+	_enemies = _enemies.filter(func(e: Enemy) -> bool: return not e.is_dead)
+
+	_total_expected_enemies = 0
+	for entry in entries:
 		_total_expected_enemies += entry.get("count", 1)
-	for entry in enemy_entries:
+
+	for entry in entries:
 		var scene_path: String = entry.get("scene", "")
 		if scene_path == "":
-			push_warning("CombatEvent: enemy entry missing 'scene'")
+			push_warning("CombatEvent: wave enemy entry missing 'scene'")
 			continue
 		var packed := load(scene_path) as PackedScene
 		if packed == null:
@@ -51,17 +102,24 @@ func _on_setup() -> void:
 			add_enemy(packed.instantiate() as Enemy)
 
 
-func _on_running() -> void:
-	_fire_trigger("on_start")
-
-
 # --- Phase Control ---
 
 func _advance_phase() -> void:
 	match phase:
 		Phase.RUNNING:
-			_set_phase(Phase.RESOLUTION)
-			# Do NOT auto-advance to COMPLETE; _on_resolution decides
+			if not _waves.is_empty():
+				var is_last_wave: bool = _current_wave_index >= _waves.size() - 1
+				if is_last_wave:
+					_set_phase(Phase.RESOLUTION)
+					return
+				var trigger_key: String = _waves[_current_wave_index].get("on_clear_trigger", "")
+				if trigger_key != "" and _dialogue_triggers.has(trigger_key):
+					_fire_trigger(trigger_key)
+				else:
+					_start_next_wave()
+			else:
+				_set_phase(Phase.RESOLUTION)
+				# Do NOT auto-advance to COMPLETE; _on_resolution decides
 
 
 func _on_resolution() -> void:
@@ -73,7 +131,10 @@ func _on_resolution() -> void:
 
 
 func on_dialogue_complete() -> void:
-	_set_phase(Phase.COMPLETE)
+	if phase == Phase.RESOLUTION:
+		_set_phase(Phase.COMPLETE)
+	else:
+		_start_next_wave()
 
 
 # --- Trigger Helper ---

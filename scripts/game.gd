@@ -208,6 +208,9 @@ func _on_event_complete() -> void:
 	if player.pending_stat_points > 0:
 		_gui.show_level_up(player)
 		return
+	if state == Enums.TurnState.VICTORY:
+		_gui.show_victory()
+		return
 	_finish_event()
 
 
@@ -410,9 +413,9 @@ func _on_gui_dialogue_complete() -> void:
 		(current_event as SkillCheckEvent).on_dialogue_complete()
 	elif current_event is CombatEvent:
 		var ce := current_event as CombatEvent
-		if ce.phase == Event.Phase.RESOLUTION:
-			ce.on_dialogue_complete()
-		elif state == Enums.TurnState.NO_TURN:
+		var was_resolution := ce.phase == Event.Phase.RESOLUTION
+		ce.on_dialogue_complete()
+		if not was_resolution:
 			_start_player_turn()
 	else:
 		_finish_event()
@@ -485,15 +488,11 @@ func _on_player_died() -> void:
 func _on_boss_defeated() -> void:
 	print("[GAME] Boss defeated — VICTORY")
 	state = Enums.TurnState.VICTORY
-	_apply_rewards(current_event.rewards)
 	_pending_event_configs = []
 	_event_index = 0
 	_active_world_node = null
-	_teardown_current_event()
-	if player.pending_stat_points > 0:
-		_gui.show_level_up(player)
-		return
-	_gui.show_victory()
+	# Teardown and victory panel happen via the normal event completion flow
+	# after the on_victory dialogue plays through _on_event_complete()
 
 
 func quit_to_main() -> void:

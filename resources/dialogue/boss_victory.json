@@ -1,0 +1,27 @@
+{
+  "name": "boss_victory",
+  "nodes": {
+    "0": {
+      "speaker": "Skeleton Lord",
+      "text": "You... break things.",
+      "consequence": null,
+      "choices": [
+        { "text": "...", "next": "1" }
+      ]
+    },
+    "1": {
+      "speaker": "Skeleton Lord",
+      "text": "I collected this place. Every bone. Every... I was here a long time.",
+      "consequence": null,
+      "choices": [
+        { "text": "...", "next": "2" }
+      ]
+    },
+    "2": {
+      "speaker": null,
+      "text": "The pale light fades. The Skeleton Lord collapses in sections, clattering to the floor in a dry avalanche. The throne room falls silent.",
+      "consequence": null,
+      "choices": []
+    }
+  }
+}

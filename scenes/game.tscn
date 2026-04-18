@@ -23,6 +23,8 @@
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
 [ext_resource type="Resource" path="res://resources/classes/warrior.tres" id="22_warrior"]
 [ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]
+[ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
+[ext_resource type="Script" uid="uid://qloduutsnv77" path="res://scripts/victory_panel.gd" id="25_bhx41"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -714,6 +716,56 @@ autowrap_mode = 2
 [node name="DetailDescLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1248119488]
 layout_mode = 2
 autowrap_mode = 2
+
+[node name="GameOverPanel" type="Control" parent="GUI" unique_id=1214527441]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("24_pl11u")
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/GameOverPanel" unique_id=1735145783]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/GameOverPanel/PanelContainer" unique_id=1187673798]
+layout_mode = 2
+
+[node name="MainMenuButton" type="Button" parent="GUI/GameOverPanel/PanelContainer/VBoxContainer" unique_id=757092087]
+layout_mode = 2
+text = "Main Menu"
+
+[node name="VictoryPanel" type="Control" parent="GUI" unique_id=525344139]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("25_bhx41")
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/VictoryPanel" unique_id=269297850]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/VictoryPanel/PanelContainer" unique_id=609608261]
+layout_mode = 2
+
+[node name="MainMenuButton" type="Button" parent="GUI/VictoryPanel/PanelContainer/VBoxContainer" unique_id=1296311386]
+layout_mode = 2
+text = "Main Menu"
 
 [connection signal="pressed" from="GUI/PlayerHUD/InventoryButton" to="GUI" method="toggle_inventory"]
 [connection signal="pressed" from="GUI/CombatHUD/ActionMenu/AttackButton" to="GUI" method="_on_attack_button_pressed"]
