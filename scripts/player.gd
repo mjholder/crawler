@@ -84,6 +84,8 @@ func initialize(p_name: String, class_data: PlayerClassData) -> void:
 	level = 1
 	experience = 0
 	pending_stat_points = 0
+	gold = 0
+	_inventory.clear()
 	_recalculate_max_health()
 	health = max_health
 	_setup_starting_equipment(class_data)

@@ -81,6 +81,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_gui.handle_esc()
 		return
+	if state in [Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
+		return
 	if state != Enums.TurnState.PLAYER_TURN:
 		return
 
@@ -173,6 +175,8 @@ func start_event(event: Event) -> void:
 		ce.player_attacked.connect(_on_player_attacked)
 		ce.enemy_turns_complete.connect(_on_enemy_turns_complete)
 		player.attack.connect(_on_player_attack_action)
+		if event is BossEvent:
+			(event as BossEvent).boss_defeated.connect(_on_boss_defeated, CONNECT_ONE_SHOT)
 		_gui.show_combat_hud()
 		_gui.set_player_turn(false)
 		_start_combat_music()
@@ -199,6 +203,17 @@ func start_event(event: Event) -> void:
 
 func _on_event_complete() -> void:
 	print("[GAME] Event complete")
+	_apply_rewards(current_event.rewards)
+	_teardown_current_event()
+	if player.pending_stat_points > 0:
+		_gui.show_level_up(player)
+		return
+	_finish_event()
+
+
+func _teardown_current_event() -> void:
+	if current_event == null:
+		return
 	if current_event is CombatEvent:
 		var ce := current_event as CombatEvent
 		ce.player_attacked.disconnect(_on_player_attacked)
@@ -225,20 +240,21 @@ func _on_event_complete() -> void:
 		se.shop_requested.disconnect(_on_shop_requested)
 		se.stock_changed.disconnect(_on_shop_stock_changed)
 		player.get_node("Inventory").bag_changed.disconnect(_on_shop_bag_changed)
-	_apply_rewards(current_event.rewards)
-	if player.pending_stat_points > 0:
-		_gui.show_level_up(player)
+	current_event.queue_free()
+	current_event = null
+
+
+func _on_level_up_complete() -> void:
+	if state == Enums.TurnState.VICTORY:
+		_gui.show_victory()
+		return
+	if state == Enums.TurnState.GAME_OVER:
+		_gui.show_game_over()
 		return
 	_finish_event()
 
 
-func _on_level_up_complete() -> void:
-	_finish_event()
-
-
 func _finish_event() -> void:
-	current_event.queue_free()
-	current_event = null
 	state = Enums.TurnState.NO_TURN
 	if _active_world_node != null:
 		_start_next_dungeon_event()
@@ -425,7 +441,7 @@ func _run_enemy_turns() -> void:
 
 
 func _on_enemy_turns_complete() -> void:
-	if state == Enums.TurnState.DIALOGUE:
+	if state in [Enums.TurnState.DIALOGUE, Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
 		return
 	_start_player_turn()
 
@@ -462,6 +478,22 @@ func _start_exploration_music() -> void:
 func _on_player_died() -> void:
 	print("[GAME] Player died — GAME OVER")
 	state = Enums.TurnState.GAME_OVER
+	_teardown_current_event()
+	_gui.show_game_over()
+
+
+func _on_boss_defeated() -> void:
+	print("[GAME] Boss defeated — VICTORY")
+	state = Enums.TurnState.VICTORY
+	_apply_rewards(current_event.rewards)
+	_pending_event_configs = []
+	_event_index = 0
+	_active_world_node = null
+	_teardown_current_event()
+	if player.pending_stat_points > 0:
+		_gui.show_level_up(player)
+		return
+	_gui.show_victory()
 
 
 func quit_to_main() -> void:

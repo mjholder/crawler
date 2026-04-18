@@ -2,7 +2,7 @@ class_name Enums
 
 # --- Turn Flow ---
 
-enum TurnState { NO_TURN, PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, DIALOGUE }
+enum TurnState { NO_TURN, PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, DIALOGUE, VICTORY }
 
 # --- Equipment ---
 
@@ -21,5 +21,5 @@ enum Slot { WEAPON, HANDS, FEET, LEGS, TORSO, HEAD }
 
 # --- World Map ---
 
-enum NodeType { DUNGEON, SHOP, REST }
+enum NodeType { DUNGEON, SHOP, REST, BOSS }
 enum NodeState { LOCKED, AVAILABLE, COMPLETED }

@@ -38,6 +38,8 @@ signal shop_leave_requested
 @onready var _inventory_panel: InventoryPanel = $InventoryPanel
 @onready var _stats_label: Label = $InventoryPanel/HBoxContainer/StatsContainer/Label
 @onready var _shop_panel: ShopPanel = $ShopPanel
+@onready var _game_over_panel: GameOverPanel = $GameOverPanel
+@onready var _victory_panel: VictoryPanel = $VictoryPanel
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -74,6 +76,10 @@ func _ready() -> void:
 	_shop_panel.buy_requested.connect(func(item: EquipmentData) -> void: shop_buy_requested.emit(item))
 	_shop_panel.sell_requested.connect(func(item: EquipmentData) -> void: shop_sell_requested.emit(item))
 	_shop_panel.leave_requested.connect(func() -> void: shop_leave_requested.emit())
+	_game_over_panel.hide()
+	_game_over_panel.main_menu_requested.connect(func() -> void: quit_to_main_requested.emit())
+	_victory_panel.hide()
+	_victory_panel.main_menu_requested.connect(func() -> void: quit_to_main_requested.emit())
 
 
 # --- Inventory ---
@@ -119,6 +125,8 @@ func return_to_main_menu() -> void:
 	_rest_panel.hide()
 	_shop_panel.hide()
 	_inventory_panel.hide()
+	_game_over_panel.hide()
+	_victory_panel.hide()
 	_player_hud.hide()
 	_main_menu.show()
 
@@ -320,6 +328,24 @@ func refresh_shop_gold(gold: int) -> void:
 
 func show_shop_status(msg: String) -> void:
 	_shop_panel.show_status(msg)
+
+
+# --- Game Over / Victory ---
+
+func show_game_over() -> void:
+	_game_over_panel.show()
+
+
+func hide_game_over() -> void:
+	_game_over_panel.hide()
+
+
+func show_victory() -> void:
+	_victory_panel.show()
+
+
+func hide_victory() -> void:
+	_victory_panel.hide()
 
 
 func _on_quit_button_pressed() -> void:

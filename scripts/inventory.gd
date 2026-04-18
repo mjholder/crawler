@@ -106,6 +106,12 @@ func get_bag() -> Array[EquipmentData]:
 
 # --- Utility ---
 
+func clear() -> void:
+	_equipped.clear()
+	_rings.fill(null)
+	_bag.clear()
+
+
 func get_all_equipped() -> Array[EquipmentData]:
 	var result: Array[EquipmentData] = []
 	for data in _equipped.values():
