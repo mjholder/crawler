@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://bnm7iaexjbl5t" path="res://assets/sprites/map-no-nodes.png" id="1_oru6e"]
 [ext_resource type="Script" uid="uid://bu1g3a1ifp8yy" path="res://scripts/world_map.gd" id="1_qqero"]
+[ext_resource type="Script" path="res://scripts/boss_map_node.gd" id="1_bossscript"]
 [ext_resource type="PackedScene" uid="uid://diohdjsg4s5j2" path="res://scenes/world_map_node_rest.tscn" id="3_qj3iy"]
 [ext_resource type="PackedScene" uid="uid://bltmvkwkf82bn" path="res://scenes/combat_event.tscn" id="4_gqm84"]
 [ext_resource type="PackedScene" uid="uid://br6bt78br4bmu" path="res://scenes/world_map_node_dungeon.tscn" id="4_sh0tg"]
@@ -46,17 +47,6 @@ offset_top = 301.0
 offset_right = 142.0
 offset_bottom = 341.0
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon1-1"), NodePath("../WorldMapNodeDungeon1-2")])
-combat_scene = ExtResource("4_gqm84")
-combat_json_dir = "res://resources/events/combat/"
-debug_combat_json_path = "res://resources/events/combat/example.json"
-dialogue_scene = ExtResource("5_55716")
-dialogue_json_dir = "res://resources/events/dialogue/"
-debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
-skill_check_scene = ExtResource("6_0hitc")
-skill_check_json_dir = "res://resources/events/skill_check/"
-debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
-miniboss_scene = ExtResource("4_gqm84")
-miniboss_json_path = "res://resources/events/combat/example.json"
 rest_scene = ExtResource("7_rest")
 
 [node name="WorldMapNodeDungeon1-1" parent="NodeContainer" unique_id=376924348 instance=ExtResource("4_sh0tg")]
@@ -104,17 +94,6 @@ offset_top = 159.0
 offset_right = 80.0
 offset_bottom = 199.0
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon3-1")])
-combat_scene = ExtResource("4_gqm84")
-combat_json_dir = "res://resources/events/combat/"
-debug_combat_json_path = "res://resources/events/combat/example.json"
-dialogue_scene = ExtResource("5_55716")
-dialogue_json_dir = "res://resources/events/dialogue/"
-debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
-skill_check_scene = ExtResource("6_0hitc")
-skill_check_json_dir = "res://resources/events/skill_check/"
-debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
-miniboss_scene = ExtResource("4_gqm84")
-miniboss_json_path = "res://resources/events/combat/example.json"
 rest_scene = ExtResource("7_rest")
 
 [node name="WorldMapNodeShop2-2" parent="NodeContainer" unique_id=514620726 instance=ExtResource("5_27p3u")]
@@ -124,17 +103,6 @@ offset_top = 166.0
 offset_right = 119.0
 offset_bottom = 206.0
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon3-1")])
-combat_scene = ExtResource("4_gqm84")
-combat_json_dir = "res://resources/events/combat/"
-debug_combat_json_path = "res://resources/events/combat/example.json"
-dialogue_scene = ExtResource("5_55716")
-dialogue_json_dir = "res://resources/events/dialogue/"
-debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
-skill_check_scene = ExtResource("6_0hitc")
-skill_check_json_dir = "res://resources/events/skill_check/"
-debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
-miniboss_scene = ExtResource("4_gqm84")
-miniboss_json_path = "res://resources/events/combat/example.json"
 shop_scene = ExtResource("10_6a477")
 shop_data = ExtResource("10_0hitc")
 
@@ -183,17 +151,6 @@ offset_top = 87.0
 offset_right = 168.0
 offset_bottom = 127.0
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon4")])
-combat_scene = ExtResource("4_gqm84")
-combat_json_dir = "res://resources/events/combat/"
-debug_combat_json_path = "res://resources/events/combat/example.json"
-dialogue_scene = ExtResource("5_55716")
-dialogue_json_dir = "res://resources/events/dialogue/"
-debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
-skill_check_scene = ExtResource("6_0hitc")
-skill_check_json_dir = "res://resources/events/skill_check/"
-debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
-miniboss_scene = ExtResource("4_gqm84")
-miniboss_json_path = "res://resources/events/combat/example.json"
 rest_scene = ExtResource("7_rest")
 
 [node name="WorldMapNodeShop3-3" parent="NodeContainer" unique_id=1512652345 instance=ExtResource("5_27p3u")]
@@ -203,17 +160,6 @@ offset_top = 94.0
 offset_right = 219.0
 offset_bottom = 134.0
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon4")])
-combat_scene = ExtResource("4_gqm84")
-combat_json_dir = "res://resources/events/combat/"
-debug_combat_json_path = "res://resources/events/combat/example.json"
-dialogue_scene = ExtResource("5_55716")
-dialogue_json_dir = "res://resources/events/dialogue/"
-debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
-skill_check_scene = ExtResource("6_0hitc")
-skill_check_json_dir = "res://resources/events/skill_check/"
-debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
-miniboss_scene = ExtResource("4_gqm84")
-miniboss_json_path = "res://resources/events/combat/example.json"
 shop_scene = ExtResource("10_6a477")
 shop_data = ExtResource("10_0hitc")
 
@@ -223,17 +169,6 @@ offset_left = 110.0
 offset_top = 13.0
 offset_right = 150.0
 offset_bottom = 53.0
-node_type = 3
-combat_scene = ExtResource("4_gqm84")
-combat_json_dir = "res://resources/events/combat/"
-debug_combat_json_path = "res://resources/events/combat/example.json"
-dialogue_scene = ExtResource("5_55716")
-dialogue_json_dir = "res://resources/events/dialogue/"
-debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
-skill_check_scene = ExtResource("6_0hitc")
-skill_check_json_dir = "res://resources/events/skill_check/"
-debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
-miniboss_scene = ExtResource("4_gqm84")
-miniboss_json_path = "res://resources/events/combat/example.json"
+script = ExtResource("1_bossscript")
 boss_scene = ExtResource("12_1xmgx")
 boss_data_json_path = "res://resources/events/boss/debug_boss.json"

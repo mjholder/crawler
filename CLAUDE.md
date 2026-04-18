@@ -52,7 +52,7 @@ These decisions are documented in `journal/design.md`. Do not change them withou
 - Signals declared at the top of the file, before stats
 - Section comments use `# --- Section Name ---`
 - Extension hooks on Enemy (`_on_ready`, `_on_damaged`, `_on_death`) use a leading underscore and do nothing in the base class
-- `@export` vars on Player and Enemy are base stats (STR/CON/AGI/SPI/LCK); effective values are computed by adding equipment modifier layers on top — see `journal/detailed/equipment-system.md`
+- `@export` vars on Player and Enemy are base stats (STR/CON/AGI/SPI/LCK); effective values are computed by adding equipment modifier layers on top — see `journal/detailed/character.md`
 - Prefer guard clauses over nested conditionals
 
 ## Journal
@@ -65,7 +65,7 @@ When updating a daily journal entry, merge new content into existing sections �
 
 - `Event` base class and concrete implementations (`CombatEvent`, `SkillCheckEvent`, `LootEvent`, `RoleplaysEvent`)
 - UI layer (health bars, combat log, action menus)
-- Full stat system — base stats are `@export` floats; equipment modifier layer (`get_effective_stat()`) **is implemented** — see `journal/detailed/equipment-system.md`
-- Inventory system — equipment slots (`equip()`, `_equipped` dict) are implemented; carrying, storing, or picking up items is not
+- Full stat system — base stats are `@export` floats; equipment modifier layer (`get_effective_stat()`) **is implemented** — see `journal/detailed/character.md`
+- Inventory system — equipment slots, rings, and bag are implemented; carrying/picking up items from the world is not
 - Procedural dungeon/floor generation
 - Loot and XP systems
