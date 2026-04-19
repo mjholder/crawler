@@ -19,6 +19,7 @@ var screen_center: Vector2
 # --- Turn State ---
 
 var state: Enums.TurnState = Enums.TurnState.NO_TURN
+var game_started: bool = false
 var round_number: int = 0
 var _pre_dialogue_state: Enums.TurnState = Enums.TurnState.NO_TURN
 
@@ -79,7 +80,12 @@ func _ready() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		_gui.handle_esc()
+		if game_started and state not in [Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
+			_gui.handle_esc()
+		return
+	if event.is_action_pressed("inventory"):
+		if game_started and state not in [Enums.TurnState.ENEMY_TURN, Enums.TurnState.DIALOGUE, Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
+			_gui.toggle_inventory(state == Enums.TurnState.NO_TURN)
 		return
 	if state in [Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
 		return
@@ -97,6 +103,7 @@ func attack_action() -> void:
 
 
 func start_dialogue_game() -> void:
+	game_started = true
 	_gui.start_game()
 	if debug_dialogue_scene != null:
 		var event_instance := debug_dialogue_scene.instantiate() as DialogueEvent
@@ -104,6 +111,7 @@ func start_dialogue_game() -> void:
 
 
 func start_skill_check_game() -> void:
+	game_started = true
 	_gui.start_game()
 	if debug_skill_check_scene != null:
 		var event_instance := debug_skill_check_scene.instantiate() as SkillCheckEvent
@@ -111,14 +119,18 @@ func start_skill_check_game() -> void:
 
 
 func _on_character_created(p_name: String, class_data: PlayerClassData) -> void:
+	game_started = true
 	player.initialize(p_name, class_data)
 	_gui.start_game()
 	_gui.show_world_map()
 	_gui.update_player_health(player.health, player.max_health)
 	_gui.update_player_stats(player.build_stats_dict())
+	_gui.update_player_gold(player.gold)
+	_gui.update_player_xp(player.experience)
 
 
 func start_game() -> void:
+	game_started = true
 	_gui.start_game()
 	_gui.show_world_map()
 
@@ -405,10 +417,10 @@ func _on_combat_dialogue_trigger(_trigger_name: String, data: Dictionary) -> voi
 	start_dialogue(data)
 
 
-func _on_gui_dialogue_complete() -> void:
+func _on_gui_dialogue_complete(terminal_node_id: String) -> void:
 	state = _pre_dialogue_state
 	if current_event is DialogueEvent:
-		(current_event as DialogueEvent).on_dialogue_complete()
+		(current_event as DialogueEvent).on_dialogue_complete(terminal_node_id)
 	elif current_event is SkillCheckEvent:
 		(current_event as SkillCheckEvent).on_dialogue_complete()
 	elif current_event is CombatEvent:
@@ -433,6 +445,8 @@ func _start_player_turn() -> void:
 
 func _on_player_turn_ended() -> void:
 	if state != Enums.TurnState.PLAYER_TURN:
+		return
+	if not current_event is CombatEvent:
 		return
 	_run_enemy_turns()
 
@@ -496,6 +510,7 @@ func _on_boss_defeated() -> void:
 
 
 func quit_to_main() -> void:
+	game_started = false
 	if current_event != null:
 		current_event.queue_free()
 		current_event = null

@@ -3,7 +3,7 @@ extends Control
 
 # --- Signals ---
 
-signal dialogue_complete
+signal dialogue_complete(terminal_node_id: String)
 
 # --- Node References ---
 
@@ -68,4 +68,4 @@ func _on_choice_pressed(index: int) -> void:
 	_load_node(next_id)
 
 func _on_continue_pressed() -> void:
-	dialogue_complete.emit()
+	dialogue_complete.emit(_current_node_id)

@@ -12,7 +12,6 @@ var _data: Dictionary
 # --- Public API ---
 
 func initialize(data: Dictionary) -> void:
-	rewards = data.get("rewards", {})
 	var dialogue_path: String = data.get("dialogue", "")
 	if dialogue_path == "":
 		push_warning("DialogueEvent: data missing 'dialogue' key")
@@ -36,5 +35,7 @@ func _on_running() -> void:
 # --- Public API ---
 
 # Called by game.gd when gui.dialogue_complete fires.
-func on_dialogue_complete() -> void:
+func on_dialogue_complete(terminal_node_id: String) -> void:
+	var node: Dictionary = _data["nodes"][terminal_node_id]
+	rewards = node.get("rewards", {})
 	_advance_phase()

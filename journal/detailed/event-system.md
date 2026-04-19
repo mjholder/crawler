@@ -236,11 +236,11 @@ Root node only. Dialogue rendering lives entirely in GUI (`DialoguePanel`). `Dia
 
 | Method | When called |
 |---|---|
-| `on_dialogue_complete()` | Called from `_on_gui_dialogue_complete()` when the player dismisses the final dialogue node |
+| `on_dialogue_complete(terminal_node_id: String)` | Called from `_on_gui_dialogue_complete()` when the player dismisses the final dialogue node. `terminal_node_id` is the id of the node they stopped on. |
 
 ### Phase Flow
 
-`start()` runs `_on_setup()` (load JSON from `dialogue_json_path`) then `_on_running()` (emit `dialogue_requested`). Event stays in RUNNING while the player navigates. When the panel emits `dialogue_complete`, `game.gd` restores turn state and calls `on_dialogue_complete()` → `_advance_phase()` → RUNNING → RESOLUTION → COMPLETE → `event_complete`. `_on_resolution()` is not overridden.
+`start()` runs `_on_setup()` (load JSON from `dialogue_json_path`) then `_on_running()` (emit `dialogue_requested`). Event stays in RUNNING while the player navigates. When the panel emits `dialogue_complete(terminal_node_id)`, `game.gd` restores turn state and calls `on_dialogue_complete(terminal_node_id)`. The event then reads the terminal node's optional `rewards` dict off `_data["nodes"][terminal_node_id]` into the inherited `rewards` field, and calls `_advance_phase()` → RESOLUTION → COMPLETE → `event_complete`. `_on_resolution()` is not overridden. Event-level `rewards` no longer exists for dialogue — every rewarding path declares its own, or grants nothing.
 
 ### Dialogue Data Format
 
@@ -263,7 +263,8 @@ Dialogue trees live in `res://dialogue/` as JSON. Each file is one dialogue tree
       "speaker": "Merchant",
       "text": "Dangerous place.",
       "consequence": { "action": "set_flag", "value": "heard_dungeon_warning" },
-      "choices": []
+      "choices": [],
+      "rewards": { "experience": 10, "gold": 2 }
     },
     "0-1": {
       "speaker": null,
@@ -283,6 +284,7 @@ Dialogue trees live in `res://dialogue/` as JSON. Each file is one dialogue tree
 | `text` | `String` | Main body text |
 | `consequence` | `{ action: String, value: Variant } \| null` | Fired on node load, before text renders |
 | `choices` | `Array[{ text, next }]` | Empty array = terminal node; shows Continue button |
+| `rewards` | `{ experience: int, gold: int } \| omitted` | **Only on terminal nodes** (empty `choices`). Read by `DialogueEvent` after the player dismisses the node; fed into `game._apply_rewards()` at event completion. Omit to grant nothing. |
 
 Node IDs follow the path of choice indices taken to reach them (developer convention for readability). Navigation is driven by the explicit `"next"` field. Root is always `"0"`.
 
@@ -313,11 +315,12 @@ game.start_event(dialogue_event)
   → game._on_dialogue_requested(data)
     → save state, set DIALOGUE, gui.show_dialogue(data, _dialogue_consequences)
   → [player navigates dialogue tree]
-  → gui.dialogue_complete → game._on_gui_dialogue_complete()
+  → gui.dialogue_complete(terminal_node_id) → game._on_gui_dialogue_complete(id)
     → restore state
-    → de.on_dialogue_complete() → _advance_phase()
-      → RESOLUTION → COMPLETE → event_complete.emit()
-  → game._on_event_complete() → disconnect, _finish_event()
+    → de.on_dialogue_complete(id)
+      → rewards = _data["nodes"][id].get("rewards", {})
+      → _advance_phase() → RESOLUTION → COMPLETE → event_complete.emit()
+  → game._on_event_complete() → _apply_rewards(current_event.rewards), disconnect, _finish_event()
 ```
 
 ---
@@ -351,13 +354,13 @@ Root node only. Roll UI lives in `SkillCheckPanel`. Event loads data and coordin
 
 ### Phase Flow
 
-`start()` runs `_on_setup()` (load JSON, parse `_stat`, `_label`, `_on_success_path`, `_on_failure_path`, `rewards`) then `_on_running()` (emit `skill_check_requested`). Stays in RUNNING until `on_skill_check_complete(success)` is called.
+`start()` runs `_on_setup()` (load JSON, parse `_stat`, `_label`, `_on_success_path`, `_on_failure_path`, `_rewards_on_success`, `_rewards_on_failure`) then `_on_running()` (emit `skill_check_requested`). Stays in RUNNING until `on_skill_check_complete(success)` is called.
 
 `on_skill_check_complete(success)` stores `_success` and calls `_set_phase(Phase.RESOLUTION)` directly — not `_advance_phase()`. This lets `_on_resolution()` pause for dialogue before COMPLETE.
 
-`_on_resolution()` picks success or failure path. If empty, calls `_set_phase(Phase.COMPLETE)` directly. If non-empty, loads dialogue JSON and emits `dialogue_requested`.
+`_on_resolution()` sets `rewards = _rewards_on_success if _success else _rewards_on_failure` at its first line, so rewards are populated even if no result dialogue fires. Then picks the success or failure dialogue path. If empty, calls `_set_phase(Phase.COMPLETE)` directly. If non-empty, loads dialogue JSON and emits `dialogue_requested`.
 
-`on_dialogue_complete()` → `_set_phase(Phase.COMPLETE)` → `event_complete` emits.
+`on_dialogue_complete()` → `_set_phase(Phase.COMPLETE)` → `event_complete` emits. Note: this ignores the `terminal_node_id` that `game.gd` passes to `DialogueEvent.on_dialogue_complete()` — skill-check flavor dialogues are *not* reward-bearing, and any terminal-node `rewards` declared on them are ignored. The skill check's own `rewards_on_success` / `rewards_on_failure` are authoritative.
 
 ### JSON Format
 
@@ -366,13 +369,14 @@ Root node only. Roll UI lives in `SkillCheckPanel`. Event loads data and coordin
   "name": "sneak_past_guard",
   "label": "Sneak past the guard",
   "stat": "AGILITY",
-  "rewards": { "experience": 15, "gold": 0 },
+  "rewards_on_success": { "experience": 15, "gold": 0 },
+  "rewards_on_failure": {},
   "on_success": "res://resources/dialogue/sneak_success.json",
   "on_failure": "res://resources/dialogue/sneak_failure.json"
 }
 ```
 
-`stat` maps to `Enums.Stat` via `Enums.Stat[stat_key]`. `on_success` and `on_failure` point directly to dialogue node tree JSONs. Leave empty to skip result dialogue.
+`stat` maps to `Enums.Stat` via `Enums.Stat[stat_key]`. `on_success` and `on_failure` point directly to dialogue node tree JSONs. Leave empty to skip result dialogue. `rewards_on_success` and `rewards_on_failure` are each optional — omit to grant nothing on that outcome. No shared fallback; each outcome declares its own.
 
 ### Roll Mechanic
 
@@ -420,7 +424,7 @@ game.start_event(skill_check_event)
   → gui.skill_check_complete(success) → game._on_gui_skill_check_complete(success)
     → sce.on_skill_check_complete(success)
       → store _success, _set_phase(RESOLUTION)
-      → _on_resolution(): load dialogue + emit dialogue_requested OR _set_phase(COMPLETE)
+      → _on_resolution(): rewards = outcome-specific dict; then load dialogue + emit dialogue_requested OR _set_phase(COMPLETE)
 
   [if dialogue fires:]
   → game._on_dialogue_requested(data) → gui.show_dialogue()
@@ -433,7 +437,6 @@ game.start_event(skill_check_event)
 
 ### Open Questions
 
-- Rewards split by outcome — current `rewards` dict applies regardless. Future: `"rewards_on_success"` / `"rewards_on_failure"` keys.
 - Roll animation — panel shows result instantly; a tween would add game feel.
 - Stat display — showing the raw stat number reveals exact odds; consider hiding until after roll.
 

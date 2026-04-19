@@ -1,13 +1,11 @@
 {
 	"name": "debug_combat",
-	"enemies": [
-		{ "scene": "res://scenes/skeleton.tscn", "count": 3 }
+	"waves": [
+		{ "enemies": [{ "scene": "res://scenes/skeleton.tscn", "count": 1 }] },
+		{ "enemies": [{ "scene": "res://scenes/skeleton.tscn", "count": 2 }] }
 	],
 	"rewards": {
 		"experience": 30,
 		"gold": 10
-	},
-	"dialogue_triggers": {
-		"on_victory": "res://resources/dialogue/test_dialogue.json"
 	}
 }

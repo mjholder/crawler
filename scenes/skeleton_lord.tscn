@@ -79,7 +79,7 @@ _data = {
 [node name="SkeletonLord" type="Node2D" unique_id=187789442]
 script = ExtResource("1_3bivb")
 max_health = 100.0
-attack_damage = 30.0
+attack_damage = 80.0
 experience_value = 200
 defense = 10.0
 metadata/_custom_type_script = "uid://dgjw5haqbj82s"

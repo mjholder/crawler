@@ -14,6 +14,18 @@ extends Control
 var _inventory: Inventory
 var _slot_buttons: Array[Button] = []
 var _ring_buttons: Array[Button] = []
+var _can_equip: bool = true
+
+
+func set_can_equip(value: bool) -> void:
+	_can_equip = value
+	for btn in _slot_buttons:
+		btn.disabled = not value
+	for btn in _ring_buttons:
+		btn.disabled = not value
+	for child in _bag_grid.get_children():
+		if child is Button:
+			child.disabled = not value
 
 
 func setup(inventory: Inventory) -> void:
@@ -72,6 +84,7 @@ func _refresh_bag() -> void:
 		btn.pressed.connect(_on_bag_button_pressed.bind(data))
 		btn.mouse_entered.connect(_show_detail.bind(data))
 		btn.mouse_exited.connect(_hide_detail)
+		btn.disabled = not _can_equip
 		_bag_grid.add_child(btn)
 
 

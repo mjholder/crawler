@@ -1,0 +1,11 @@
+{
+	"name": "post_combat_default",
+	"nodes": {
+		"0": {
+			"speaker": null,
+			"text": "The battle is over.",
+			"consequence": null,
+			"choices": []
+		}
+	}
+}

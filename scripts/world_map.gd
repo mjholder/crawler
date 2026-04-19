@@ -14,9 +14,14 @@ signal node_selected(node: WorldMapNode)
 func _ready() -> void:
 	for child in $NodeContainer.get_children():
 		if child is WorldMapNode:
-			child.set_state(Enums.NodeState.LOCKED)
 			child.node_selected.connect(_on_node_selected)
+	reset()
 
+
+func reset() -> void:
+	for child in $NodeContainer.get_children():
+		if child is WorldMapNode:
+			child.set_state(Enums.NodeState.LOCKED)
 	for path in initial_nodes:
 		var node := get_node(path) as WorldMapNode
 		if node:

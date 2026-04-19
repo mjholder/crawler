@@ -30,7 +30,8 @@
       "speaker": "Stranger",
       "text": "Pressure plate, third corridor east. Whoever built this place didn't want company. Watch your step.",
       "consequence": { "action": "set_flag", "value": "heard_trap_warning" },
-      "choices": []
+      "choices": [],
+      "rewards": { "experience": 15, "gold": 3 }
     },
     "0-1-1": {
       "speaker": null,
@@ -42,7 +43,8 @@
       "speaker": null,
       "text": "The stranger nods once and steps aside, vanishing into the dark as if they were never there.",
       "consequence": { "action": "set_flag", "value": "stranger_dismissed" },
-      "choices": []
+      "choices": [],
+      "rewards": { "experience": 5, "gold": 0 }
     }
   }
 }

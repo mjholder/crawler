@@ -91,6 +91,13 @@ func _build_stats_text(class_data: PlayerClassData) -> String:
 	return "\n".join(lines)
 
 
+func reset() -> void:
+	_name_input.text = ""
+	_class_list.deselect_all()
+	_selected_index = -1
+	_continue_button.disabled = true
+
+
 func _on_continue_pressed() -> void:
 	if _selected_index < 0 or _name_input.text.strip_edges().is_empty():
 		return

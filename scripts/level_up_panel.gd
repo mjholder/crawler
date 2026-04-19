@@ -46,6 +46,8 @@ func _rebuild_stat_rows() -> void:
 	_plus_buttons.clear()
 	var stat_names := Enums.Stat.keys()
 	for stat_key in Enums.Stat.values():
+		if stat_key == Enums.Stat.DEFENSE:
+			continue
 		var row := HBoxContainer.new()
 		var label := Label.new()
 		label.custom_minimum_size = Vector2(200, 0)
@@ -73,6 +75,8 @@ func _refresh() -> void:
 	_confirm_button.disabled = _player.pending_stat_points > 0
 	var stat_names := Enums.Stat.keys()
 	for stat_key in Enums.Stat.values():
+		if stat_key == Enums.Stat.DEFENSE:
+			continue
 		var label: Label = _stat_labels.get(stat_key)
 		var minus_btn: Button = _minus_buttons.get(stat_key)
 		var plus_btn: Button = _plus_buttons.get(stat_key)

@@ -8,7 +8,7 @@ signal start_dialogue_requested
 signal start_skill_check_requested
 signal quit_to_main_requested
 signal attack_requested
-signal dialogue_complete
+signal dialogue_complete(terminal_node_id: String)
 signal skill_check_complete(success: bool)
 signal rest_requested
 signal rest_complete
@@ -88,14 +88,9 @@ func setup_inventory(inventory: Inventory) -> void:
 	_inventory_panel.setup(inventory)
 
 
-func toggle_inventory() -> void:
+func toggle_inventory(can_equip: bool = true) -> void:
+	_inventory_panel.set_can_equip(can_equip)
 	_inventory_panel.visible = not _inventory_panel.visible
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("inventory"):
-		toggle_inventory()
-		get_viewport().set_input_as_handled()
 
 
 # --- Navigation ---
@@ -110,6 +105,7 @@ func show_main_menu() -> void:
 func start_game() -> void:
 	_main_menu.hide()
 	_player_hud.show()
+	_world_map.reset()
 
 
 func handle_esc() -> void:
@@ -228,9 +224,9 @@ func show_dialogue(data: Dictionary, consequences: DialogueConsequences) -> void
 	_dialogue_panel.show()
 
 
-func _on_dialogue_complete() -> void:
+func _on_dialogue_complete(terminal_node_id: String) -> void:
 	_dialogue_panel.hide()
-	dialogue_complete.emit()
+	dialogue_complete.emit(terminal_node_id)
 
 
 # --- Skill Check ---
@@ -270,6 +266,7 @@ func _on_rest_complete() -> void:
 ## Shows the character creation panel. Wired once the scene is built.
 func show_character_creation() -> void:
 	_main_menu.hide()
+	_character_creation.reset()
 	_character_creation.show()
 
 

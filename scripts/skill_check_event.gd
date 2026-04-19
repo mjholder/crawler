@@ -12,15 +12,18 @@ var _stat: Enums.Stat
 var _label: String
 var _on_success_path: String
 var _on_failure_path: String
+var _rewards_on_success: Dictionary
+var _rewards_on_failure: Dictionary
 var _success: bool
 
 # --- Public API ---
 
 func initialize(data: Dictionary) -> void:
-	rewards = data.get("rewards", {})
 	_label = data.get("label", "")
 	_on_success_path = data.get("on_success", "")
 	_on_failure_path = data.get("on_failure", "")
+	_rewards_on_success = data.get("rewards_on_success", {})
+	_rewards_on_failure = data.get("rewards_on_failure", {})
 	var stat_key: String = data.get("stat", "")
 	if not stat_key in Enums.Stat:
 		push_warning("SkillCheckEvent: unknown stat '%s', defaulting to LUCK" % stat_key)
@@ -39,6 +42,7 @@ func _on_running() -> void:
 
 
 func _on_resolution() -> void:
+	rewards = _rewards_on_success if _success else _rewards_on_failure
 	var path: String = _on_success_path if _success else _on_failure_path
 	if path == "":
 		_set_phase(Phase.COMPLETE)

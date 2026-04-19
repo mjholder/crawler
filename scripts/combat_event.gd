@@ -1,6 +1,8 @@
 class_name CombatEvent
 extends Event
 
+const DEFAULT_VICTORY_DIALOGUE := "res://resources/dialogue/post_combat_default.json"
+
 # --- Signals ---
 
 signal enemy_added(enemy: Enemy, total_expected: int)
@@ -126,8 +128,14 @@ func _on_resolution() -> void:
 	if _dialogue_triggers.has("on_victory"):
 		_fire_trigger("on_victory")
 		# game.gd calls on_dialogue_complete() when dialogue is done
-	else:
+		return
+	var file := FileAccess.open(DEFAULT_VICTORY_DIALOGUE, FileAccess.READ)
+	if file == null:
+		push_warning("CombatEvent: default victory dialogue missing at '%s'" % DEFAULT_VICTORY_DIALOGUE)
 		_set_phase(Phase.COMPLETE)
+		return
+	var data: Dictionary = JSON.parse_string(file.get_as_text())
+	dialogue_trigger_fired.emit("on_victory_default", data)
 
 
 func on_dialogue_complete() -> void:
