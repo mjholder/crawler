@@ -76,6 +76,32 @@ extends EquipmentData    # scripts/weapon_data.gd
 
 Adds an attack sound. Weapon-specific data (damage type, special attack properties) can be added here as those systems are designed.
 
+### ConsumableData extends EquipmentData
+
+```gdscript
+class_name ConsumableData
+extends EquipmentData    # scripts/consumable_data.gd
+
+enum Effect { HEAL_FLAT, HEAL_PERCENT, DAMAGE_ALL, STAT_BUFF }
+
+@export var effect: Effect = Effect.HEAL_FLAT
+@export var effect_value: float = 0.0            # heal amount, damage amount, or buff magnitude
+@export var buff_stat: Enums.Stat = Enums.Stat.STRENGTH   # STAT_BUFF only
+@export var buff_duration: int = 3               # player turns; STAT_BUFF only
+@export var use_sfx: AudioStream
+@export var is_consumable: bool = true           # routing flag, mirrors is_ring
+```
+
+Single-use by design — the item is destroyed when activated and the belt slot becomes empty until the player re-equips something outside combat. No charge / stack counter exists on the resource.
+
+- `effect` — which branch of the dispatch table (`HEAL_FLAT`, `HEAL_PERCENT`, `DAMAGE_ALL`, `STAT_BUFF`) runs.
+- `effect_value` — polymorphic by effect: HP for `HEAL_FLAT`, percent of max health for `HEAL_PERCENT`, damage per enemy for `DAMAGE_ALL`, flat bonus for `STAT_BUFF`.
+- `buff_stat` / `buff_duration` — only consulted when `effect == STAT_BUFF`.
+- `is_consumable` — mirrors `is_ring`. `InventoryPanel` uses it to route bag clicks through `equip_consumable()` instead of `equip()` / `equip_ring()`.
+- `slot` is ignored. Consumables are indexed by belt position like rings.
+- `stat_modifiers` is ignored. Consumables grant **only active effects**, never passive bonuses — they are excluded from `Inventory.get_all_equipped()` (see below).
+- `scene` is typically unused; consumables don't instantiate an `Equipment` node under the Player. Dispatch is performed entirely from data.
+
 ---
 
 ## Equipment Node Trees
@@ -224,14 +250,19 @@ extends Node
 
 @export var max_bag_size: int = 20
 @export var max_rings: int = 2
+@export var belt_size: int = 2                    # initial consumable belt capacity
 
 var _equipped: Dictionary = {}   # Enums.Slot -> EquipmentData
 var _rings: Array = []           # Array of EquipmentData or null, length = max_rings
+var _consumable_belt: Array = [] # Array of ConsumableData or null, length = belt_size
 var _bag: Array[EquipmentData] = []
+var _dungeon_locked: bool = false   # true while inside a dungeon; see "Dungeon Lock" below
 
 func _ready() -> void:
     _rings.resize(max_rings)
     _rings.fill(null)
+    _consumable_belt.resize(belt_size)
+    _consumable_belt.fill(null)
 ```
 
 ### Signals
@@ -239,10 +270,45 @@ func _ready() -> void:
 ```gdscript
 signal slot_changed(slot: Enums.Slot, new_data: EquipmentData, old_data: EquipmentData)
 signal ring_changed(index: int, new_data: EquipmentData, old_data: EquipmentData)
+signal consumable_belt_changed(index: int, new_data: ConsumableData, old_data: ConsumableData)
+signal belt_size_changed(new_size: int)
 signal bag_changed()
 ```
 
 Either `new_data` or `old_data` can be `null` (filling from empty or becoming empty). Player uses these to manage Equipment node lifecycle.
+
+### Dungeon Lock
+
+While the player is inside a dungeon, **the bag is sealed**: items can enter but cannot leave. All equipment-swap operations that would pull an item from the bag — or set one aside that the player would need to retrieve — are blocked. Consumable pickups are the sole exception and go directly to the belt without touching the bag (see "Consumable Pickup Flow" below).
+
+```gdscript
+func set_dungeon_locked(locked: bool) -> void:
+    _dungeon_locked = locked
+
+func is_dungeon_locked() -> bool:
+    return _dungeon_locked
+```
+
+`game.gd` flips this flag at dungeon boundaries — on when the player enters a dungeon node, off when the dungeon completes (or, later, when the player steps into a shrine/safe room). `Inventory` itself does not know the game state; it only enforces the rule.
+
+**Paths that check the lock and no-op when locked:**
+
+| API | Lock check | Notes |
+|---|---|---|
+| `equip(slot, data)` | blocked when locked | would pull from bag to a named slot |
+| `unequip(slot)` | blocked when locked | returns to bag, but player couldn't re-equip |
+| `equip_ring(data)` / `equip_ring_at(index, data)` | blocked when locked | bag→ring |
+| `unequip_ring(index)` | blocked when locked | ring→bag |
+| `equip_consumable(data)` / `equip_consumable_at(index, data)` | blocked when locked | bag→belt |
+| `unequip_consumable(index)` | blocked when locked | belt→bag |
+| `remove_from_bag(data)` | blocked when locked | the seal rule |
+| `place_consumable_on_belt(index, data)` | **bypasses lock** | pickup path only, never reads from bag |
+| `consume(index)` | **bypasses lock** | activation, not equipping |
+| `add_to_bag(data)` | always allowed | items can enter the bag freely |
+
+No signal fires on a blocked call — the operation is simply a no-op. UI code (InventoryPanel) is responsible for disabling controls up-front via `gui.set_dungeon_locked(true)` rather than relying on silent method failure.
+
+> **Lore pointer:** see `journal/ideas.md` entries **Equipment locked in dungeons ("bad air")** and **Consumable handling mid-dungeon ("only the dead remain still")** for the fiction behind this rule.
 
 ### Named Slot API
 
@@ -279,23 +345,61 @@ func unequip_ring(index: int) -> void
 func get_rings() -> Array  # returns duplicate
 ```
 
+### Consumable Belt API
+
+```gdscript
+# Equip into the first empty belt slot from the bag. Returns false if the belt
+# is full or the inventory is dungeon-locked.
+func equip_consumable(data: ConsumableData) -> bool
+
+# Equip from bag to a specific index, displacing the current occupant to the bag.
+# No-op while dungeon-locked.
+func equip_consumable_at(index: int, data: ConsumableData) -> void
+
+# Move the item at index back into the bag. No-op while dungeon-locked.
+func unequip_consumable(index: int) -> void
+
+# Pickup-path placement. Writes to _consumable_belt[index] directly; the displaced
+# occupant (if any) is RETURNED to the caller so game.gd can ask the player whether
+# to bag or drop it. Bypasses the dungeon lock — the pickup never touches the bag.
+# Emits consumable_belt_changed(index, new_data, displaced).
+func place_consumable_on_belt(index: int, data: ConsumableData) -> ConsumableData
+
+# Clear the slot and return the removed data. Used by the dispatcher after an
+# effect is applied. Emits consumable_belt_changed(index, null, old). Bypasses the
+# dungeon lock — consumable activation is always allowed.
+func consume(index: int) -> ConsumableData
+
+func get_consumable_at(index: int) -> ConsumableData
+func get_consumable_belt() -> Array  # returns duplicate; may contain nulls
+
+# Resize the belt. When shrinking, overflow items spill into the bag (in reverse
+# index order); if the bag is full, they are dropped. Emits belt_size_changed.
+func set_belt_size(n: int) -> void
+```
+
+The belt mirrors the ring pattern: index-based, may contain `null` entries, separate from the bag. `equip_consumable_at` is what `InventoryPanel` calls when the player drags a consumable from the bag onto a specific belt slot; the auto-fill `equip_consumable(data)` is used for starting loadouts and InventoryPanel bag→belt clicks. `place_consumable_on_belt(index, data)` is a dedicated pickup-path method used by `game.gd._on_consumable_pickup()` — it does not read the bag and is not blocked by the dungeon lock, so fresh pickups can be slotted while dungeon-locked even though bag→belt moves cannot. `consume(index)` is called by `game.gd` immediately after the effect is applied — it is the only path that should clear a belt slot during combat, and is also lock-bypassing so consumable use works inside a dungeon.
+
 ### Bag API
 
 ```gdscript
 func add_to_bag(data: EquipmentData) -> bool   # returns false if full
-func remove_from_bag(data: EquipmentData) -> void
+func remove_from_bag(data: EquipmentData) -> void   # no-op when dungeon-locked
 func is_bag_full() -> bool
 func get_bag() -> Array[EquipmentData]          # returns duplicate
 ```
+
+`add_to_bag` is always allowed — items may enter the bag during a dungeon run (bag-routed pickups, displaced consumables from swaps, etc.). `remove_from_bag` is blocked while dungeon-locked: once an item is in the bag during a dungeon, it stays there until the dungeon completes.
 
 ### Utility
 
 ```gdscript
 # Returns all equipped EquipmentData across named slots and rings.
-# Used by Player.get_effective_stat().
+# Used by Player.get_effective_stat(). Excludes consumables — they grant
+# only active effects, never passive stat modifiers.
 func get_all_equipped() -> Array[EquipmentData]
 
-# Resets all slots, rings, and bag. Called by player.initialize() on new game.
+# Resets all slots, rings, belt, and bag. Called by player.initialize() on new game.
 func clear() -> void
 ```
 
@@ -307,6 +411,14 @@ player._inventory._rings.append(null)
 ```
 
 No signal needed — UI reads `get_rings()`.
+
+### Expanding Belt Slots
+
+```gdscript
+player._inventory.set_belt_size(player._inventory.belt_size + 1)
+```
+
+`set_belt_size()` emits `belt_size_changed(new_size)`; `ConsumableBelt` rebuilds its button row in response. Shrinking spills overflow items into the bag (or drops them if the bag is full).
 
 ---
 
@@ -396,6 +508,7 @@ func execute_action(action_name: String) -> void:
 func _process(_delta: float) -> void:
     if _turn_pending and _is_turn_complete():
         _turn_pending = false
+        _tick_buffs()
         turn_ended.emit()
 
 func _is_turn_complete() -> bool:
@@ -406,6 +519,37 @@ func _on_weapon_animation_finished() -> void:
 ```
 
 `_attack_animation_pending` is set in `_do_attack()` when a weapon is equipped, cleared when `Weapon.animation_finished` fires. `game.gd` is unchanged — it connects to `turn_ended` and doesn't care when it fires.
+
+### Buff Tracking
+
+```gdscript
+var _active_buffs: Array = []   # [{stat: Enums.Stat, amount: float, turns_remaining: int}]
+
+func apply_buff(stat: Enums.Stat, amount: float, duration: int) -> void:
+    _active_buffs.append({"stat": stat, "amount": amount, "turns_remaining": duration})
+    buff_applied.emit(stat, amount, duration)
+    stats_changed.emit(build_stats_dict())
+
+func _tick_buffs() -> void:
+    var expired_stats: Array = []
+    for buff in _active_buffs:
+        buff.turns_remaining -= 1
+    var kept: Array = []
+    for buff in _active_buffs:
+        if buff.turns_remaining <= 0:
+            expired_stats.append(buff.stat)
+        else:
+            kept.append(buff)
+    _active_buffs = kept
+    if not expired_stats.is_empty():
+        for stat in expired_stats:
+            buff_expired.emit(stat)
+        stats_changed.emit(build_stats_dict())
+```
+
+`_tick_buffs()` is called once per player turn, **immediately before `turn_ended.emit()` in `_process()`**, so a `duration` of `N` means "active for N player turns starting with the turn on which it was applied." Enemy turns do not tick buffs.
+
+Buffs are additive and independent — applying `+5 STR` twice stacks to `+10` until each entry expires. There are no diminishing returns, no caps, and no stat-grouped merging for MVP.
 
 ### Node Wiring
 
@@ -452,6 +596,9 @@ Adding future actions: call `register_action("action_name", _do_action_name)` in
 | `died` | `_die()` | `game.gd` in `set_player()` |
 | `gold_changed(new_total: int)` | `add_gold()` | `game.gd` → `gui.update_player_gold()` |
 | `experience_changed(new_total: int)` | `add_experience()` | `game.gd` → `gui.update_player_xp()` |
+| `consumable_used(data: ConsumableData)` | `game.gd._on_consumable_use_requested()` after effect + `Inventory.consume()` | `game.gd` → `gui.log_message()` / optional SFX |
+| `buff_applied(stat, amount, duration)` | `apply_buff()` | `game.gd` → `gui.log_message()` (optional HUD indicator later) |
+| `buff_expired(stat)` | `_tick_buffs()` when a buff reaches zero duration | `game.gd` → `gui.log_message()` |
 
 ---
 
@@ -464,6 +611,9 @@ func get_effective_stat(stat: Enums.Stat) -> float:
     for data in _inventory.get_all_equipped():
         if data.stat_modifiers.has(stat):
             bonus += data.stat_modifiers[stat]
+    for buff in _active_buffs:
+        if buff.stat == stat:
+            bonus += buff.amount
     return base + bonus
 
 func _get_base_stat(stat: Enums.Stat) -> float:
@@ -477,9 +627,9 @@ func _get_base_stat(stat: Enums.Stat) -> float:
     return 0.0
 ```
 
-Reads from `EquipmentData.stat_modifiers` directly — not from Equipment nodes. Stat math works even when an item has no scene (e.g. rings without visuals).
+Reads from `EquipmentData.stat_modifiers` directly — not from Equipment nodes. Stat math works even when an item has no scene (e.g. rings without visuals). Active buffs (from `STAT_BUFF` consumables) are layered on top of the equipment bonuses.
 
-`_calculate_damage()` and `_apply_defense()` call `get_effective_stat()` rather than reading raw floats directly.
+`_calculate_damage()` and `_apply_defense()` call `get_effective_stat()` rather than reading raw floats directly — so buffs automatically flow into attack/defense math without extra wiring.
 
 ---
 
@@ -510,6 +660,10 @@ extends Resource    # scripts/player_class_data.gd
 @export var starting_equipped: Dictionary = {}   # Enums.Slot -> EquipmentData
 @export var starting_rings: Array[EquipmentData] = []
 @export var starting_bag: Array[EquipmentData] = []
+
+# Starting Consumables
+@export var starting_consumable_slots: int = 2
+@export var starting_consumables: Array[ConsumableData] = []
 ```
 
 **File location:** `resources/classes/warrior.tres`, `rogue.tres`, etc.
@@ -523,6 +677,8 @@ extends Resource    # scripts/player_class_data.gd
 | class_health_bonus | 20.0 |
 | growth_rates | `{ STR: 3.0, CON: 2.0 }` |
 | starting_equipped | `{ WEAPON: battle_axe.tres, TORSO: leather_chest, … }` |
+| starting_consumable_slots | 2 |
+| starting_consumables | `[minor_healing_potion.tres, throwing_bomb.tres]` |
 
 ---
 
@@ -578,6 +734,9 @@ func _setup_starting_equipment(class_data: PlayerClassData) -> void:
         _inventory.equip(slot_key as Enums.Slot, class_data.starting_equipped[slot_key])
     for ring in class_data.starting_rings:
         _inventory.equip_ring(ring)
+    _inventory.set_belt_size(class_data.starting_consumable_slots)
+    for consumable in class_data.starting_consumables:
+        _inventory.equip_consumable(consumable)
     for item in class_data.starting_bag:
         _inventory.add_to_bag(item)
 ```
@@ -743,6 +902,93 @@ Event completes → game.gd checks pending_stat_points
 
 ---
 
+## Consumable Use Dispatch
+
+Consumable activation **never flows through the action registry**. Doing so would set `_turn_pending = true` and eventually emit `turn_ended`, which is the explicit contract of every registered action. Consumables must not end the player's turn.
+
+### Flow
+
+```
+ConsumableBelt button pressed (index)
+  → gui.consumable_use_requested(index)     # gui.gd re-emits from ConsumableBelt
+  → game.gd._on_consumable_use_requested(index)
+      1. Validate state ∉ {ENEMY_TURN, GAME_OVER, VICTORY}
+      2. data := player._inventory.get_consumable_at(index)
+      3. if data == null: return
+      4. _apply_consumable_effect(data)
+      5. player._inventory.consume(index)    # clears slot, emits consumable_belt_changed
+      6. player.consumable_used.emit(data)   # for combat log, SFX
+```
+
+### Effect dispatch
+
+```gdscript
+func _apply_consumable_effect(data: ConsumableData) -> void:
+    match data.effect:
+        ConsumableData.Effect.HEAL_FLAT:
+            player.heal(data.effect_value)
+        ConsumableData.Effect.HEAL_PERCENT:
+            player.heal(player.max_health * data.effect_value * 0.01)
+        ConsumableData.Effect.DAMAGE_ALL:
+            if current_event is CombatEvent:
+                (current_event as CombatEvent).apply_consumable_damage(data.effect_value)
+            # no-op outside combat
+        ConsumableData.Effect.STAT_BUFF:
+            player.apply_buff(data.buff_stat, data.effect_value, data.buff_duration)
+```
+
+`CombatEvent.apply_consumable_damage(amount)` iterates living enemies and calls `enemy.take_damage(amount)` on each — the same path `player.attack` reaches through. `DAMAGE_ALL` effects outside combat silently do nothing; there is no error state (they just don't apply).
+
+### Invariant — do not break
+
+**This path must not touch `_turn_pending` and must not emit `turn_ended`.** `execute_action()` remains the single source of turn-ending. Any future consumable effect that *should* end the turn belongs in the action registry as a distinct `register_action("…")` entry, not in this dispatch table.
+
+---
+
+## Consumable Pickup Flow
+
+The pickup flow is the one path that can move consumables onto the belt while the inventory is dungeon-locked. It is driven by `game.gd` in response to a loot interaction (the Loot UI itself is not yet designed — see `gui-design.md § Pickup Choice`). The rule set is symmetric for bag-locked and unlocked states; the dungeon lock only changes which choices the UI offers.
+
+### Player choices at pickup (consumable)
+
+1. **Equip to empty slot** — only available if at least one belt slot is empty. Writes directly to the empty slot, no bag involvement.
+2. **Swap with an equipped consumable** — available when the belt is occupied. Player picks which slot; the displaced occupant then needs a destination:
+   - **Send displaced to bag** — standard case; `add_to_bag(displaced)` is always allowed.
+   - **Drop displaced** — the displaced item is discarded (lost).
+3. **Put in bag** — consumable goes into the bag. During a dungeon this is a one-way commitment: the item cannot be pulled back to the belt until the dungeon ends.
+4. **Drop** — the new item is discarded.
+
+Equipment (non-consumable `EquipmentData`) has a reduced choice set during a dungeon: only **Put in bag** or **Drop**. Outside a dungeon, equipment pickups can use the normal InventoryPanel flow to equip immediately.
+
+### Flow
+
+```
+Loot interaction selects item (data)
+  → gui shows pickup choice (three-choice prompt for consumables, two for equipment)
+  → game.gd._on_consumable_pickup(data, choice, target_index, displaced_action)
+      match choice:
+          EQUIP_EMPTY:
+              place_consumable_on_belt(target_index, data)
+              # displaced return value is null; belt was empty
+          SWAP:
+              displaced := place_consumable_on_belt(target_index, data)
+              match displaced_action:
+                  TO_BAG:  _inventory.add_to_bag(displaced)
+                  DROP:    pass   # discard
+          BAG:
+              _inventory.add_to_bag(data)
+          DROP:
+              pass   # discard
+```
+
+`place_consumable_on_belt` is the only method that writes to `_consumable_belt` without checking the dungeon lock; it is therefore the pickup-only primitive. The high-level pickup handler lives in `game.gd` because it spans multiple systems (Inventory + loot UI + possibly CombatEvent for drop-on-floor visuals later).
+
+### Invariant — do not break
+
+**Pickups never read from the bag.** The pickup flow is strictly item-in-hand → destination. If a flow ever needs to move a bag item to the belt, that is a bag→belt operation and is subject to the dungeon lock like any other equip call. Keeping the pickup path bag-isolated is what makes the "bag is sealed during a dungeon" rule enforceable.
+
+---
+
 ## Open Questions
 
 - **Unarmed weapon:** Needs its own `.tres` resource and logic to auto-equip when no weapon is present. `base_damage` was removed — this dependency is not yet resolved.
@@ -754,3 +1000,11 @@ Event completes → game.gd checks pending_stat_points
 - **Level cap:** Not defined — can be added as an export var when content scope is clearer.
 - **Respec:** Not planned.
 - **XP display:** HUD should show progress toward next level ("XP: 45/115") once leveling lands in the UI.
+- **Consumable belt growth:** MVP ships with a fixed `starting_consumable_slots` per class and the `set_belt_size()` helper. No equipment-driven or level-driven growth mechanic exists yet — see `journal/ideas.md`.
+- **Combat-only consumables:** No flag distinguishes combat-only from universal items. `DAMAGE_ALL` no-ops outside combat; other effects work anywhere allowed by the state gate. A future `combat_only: bool` on `ConsumableData` could disable buttons when out of scope rather than silently failing.
+- **Buff stacking:** Additive with independent decrements; no caps, no diminishing returns, no per-stat merging. Two `+5 STR, 3 turns` buffs stack to `+10 STR` and both tick down separately.
+- **`use_sfx` playback channel:** Unresolved whether to reuse `SFX/AttackPlayer`, add a dedicated `SFX/ConsumePlayer` on the Player, or let the dispatcher play it on a one-shot node. Flag at implementation time.
+- **Dungeon lock boundaries:** `game.gd` drives `Inventory.set_dungeon_locked()`. The exact world-map → dungeon transition hook is not yet defined — current turn-state machine has no `IN_DUNGEON` phase. May derive from `current_event` type (e.g. `CombatEvent` / `LootEvent` / `RoleplaysEvent` imply dungeon) vs `ShopEvent` / `RestEvent` (imply safe node). Revisit when dungeon-run structure (`journal/ideas.md § Roguelike Run Structure`) is formalized.
+- **Shrine / safe room unlock:** Planned longer-dungeon feature that temporarily unlocks the inventory mid-dungeon. Not yet in scope. When built, it toggles `set_dungeon_locked(false)` on entry and `true` on exit.
+- **Full-belt-plus-full-bag pickup:** If the belt is full AND the bag is full, the player's only remaining choices are Swap+Drop (displaced item lost) or Drop (new item lost). Acceptable but harsh; may want to surface this clearly in the pickup UI.
+- **Pre-dungeon preparation UX:** Leaving belt slots empty before descending is a valid strategy (room for pickups). The UI may want to signal this as a deliberate choice rather than an oversight, e.g. a subtle "Empty — ready for pickup" label rather than a warning indicator.

@@ -42,7 +42,8 @@ GUI  (CanvasLayer, layer 4)  [gui.gd]
 ├── CombatHUD  (Control)                   # shown only during CombatEvent
 │   ├── EnemyHUD  (Control)
 │   ├── ActionMenu  (Control)
-│   │   └── AttackButton  (Button)
+│   │   ├── AttackButton  (Button)
+│   │   └── ConsumableBelt  (HBoxContainer)   [consumable_belt_ui.gd]
 │   └── CombatLog  (RichTextLabel)
 │
 ├── DialoguePanel  (Control)               [dialogue_panel.gd] hidden by default
@@ -101,8 +102,42 @@ Shown over any game state when ESC is pressed. `game.gd` calls `gui.handle_esc()
 |---|---|---|
 | `EnemyHUD` | Control | Container; `health_bar.tscn` instances per enemy |
 | `ActionMenu` | Control | Player action buttons; enabled on player turn |
-| `AttackButton` | Button | Sole current action |
+| `AttackButton` | Button | Turn-ending attack action |
+| `ConsumableBelt` | HBoxContainer | Per-slot consumable-use buttons. Icon from equipped `ConsumableData.sprite_frames`; disabled when slot empty or state disallows use. |
 | `CombatLog` | RichTextLabel | Append-only log; cleared on new combat |
+
+#### ConsumableBelt
+
+```
+ConsumableBelt      HBoxContainer       scripts/consumable_belt_ui.gd
+└── [Button nodes instantiated at runtime, one per belt slot]
+```
+
+Built at runtime from `Inventory.belt_size`. Subscribes to `Inventory.consumable_belt_changed` and `Inventory.belt_size_changed`; rebuilds its button row when belt size changes.
+
+Each button:
+- Indexed by belt position, stored on the button as a metadata key.
+- Shows the equipped `ConsumableData.sprite_frames` idle frame as its icon; when the slot is empty, shows an empty-slot placeholder and sets `disabled = true`.
+- `pressed` → emits `consumable_use_requested(index: int)` upward.
+- Enabled/disabled as a group via `set_can_use(value: bool)`.
+
+```gdscript
+signal consumable_use_requested(index: int)
+
+var _inventory: Inventory
+
+func setup(inventory: Inventory) -> void
+func set_can_use(value: bool) -> void
+
+func _on_consumable_belt_changed(index: int, new_data: ConsumableData, old_data: ConsumableData) -> void
+func _on_belt_size_changed(new_size: int) -> void
+```
+
+`ConsumableBelt` receives the `Inventory` reference at setup (passed by `gui.gd` when the player is set) — it does not read `Player` or `game.gd`. That keeps the component's dependencies to just `Inventory` state.
+
+**Enable gate:** `set_player_turn(false)` no longer disables `ConsumableBelt` — usage is allowed during `NO_TURN` and `DIALOGUE` too. `game.gd` flips `gui.set_consumables_enabled(enabled)` based on state: enabled when `state in {PLAYER_TURN, NO_TURN, DIALOGUE}`, disabled otherwise.
+
+**Dungeon lock is independent.** The belt's buttons are for *using* consumables, not for equipping them. `Inventory.consume()` bypasses the dungeon lock, so the belt works normally inside a dungeon. The dungeon lock only affects **equipping/unequipping** flows (InventoryPanel belt row, bag→belt drags), never use.
 
 ---
 
@@ -467,6 +502,14 @@ func remove_enemy_health_bar(enemy: Enemy) -> void
 func set_player_turn(is_player_turn: bool) -> void
 func log_message(text: String) -> void
 
+# --- Consumables ---
+signal consumable_use_requested(index: int)
+func set_consumables_enabled(enabled: bool) -> void   # flips ConsumableBelt.set_can_use
+func setup_consumable_belt(inventory: Inventory) -> void   # called from game.gd on set_player
+
+# --- Inventory lock (bag sealed during dungeons) ---
+func set_dungeon_locked(locked: bool) -> void   # disables all equip/unequip/swap in InventoryPanel
+
 # --- Dialogue ---
 func show_dialogue(data: Dictionary, consequences: DialogueConsequences) -> void
 
@@ -513,6 +556,9 @@ All connections wired in `game.gd`. GUI emits nothing outbound except through it
 | `ShopPanel` | `leave_requested` | `game.gd: _on_gui_shop_leave_requested()` | `gui.gd: _ready()` → relayed |
 | `LevelUpPanel` | `level_up_complete` | `game.gd: _on_level_up_complete()` | `gui.gd: _ready()` → relayed |
 | `CharacterCreation` | `character_created(name, class_data)` | `game.gd: _on_character_created()` | `gui.gd: _ready()` → relayed |
+| `ConsumableBelt` | `consumable_use_requested(index)` | `game.gd: _on_consumable_use_requested()` | `gui.gd: _ready()` → relayed |
+| `Inventory` | `consumable_belt_changed` | `ConsumableBelt._on_consumable_belt_changed()` | `gui.setup_consumable_belt()` (direct, no relay) |
+| `Inventory` | `belt_size_changed` | `ConsumableBelt._on_belt_size_changed()` | `gui.setup_consumable_belt()` (direct, no relay) |
 | `MainMenu/StartButton` | `pressed` | show character creation | `game.gd: _ready()` |
 | `PauseMenu/QuitToMainButton` | `pressed` | `game.gd: quit_to_main()` | `game.gd: _ready()` |
 | `GameOverPanel` *(planned)* | `main_menu_requested` | `gui.quit_to_main_requested` → `game.gd: quit_to_main()` | `gui.gd: _ready()` |
@@ -524,6 +570,55 @@ All connections wired in `game.gd`. GUI emits nothing outbound except through it
 - `player.attack` — routed through `CombatEvent`
 - `CombatEvent.player_attacked` — `game.gd` applies damage; GUI sees result via `player.damaged`
 - `player.turn_ended` / `CombatEvent.enemy_turns_complete` — `game.gd` calls `gui.set_player_turn()` at each transition
+- `player.consumable_used` / `player.buff_applied` / `player.buff_expired` — `game.gd` observes and pushes to `gui.log_message()`; the belt UI itself rebuilds from `Inventory` signals, not from `Player`
+
+---
+
+## InventoryPanel — Consumable Belt Row
+
+`InventoryPanel` is not documented in depth here (it pre-dates this doc). The consumables system adds one visual addition, and the dungeon-lock rule changes how the whole panel behaves mid-dungeon.
+
+- A horizontal row of **belt-slot buttons** beneath the existing Rings row. Each button shows the equipped `ConsumableData` icon or an empty placeholder. Click to unequip (returns the item to the bag).
+- Bag entries with `is_consumable == true` route through `Inventory.equip_consumable(data)` (auto-fill) or `Inventory.equip_consumable_at(index, data)` (when dragged onto a specific belt slot) — the same branching `is_ring` uses today.
+- All belt-row and bag-routing buttons respect the existing `set_can_equip()` gate, so they are disabled during combat turns for free.
+
+### Dungeon-locked behavior
+
+While the player is inside a dungeon, **the entire InventoryPanel is read-only**. `gui.set_dungeon_locked(true)` disables every equip/unequip/swap interaction:
+
+| Control | Dungeon-unlocked | Dungeon-locked |
+|---|---|---|
+| Equipped-slot click (weapon / armor / ring / belt) | unequip to bag | disabled |
+| Bag-item click on equipment | route to `equip*` | disabled |
+| Bag-item click on consumable | route to `equip_consumable*` | disabled |
+| Drag from bag → equipped/ring/belt slot | perform swap | drag rejected |
+| View item details | full details | full details (unchanged) |
+
+Viewing stats, reading item descriptions, and browsing the bag all remain available — the panel becomes an info surface rather than an edit surface. A status line or banner ("Bag sealed — the bad air keeps you moving") surfaces the rule so the player understands why controls are disabled rather than assuming a bug.
+
+Implementation note: `set_dungeon_locked()` should be a **stronger** gate than `set_can_equip()`. When locked, ignore `set_can_equip()` entirely — the combat-turn gate is a finer-grained variant that only matters in the unlocked (safe-node) context.
+
+---
+
+## Pickup Choice (during dungeon)
+
+**Status:** Planned — UI details deferred until the loot system is designed.
+
+When the player picks up an item mid-dungeon, the InventoryPanel cannot be used to equip it (the panel is locked). Instead, a dedicated pickup prompt surfaces the choices in-flow. The prompt is driven by `game.gd` and rendered by a new `PickupChoicePanel` (TBD). The exact choice set depends on item type:
+
+**Consumable pickup** (four possible choices, gated by availability):
+- **Equip to slot N** — shown once per empty belt slot.
+- **Swap with slot N** — shown once per occupied belt slot. Player then chooses *where the displaced item goes*: bag or drop.
+- **Put in bag** — disabled if bag is full.
+- **Drop** — always available.
+
+**Equipment pickup** (two choices during dungeon):
+- **Put in bag** — disabled if bag is full.
+- **Drop** — always available.
+
+The "Equip" choice for non-consumable equipment is simply not offered inside a dungeon. Outside a dungeon (world map, rest, shop contexts), standard InventoryPanel flows handle equip instead.
+
+Wiring signal (planned): `PickupChoicePanel.choice_made(choice, target_index, displaced_action)` → `game.gd._on_consumable_pickup()` / `_on_equipment_pickup()`. See `journal/detailed/character.md § Consumable Pickup Flow` for the handler contract.
 
 ---
 
@@ -534,3 +629,7 @@ All connections wired in `game.gd`. GUI emits nothing outbound except through it
 - **Enemy health bar identity** — Show enemy names? Distinguish two skeletons?
 - **CombatLog persistence** — Clear on each new combat, or accumulate across the run?
 - **PauseMenu contents** — Resume and quit are the minimum. Settings, controls, save/load may follow.
+- **ConsumableBelt scope** — Belt buttons live inside `CombatHUD` today, so they're only visible while fighting. Since usage is permitted during `NO_TURN` and `DIALOGUE`, a later pass may surface the belt outside combat (world-map overlay or persistent HUD element). MVP keeps it combat-only.
+- **PickupChoicePanel shape** — Listed inline in `game.gd._on_consumable_pickup()` flow, but the panel scene and layout are not yet designed. Open questions: modal vs inline, single-screen with all choices vs two-step (choice → displaced-item destination for swaps), how the displaced-item choice is surfaced visually (two extra buttons or a secondary prompt).
+- **Dungeon-lock feedback** — InventoryPanel needs to communicate *why* controls are disabled when locked ("Bag sealed — the bad air keeps you moving", or a padlock icon, or the whole panel shaded). MVP probably a single status label; revisit when lore copy is being written.
+- **Equipment pickup UX outside dungeons** — When the player is on the world map / rest / shop and picks up an item, the pickup flow has more options than the two-choice dungeon prompt. Need to decide whether to route those to the same `PickupChoicePanel` with an expanded choice set, or let the InventoryPanel be the primary handling path and skip the pickup prompt entirely in safe contexts.
