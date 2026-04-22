@@ -31,3 +31,9 @@ extends Resource
 
 ## Items placed in the bag on game start.
 @export var starting_bag: Array[EquipmentData] = []
+
+## Number of consumable belt slots this class starts with.
+@export var starting_consumable_slots: int = 2
+
+## Consumables auto-equipped to belt slots on game start.
+@export var starting_consumables: Array[ConsumableData] = []

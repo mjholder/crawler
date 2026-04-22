@@ -16,6 +16,7 @@ signal node_selected(node: WorldMapNode)
 signal shop_buy_requested(item: EquipmentData)
 signal shop_sell_requested(item: EquipmentData)
 signal shop_leave_requested
+signal consumable_use_requested(index: int)
 
 # --- Node References ---
 @onready var _character_creation: CharacterCreationPanel = $CharacterCreationPanel
@@ -30,6 +31,7 @@ signal shop_leave_requested
 @onready var _combat_hud: Control = $CombatHUD
 @onready var _enemy_hud: Control = $CombatHUD/EnemyHUD
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
+@onready var _consumable_belt: ConsumableBeltUI = $CombatHUD/ActionMenu/ConsumableBelt
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
 @onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
@@ -76,6 +78,7 @@ func _ready() -> void:
 	_shop_panel.buy_requested.connect(func(item: EquipmentData) -> void: shop_buy_requested.emit(item))
 	_shop_panel.sell_requested.connect(func(item: EquipmentData) -> void: shop_sell_requested.emit(item))
 	_shop_panel.leave_requested.connect(func() -> void: shop_leave_requested.emit())
+	_consumable_belt.consumable_use_requested.connect(func(idx: int) -> void: consumable_use_requested.emit(idx))
 	_game_over_panel.hide()
 	_game_over_panel.main_menu_requested.connect(func() -> void: quit_to_main_requested.emit())
 	_victory_panel.hide()
@@ -91,6 +94,20 @@ func setup_inventory(inventory: Inventory) -> void:
 func toggle_inventory(can_equip: bool = true) -> void:
 	_inventory_panel.set_can_equip(can_equip)
 	_inventory_panel.visible = not _inventory_panel.visible
+
+
+func set_dungeon_locked(locked: bool) -> void:
+	_inventory_panel.set_dungeon_locked(locked)
+
+
+# --- Consumables ---
+
+func setup_consumable_belt(inventory: Inventory) -> void:
+	_consumable_belt.setup(inventory)
+
+
+func set_consumables_enabled(enabled: bool) -> void:
+	_consumable_belt.set_can_use(enabled)
 
 
 # --- Navigation ---
@@ -135,6 +152,9 @@ func show_combat_hud() -> void:
 
 
 func hide_combat_hud() -> void:
+	for child in _enemy_hud.get_children():
+		child.queue_free()
+	_enemy_bars.clear()
 	_combat_hud.hide()
 
 

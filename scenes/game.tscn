@@ -25,6 +25,7 @@
 [ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]
 [ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
 [ext_resource type="Script" uid="uid://qloduutsnv77" path="res://scripts/victory_panel.gd" id="25_bhx41"]
+[ext_resource type="Script" uid="uid://biwwcl2cyveoh" path="res://scripts/consumable_belt_ui.gd" id="26_cbeltu"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -223,6 +224,21 @@ offset_bottom = -73.0
 grow_horizontal = 0
 grow_vertical = 0
 icon = ExtResource("7_u5sy4")
+
+[node name="ConsumableBelt" type="HBoxContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=-2060399406]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -104.0
+offset_right = -160.0
+offset_bottom = -73.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("26_cbeltu")
 
 [node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
 layout_mode = 0

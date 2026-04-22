@@ -24,6 +24,16 @@ func on_rest_complete() -> void:
 	_advance_phase()
 
 
+# --- Enter / Exit ---
+
+func _on_enter(game: Node) -> void:
+	rest_requested.connect(game._on_rest_requested)
+
+
+func _on_exit(game: Node) -> void:
+	rest_requested.disconnect(game._on_rest_requested)
+
+
 # --- Phase Hooks ---
 
 func _on_running() -> void:

@@ -11,6 +11,9 @@ signal gold_changed(new_total: int)
 signal experience_changed(new_total: int)
 signal stats_changed(stats: Dictionary)
 signal leveled_up(new_level: int)
+signal consumable_used(data: ConsumableData)
+signal buff_applied(stat: Enums.Stat, amount: float, duration: int)
+signal buff_expired(stat: Enums.Stat)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -45,6 +48,7 @@ var _attack_animation_pending: bool = false
 var _weapon_visible: bool = false
 var _hurt_overlay: ColorRect = null
 var _class_data: PlayerClassData = null
+var _active_buffs: Array = []  # Array of {stat, amount, turns_remaining}
 
 # --- Node References ---
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
@@ -67,6 +71,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _turn_pending and _is_turn_complete():
 		_turn_pending = false
+		_tick_buffs()
 		turn_ended.emit()
 
 
@@ -93,10 +98,13 @@ func initialize(p_name: String, class_data: PlayerClassData) -> void:
 
 
 func _setup_starting_equipment(class_data: PlayerClassData) -> void:
+	_inventory.set_belt_size(class_data.starting_consumable_slots)
 	for slot_key in class_data.starting_equipped:
 		_inventory.equip(slot_key as Enums.Slot, class_data.starting_equipped[slot_key])
 	for ring in class_data.starting_rings:
 		_inventory.equip_ring(ring)
+	for i in class_data.starting_consumables.size():
+		_inventory.equip_consumable_at(i, class_data.starting_consumables[i])
 	for item in class_data.starting_bag:
 		_inventory.add_to_bag(item)
 
@@ -323,7 +331,26 @@ func get_effective_stat(stat: Enums.Stat) -> float:
 	for data in _inventory.get_all_equipped():
 		if data.stat_modifiers.has(stat):
 			bonus += data.stat_modifiers[stat]
+	for buff in _active_buffs:
+		if buff.stat == stat:
+			bonus += buff.amount
 	return base + bonus
+
+
+func apply_buff(stat: Enums.Stat, amount: float, duration: int) -> void:
+	_active_buffs.append({stat = stat, amount = amount, turns_remaining = duration})
+	buff_applied.emit(stat, amount, duration)
+
+
+func _tick_buffs() -> void:
+	var expired: Array = []
+	for buff in _active_buffs:
+		buff.turns_remaining -= 1
+		if buff.turns_remaining <= 0:
+			expired.append(buff)
+	for buff in expired:
+		_active_buffs.erase(buff)
+		buff_expired.emit(buff.stat)
 
 
 func build_stats_dict() -> Dictionary:

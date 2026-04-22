@@ -22,6 +22,16 @@ func initialize(data: Dictionary) -> void:
 		return
 	_data = JSON.parse_string(dialogue_file.get_as_text())
 
+# --- Enter / Exit ---
+
+func _on_enter(game: Node) -> void:
+	dialogue_requested.connect(game._on_dialogue_requested)
+
+
+func _on_exit(game: Node) -> void:
+	dialogue_requested.disconnect(game._on_dialogue_requested)
+
+
 # --- Phase Hooks ---
 
 func _on_setup() -> void:

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ConsumableData" format=3 uid="uid://cdat_strtonic"]
+
+[ext_resource type="Script" path="res://scripts/consumable_data.gd" id="1_cdat"]
+
+[resource]
+script = ExtResource("1_cdat")
+item_name = "Strength Tonic"
+description = "Grants +20 STR for 3 turns."
+effect = 3
+effect_value = 20.0
+buff_stat = 0
+buff_duration = 3

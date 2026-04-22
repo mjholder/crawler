@@ -16,8 +16,9 @@ extends Node2D
 var screen_size: Vector2
 var screen_center: Vector2
 
-# --- Turn State ---
+# --- Game / Turn State ---
 
+var game_state: Enums.GameState = Enums.GameState.MAIN_MENU
 var state: Enums.TurnState = Enums.TurnState.NO_TURN
 var game_started: bool = false
 var round_number: int = 0
@@ -55,9 +56,6 @@ func _ready() -> void:
 	$Player.position = screen_center
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
 	_gui.setup_inventory($Player.get_node("Inventory") as Inventory)
-	if _exploration_music:
-		$Music/BGM.stream = _exploration_music
-		$Music/BGM.play()
 
 	_gui.character_created.connect(_on_character_created)
 	_gui.level_up_complete.connect(_on_level_up_complete)
@@ -65,6 +63,7 @@ func _ready() -> void:
 	_gui.start_skill_check_requested.connect(start_skill_check_game)
 	_gui.quit_to_main_requested.connect(quit_to_main)
 	_gui.attack_requested.connect(attack_action)
+	_gui.consumable_use_requested.connect(_on_consumable_use_requested)
 	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
 	_gui.skill_check_complete.connect(_on_gui_skill_check_complete)
 	_gui.rest_requested.connect(_on_gui_rest_requested)
@@ -73,7 +72,8 @@ func _ready() -> void:
 	_gui.shop_buy_requested.connect(_on_gui_shop_buy_requested)
 	_gui.shop_sell_requested.connect(_on_gui_shop_sell_requested)
 	_gui.shop_leave_requested.connect(_on_gui_shop_leave_requested)
-	_gui.show_main_menu()
+
+	_enter_main_menu()
 
 
 # --- Input Handling ---
@@ -103,36 +103,30 @@ func attack_action() -> void:
 
 
 func start_dialogue_game() -> void:
+	if debug_dialogue_scene == null:
+		return
 	game_started = true
+	game_state = Enums.GameState.DUNGEON
 	_gui.start_game()
-	if debug_dialogue_scene != null:
-		var event_instance := debug_dialogue_scene.instantiate() as DialogueEvent
-		start_event(event_instance)
+	var event_instance := debug_dialogue_scene.instantiate() as DialogueEvent
+	_enter_event(event_instance)
 
 
 func start_skill_check_game() -> void:
+	if debug_skill_check_scene == null:
+		return
 	game_started = true
+	game_state = Enums.GameState.DUNGEON
 	_gui.start_game()
-	if debug_skill_check_scene != null:
-		var event_instance := debug_skill_check_scene.instantiate() as SkillCheckEvent
-		start_event(event_instance)
+	var event_instance := debug_skill_check_scene.instantiate() as SkillCheckEvent
+	_enter_event(event_instance)
 
 
 func _on_character_created(p_name: String, class_data: PlayerClassData) -> void:
-	game_started = true
 	player.initialize(p_name, class_data)
-	_gui.start_game()
-	_gui.show_world_map()
-	_gui.update_player_health(player.health, player.max_health)
-	_gui.update_player_stats(player.build_stats_dict())
-	_gui.update_player_gold(player.gold)
-	_gui.update_player_xp(player.experience)
-
-
-func start_game() -> void:
 	game_started = true
 	_gui.start_game()
-	_gui.show_world_map()
+	_enter_world_map()
 
 
 # --- Participant Setup ---
@@ -146,6 +140,7 @@ func set_player(p: Player) -> void:
 	player.gold_changed.connect(_on_player_gold_changed)
 	player.experience_changed.connect(_on_player_experience_changed)
 	player.stats_changed.connect(_on_player_stats_changed)
+	_gui.setup_consumable_belt(player.get_node("Inventory") as Inventory)
 	_gui.update_player_health(player.max_health, player.max_health)
 	_gui.update_player_stats(player.build_stats_dict())
 
@@ -173,118 +168,144 @@ func _on_player_stats_changed(stats: Dictionary) -> void:
 	_gui.update_player_health(player.health, player.max_health)
 
 
+# --- State Enter / Exit ---
+
+func _enter_main_menu() -> void:
+	game_state = Enums.GameState.MAIN_MENU
+	state = Enums.TurnState.NO_TURN
+	game_started = false
+	player.set_weapon_visible(false)
+	_start_exploration_music()
+	_gui.return_to_main_menu()
+
+
+func _exit_main_menu() -> void:
+	pass
+
+
+func _enter_world_map(completed_node: WorldMapNode = null) -> void:
+	game_state = Enums.GameState.WORLD_MAP
+	state = Enums.TurnState.NO_TURN
+	_start_exploration_music()
+	player.set_weapon_visible(false)
+	if completed_node != null:
+		_gui.world_map_on_dungeon_complete(completed_node)
+	else:
+		_gui.show_world_map()
+	_gui.update_player_health(player.health, player.max_health)
+	_gui.update_player_stats(player.build_stats_dict())
+	_gui.update_player_gold(player.gold)
+	_gui.update_player_xp(player.experience)
+
+
+func _exit_world_map() -> void:
+	_gui.hide_world_map()
+
+
+func _enter_dungeon(configs: Array[Dictionary], event_index: int, world_node: WorldMapNode) -> void:
+	game_state = Enums.GameState.DUNGEON
+	_active_world_node = world_node
+	_pending_event_configs = configs
+	_event_index = event_index
+	player.inventory.set_dungeon_locked(true)
+	_gui.set_dungeon_locked(true)
+	_start_next_dungeon_event()
+
+
+func _exit_dungeon() -> void:
+	_exit_event()
+	_pending_event_configs = []
+	_event_index = 0
+	_active_world_node = null
+	player.inventory.set_dungeon_locked(false)
+	_gui.set_dungeon_locked(false)
+
+
+func _enter_game_over() -> void:
+	game_state = Enums.GameState.GAME_OVER
+	state = Enums.TurnState.GAME_OVER
+	_pending_event_configs = []
+	_event_index = 0
+	_active_world_node = null
+	_gui.set_consumables_enabled(false)
+	_gui.show_game_over()
+
+
+func _exit_game_over() -> void:
+	_gui.hide_game_over()
+
+
+func _enter_victory() -> void:
+	game_state = Enums.GameState.VICTORY
+	state = Enums.TurnState.VICTORY
+	_pending_event_configs = []
+	_event_index = 0
+	_active_world_node = null
+	_gui.set_consumables_enabled(false)
+	_gui.show_victory()
+
+
+func _exit_victory() -> void:
+	_gui.hide_victory()
+
+
 # --- Event Control ---
 
-func start_event(event: Event) -> void:
+func _enter_event(event: Event) -> void:
 	$EventContainer.add_child(event)
 	current_event = event
 	current_event.event_complete.connect(_on_event_complete, CONNECT_ONE_SHOT)
-	if event is CombatEvent:
-		print("[GAME] Starting Combat Event")
-		var ce := event as CombatEvent
-		ce.enemy_added.connect(_on_combat_enemy_added)
-		ce.dialogue_trigger_fired.connect(_on_combat_dialogue_trigger)
-		ce.player_attacked.connect(_on_player_attacked)
-		ce.enemy_turns_complete.connect(_on_enemy_turns_complete)
-		player.attack.connect(_on_player_attack_action)
-		if event is BossEvent:
-			(event as BossEvent).boss_defeated.connect(_on_boss_defeated, CONNECT_ONE_SHOT)
-		_gui.show_combat_hud()
-		_gui.set_player_turn(false)
-		_start_combat_music()
-		player.set_weapon_visible(true)
-	elif event is DialogueEvent:
-		var de := event as DialogueEvent
-		de.dialogue_requested.connect(_on_dialogue_requested)
-	elif event is SkillCheckEvent:
-		var sce := event as SkillCheckEvent
-		sce.skill_check_requested.connect(_on_skill_check_requested)
-		sce.dialogue_requested.connect(_on_dialogue_requested)
-	elif event is RestEvent:
-		var re := event as RestEvent
-		re.rest_requested.connect(_on_rest_requested)
-	elif event is ShopEvent:
-		var se := event as ShopEvent
-		se.shop_requested.connect(_on_shop_requested)
-		se.stock_changed.connect(_on_shop_stock_changed)
-		player.get_node("Inventory").bag_changed.connect(_on_shop_bag_changed)
+	event._on_enter(self)
 	current_event.start()
 	if event is CombatEvent and state != Enums.TurnState.DIALOGUE:
 		_start_player_turn()
 
 
-func _on_event_complete() -> void:
-	print("[GAME] Event complete")
-	_apply_rewards(current_event.rewards)
-	_teardown_current_event()
-	if player.pending_stat_points > 0:
-		_gui.show_level_up(player)
-		return
-	if state == Enums.TurnState.VICTORY:
-		_gui.show_victory()
-		return
-	_finish_event()
-
-
-func _teardown_current_event() -> void:
+func _exit_event() -> void:
 	if current_event == null:
 		return
-	if current_event is CombatEvent:
-		var ce := current_event as CombatEvent
-		ce.player_attacked.disconnect(_on_player_attacked)
-		ce.enemy_turns_complete.disconnect(_on_enemy_turns_complete)
-		ce.enemy_added.disconnect(_on_combat_enemy_added)
-		ce.dialogue_trigger_fired.disconnect(_on_combat_dialogue_trigger)
-		player.attack.disconnect(_on_player_attack_action)
-		for enemy in ce._enemies:
-			_gui.remove_enemy_health_bar(enemy)
-		_gui.hide_combat_hud()
-		player.set_weapon_visible(false)
-	elif current_event is DialogueEvent:
-		var de := current_event as DialogueEvent
-		de.dialogue_requested.disconnect(_on_dialogue_requested)
-	elif current_event is SkillCheckEvent:
-		var sce := current_event as SkillCheckEvent
-		sce.skill_check_requested.disconnect(_on_skill_check_requested)
-		sce.dialogue_requested.disconnect(_on_dialogue_requested)
-	elif current_event is RestEvent:
-		var re := current_event as RestEvent
-		re.rest_requested.disconnect(_on_rest_requested)
-	elif current_event is ShopEvent:
-		var se := current_event as ShopEvent
-		se.shop_requested.disconnect(_on_shop_requested)
-		se.stock_changed.disconnect(_on_shop_stock_changed)
-		player.get_node("Inventory").bag_changed.disconnect(_on_shop_bag_changed)
+	current_event._on_exit(self)
 	current_event.queue_free()
 	current_event = null
 
 
+func _on_event_complete() -> void:
+	print("[GAME] Event complete")
+	_apply_rewards(current_event.rewards)
+	_exit_event()
+	if player.pending_stat_points > 0:
+		_gui.show_level_up(player)
+		return
+	if state == Enums.TurnState.VICTORY:
+		_enter_victory()
+		return
+	_finish_event()
+
+
 func _on_level_up_complete() -> void:
 	if state == Enums.TurnState.VICTORY:
-		_gui.show_victory()
+		_enter_victory()
 		return
 	if state == Enums.TurnState.GAME_OVER:
-		_gui.show_game_over()
+		_enter_game_over()
 		return
 	_finish_event()
 
 
 func _finish_event() -> void:
 	state = Enums.TurnState.NO_TURN
+	_gui.set_consumables_enabled(true)
 	if _active_world_node != null:
 		_start_next_dungeon_event()
 	else:
-		_start_exploration_music()
-		_gui.return_to_main_menu()
+		_enter_main_menu()
 
 
 # --- World Map ---
 
 func _on_world_node_selected(node: WorldMapNode) -> void:
-	_active_world_node = node
-	_pending_event_configs = node.generate_event_configs()
-	_event_index = 0
-	_start_next_dungeon_event()
+	_exit_world_map()
+	_enter_dungeon(node.generate_event_configs(), 0, node)
 
 
 func _start_next_dungeon_event() -> void:
@@ -295,15 +316,13 @@ func _start_next_dungeon_event() -> void:
 	_event_index += 1
 	var event := (config["scene"] as PackedScene).instantiate() as Event
 	event.initialize(config["data"])
-	start_event(event)
+	_enter_event(event)
 
 
 func _on_dungeon_complete() -> void:
-	_start_exploration_music()
-	_gui.world_map_on_dungeon_complete(_active_world_node)
-	_pending_event_configs = []
-	_event_index = 0
-	_active_world_node = null
+	var completed_node := _active_world_node
+	_exit_dungeon()
+	_enter_world_map(completed_node)
 
 
 func _on_player_attacked(damage: float) -> void:
@@ -316,6 +335,7 @@ func _on_player_attacked(damage: float) -> void:
 func start_dialogue(data: Dictionary) -> void:
 	_pre_dialogue_state = state
 	state = Enums.TurnState.DIALOGUE
+	_gui.set_consumables_enabled(true)
 	_gui.show_dialogue(data, _dialogue_consequences)
 
 
@@ -433,6 +453,34 @@ func _on_gui_dialogue_complete(terminal_node_id: String) -> void:
 		_finish_event()
 
 
+# --- Consumable Dispatch ---
+# This path never calls execute_action() and never touches _turn_pending — turn does not end.
+
+func _on_consumable_use_requested(index: int) -> void:
+	if state in [Enums.TurnState.ENEMY_TURN, Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
+		return
+	var inventory := player.get_node("Inventory") as Inventory
+	var data: ConsumableData = inventory.get_consumable_at(index)
+	if data == null:
+		return
+	inventory.consume(index)
+	_apply_consumable_effect(data)
+	player.consumable_used.emit(data)
+
+
+func _apply_consumable_effect(data: ConsumableData) -> void:
+	match data.effect:
+		ConsumableData.Effect.HEAL_FLAT:
+			player.heal(data.effect_value)
+		ConsumableData.Effect.HEAL_PERCENT:
+			player.heal(player.max_health * data.effect_value * 0.01)
+		ConsumableData.Effect.DAMAGE_ALL:
+			if current_event is CombatEvent:
+				(current_event as CombatEvent).apply_consumable_damage(data.effect_value)
+		ConsumableData.Effect.STAT_BUFF:
+			player.apply_buff(data.buff_stat, data.effect_value, data.buff_duration)
+
+
 # --- Turn Flow ---
 
 func _start_player_turn() -> void:
@@ -440,6 +488,7 @@ func _start_player_turn() -> void:
 	round_number += 1
 	print("[ROUND %d] === Player Turn ===" % round_number)
 	_gui.set_player_turn(true)
+	_gui.set_consumables_enabled(true)
 	_gui.log_message("[Round %d] Your turn." % round_number)
 
 
@@ -453,6 +502,7 @@ func _on_player_turn_ended() -> void:
 
 func _run_enemy_turns() -> void:
 	state = Enums.TurnState.ENEMY_TURN
+	_gui.set_consumables_enabled(false)
 	print("[ROUND %d] === Enemy Turn ===" % round_number)
 	(current_event as CombatEvent).run_enemy_turns()
 
@@ -486,6 +536,8 @@ func _start_combat_music() -> void:
 func _start_exploration_music() -> void:
 	if _exploration_music == null:
 		return
+	if $Music/BGM.stream == _exploration_music and $Music/BGM.playing:
+		return
 	$Music/BGM.stream = _exploration_music
 	$Music/BGM.play()
 
@@ -494,33 +546,28 @@ func _start_exploration_music() -> void:
 
 func _on_player_died() -> void:
 	print("[GAME] Player died — GAME OVER")
-	state = Enums.TurnState.GAME_OVER
-	_teardown_current_event()
-	_gui.show_game_over()
+	_exit_event()
+	_enter_game_over()
 
 
 func _on_boss_defeated() -> void:
 	print("[GAME] Boss defeated — VICTORY")
 	state = Enums.TurnState.VICTORY
-	_pending_event_configs = []
-	_event_index = 0
-	_active_world_node = null
-	# Teardown and victory panel happen via the normal event completion flow
-	# after the on_victory dialogue plays through _on_event_complete()
+	_gui.set_consumables_enabled(false)
+	# Victory panel is shown via _on_event_complete() after the on_victory dialogue.
 
 
 func quit_to_main() -> void:
-	game_started = false
-	if current_event != null:
-		current_event.queue_free()
-		current_event = null
-	_pending_event_configs = []
-	_event_index = 0
-	_active_world_node = null
-	_start_exploration_music()
-	player.set_weapon_visible(false)
-	_gui.return_to_main_menu()
-	state = Enums.TurnState.NO_TURN
+	match game_state:
+		Enums.GameState.DUNGEON:
+			_exit_dungeon()
+		Enums.GameState.WORLD_MAP:
+			_exit_world_map()
+		Enums.GameState.GAME_OVER:
+			_exit_game_over()
+		Enums.GameState.VICTORY:
+			_exit_victory()
+	_enter_main_menu()
 
 
 # --- Helper Functions ---

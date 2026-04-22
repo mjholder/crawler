@@ -6,6 +6,19 @@ extends CombatEvent
 signal boss_defeated
 
 
+# --- Enter / Exit ---
+
+func _on_enter(game: Node) -> void:
+	super._on_enter(game)
+	boss_defeated.connect(game._on_boss_defeated, CONNECT_ONE_SHOT)
+
+
+func _on_exit(game: Node) -> void:
+	if boss_defeated.is_connected(game._on_boss_defeated):
+		boss_defeated.disconnect(game._on_boss_defeated)
+	super._on_exit(game)
+
+
 # --- Phase Control ---
 
 func _advance_phase() -> void:

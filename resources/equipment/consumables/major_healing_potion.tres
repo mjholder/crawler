@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ConsumableData" format=3 uid="uid://cdat_majorhealpot"]
+
+[ext_resource type="Script" path="res://scripts/consumable_data.gd" id="1_cdat"]
+
+[resource]
+script = ExtResource("1_cdat")
+item_name = "Major Healing Potion"
+description = "Restores 25% of max HP."
+effect = 1
+effect_value = 25.0

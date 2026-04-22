@@ -1,15 +1,18 @@
-[gd_resource type="Resource" script_class="PlayerClassData" format=3 uid="uid://warrior_class001"]
+[gd_resource type="Resource" script_class="PlayerClassData" format=3 uid="uid://gd05xm21dlnr"]
 
-[ext_resource type="Script" uid="uid://cplyr_classdata1" path="res://scripts/player_class_data.gd" id="1_pcd"]
+[ext_resource type="Script" path="res://scripts/player_class_data.gd" id="1_pcd"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="2_2uuax"]
 [ext_resource type="Resource" uid="uid://b2df62wmsyqmd" path="res://resources/equipment/weapons/battle_axe.tres" id="2_axe"]
-[ext_resource type="Resource" uid="uid://test_chest001" path="res://resources/equipment/armor/leather_chest.tres" id="3_chest"]
+[ext_resource type="Resource" uid="uid://db1bvel3krb2" path="res://resources/equipment/armor/leather_chest.tres" id="3_chest"]
+[ext_resource type="Script" uid="uid://3eu536m6ee4v" path="res://scripts/consumable_data.gd" id="3_jfbdk"]
+[ext_resource type="Resource" path="res://resources/equipment/consumables/major_healing_potion.tres" id="4_tpr3e"]
+[ext_resource type="Resource" path="res://resources/equipment/consumables/throwing_bomb.tres" id="5_k0nru"]
 
 [resource]
 script = ExtResource("1_pcd")
 class_name_text = "Warrior"
 description = "A sturdy frontline fighter. High STR and CON growth. Starts with a battle axe and leather armour."
 strength = 60.0
-defense = 50.0
 constitution = 55.0
 agility = 40.0
 spirit = 30.0
@@ -23,5 +26,4 @@ starting_equipped = {
 0: ExtResource("2_axe"),
 4: ExtResource("3_chest")
 }
-starting_rings = []
-starting_bag = []
+starting_consumables = Array[ExtResource("3_jfbdk")]([ExtResource("4_tpr3e"), ExtResource("5_k0nru")])

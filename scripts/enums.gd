@@ -1,5 +1,9 @@
 class_name Enums
 
+# --- Game State ---
+
+enum GameState { MAIN_MENU, CHARACTER_CREATION, WORLD_MAP, DUNGEON, GAME_OVER, VICTORY }
+
 # --- Turn Flow ---
 
 enum TurnState { NO_TURN, PLAYER_TURN, ENEMY_TURN, GAME_OVER, ENEMY_CLEARED, DIALOGUE, VICTORY }

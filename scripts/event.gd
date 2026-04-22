@@ -47,6 +47,14 @@ func _set_phase(next_phase: Phase) -> void:
 
 # --- Extension Hooks ---
 
+func _on_enter(_game: Node) -> void:
+	pass
+
+
+func _on_exit(_game: Node) -> void:
+	pass
+
+
 func _on_setup() -> void:
 	pass
 

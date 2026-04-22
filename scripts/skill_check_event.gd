@@ -31,6 +31,18 @@ func initialize(data: Dictionary) -> void:
 		return
 	_stat = Enums.Stat[stat_key]
 
+# --- Enter / Exit ---
+
+func _on_enter(game: Node) -> void:
+	skill_check_requested.connect(game._on_skill_check_requested)
+	dialogue_requested.connect(game._on_dialogue_requested)
+
+
+func _on_exit(game: Node) -> void:
+	skill_check_requested.disconnect(game._on_skill_check_requested)
+	dialogue_requested.disconnect(game._on_dialogue_requested)
+
+
 # --- Phase Hooks ---
 
 func _on_setup() -> void:

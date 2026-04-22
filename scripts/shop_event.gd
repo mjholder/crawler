@@ -48,6 +48,22 @@ func get_sell_price(item: EquipmentData) -> int:
 	return roundi(item.price * _sell_mult)
 
 
+# --- Enter / Exit ---
+
+func _on_enter(game: Node) -> void:
+	shop_requested.connect(game._on_shop_requested)
+	stock_changed.connect(game._on_shop_stock_changed)
+	var inventory: Inventory = game.player.get_node("Inventory")
+	inventory.bag_changed.connect(game._on_shop_bag_changed)
+
+
+func _on_exit(game: Node) -> void:
+	shop_requested.disconnect(game._on_shop_requested)
+	stock_changed.disconnect(game._on_shop_stock_changed)
+	var inventory: Inventory = game.player.get_node("Inventory")
+	inventory.bag_changed.disconnect(game._on_shop_bag_changed)
+
+
 # --- Extension Hooks ---
 
 func _on_setup() -> void:
