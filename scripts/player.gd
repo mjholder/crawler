@@ -42,6 +42,7 @@ var gold: int = 0
 var experience: int = 0
 var level: int = 1
 var pending_stat_points: int = 0
+var pending_growth_bonuses: Dictionary = {}
 var is_dead: bool = false
 var _turn_pending: bool = false
 var _attack_animation_pending: bool = false
@@ -89,6 +90,7 @@ func initialize(p_name: String, class_data: PlayerClassData) -> void:
 	level = 1
 	experience = 0
 	pending_stat_points = 0
+	pending_growth_bonuses = {}
 	gold = 0
 	_inventory.clear()
 	is_dead = false
@@ -177,9 +179,15 @@ func _apply_growth_rates() -> void:
 	if _class_data == null:
 		return
 	for stat_key in _class_data.growth_rates:
-		_add_to_base_stat(stat_key as Enums.Stat, _class_data.growth_rates[stat_key])
+		var amount: float = _class_data.growth_rates[stat_key]
+		_add_to_base_stat(stat_key as Enums.Stat, amount)
+		pending_growth_bonuses[stat_key] = pending_growth_bonuses.get(stat_key, 0.0) + amount
 	_recalculate_max_health()
 	stats_changed.emit(build_stats_dict())
+
+
+func clear_pending_growth_bonuses() -> void:
+	pending_growth_bonuses = {}
 
 
 func spend_stat_point(stat: Enums.Stat) -> void:
@@ -323,6 +331,14 @@ func set_weapon_visible(show: bool) -> void:
 	var weapon := get_equipped_node(Enums.Slot.WEAPON)
 	if weapon != null:
 		weapon.visible = show
+
+
+func get_base_stat(stat: Enums.Stat) -> float:
+	return _get_base_stat(stat)
+
+
+func get_inventory() -> Inventory:
+	return _inventory
 
 
 func get_effective_stat(stat: Enums.Stat) -> float:

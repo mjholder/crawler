@@ -5,66 +5,54 @@ extends Control
 signal level_up_confirmed
 
 # --- Node References ---
-# Expected scene layout:
-#   PanelContainer/VBoxContainer/
-#     TitleLabel     (Label)   "Level Up! You are now level N"
-#     PointsLabel    (Label)   "Points remaining: N"
-#     StatsContainer (VBoxContainer)  — stat rows added dynamically
-#     ConfirmButton  (Button)
 @onready var _title_label: Label = $PanelContainer/VBoxContainer/TitleLabel
-@onready var _points_label: Label = $PanelContainer/VBoxContainer/PointsLabel
-@onready var _stats_container: VBoxContainer = $PanelContainer/VBoxContainer/StatsContainer
+@onready var _points_label: Label = $PanelContainer/VBoxContainer/PointsContainer/PointsLabel
 @onready var _confirm_button: Button = $PanelContainer/VBoxContainer/ConfirmButton
 
 var _player: Player = null
-# Tracks points spent in this session so we can undo before confirming.
-# Enums.Stat (int) -> int count
+# Enums.Stat (int) -> int, points spent this panel session
 var _session_allocations: Dictionary = {}
-# Direct references to row widgets, keyed by Enums.Stat (int).
-var _stat_labels: Dictionary = {}
-var _minus_buttons: Dictionary = {}
-var _plus_buttons: Dictionary = {}
+# Enums.Stat (int) -> float, base value before growth and session spend
+var _pre_session_bases: Dictionary = {}
+
+# Row node bundles keyed by Enums.Stat (int)
+var _rows: Dictionary = {}
 
 
 func _ready() -> void:
+	_rows = {
+		Enums.Stat.STRENGTH:     _build_row_ref("StrengthContainer"),
+		Enums.Stat.CONSTITUTION: _build_row_ref("ConstitutionContainer"),
+		Enums.Stat.AGILITY:      _build_row_ref("AgilityContainer"),
+		Enums.Stat.SPIRIT:       _build_row_ref("SpiritContainer"),
+		Enums.Stat.LUCK:         _build_row_ref("LuckContainer"),
+	}
+	for stat_key in _rows:
+		var row: Dictionary = _rows[stat_key]
+		row.plus.pressed.connect(_on_plus_pressed.bind(stat_key as Enums.Stat))
+		row.minus.pressed.connect(_on_minus_pressed.bind(stat_key as Enums.Stat))
 	_confirm_button.pressed.connect(_on_confirm_pressed)
+
+
+func _build_row_ref(container_name: String) -> Dictionary:
+	var container: HBoxContainer = $PanelContainer/VBoxContainer/StatsContainer.get_node(container_name)
+	return {
+		number = container.get_node("NumberLabel") as Label,
+		bonus  = container.get_node("BonusLabel") as Label,
+		plus   = container.get_node("PlusButton") as Button,
+		minus  = container.get_node("MinusButton") as Button,
+	}
 
 
 ## Called by game.gd before showing the panel.
 func setup(player: Player) -> void:
 	_player = player
 	_session_allocations = {}
-	_rebuild_stat_rows()
+	_pre_session_bases = {}
+	for stat_key in _rows:
+		var growth: float = _player.pending_growth_bonuses.get(stat_key, 0.0)
+		_pre_session_bases[stat_key] = _player.get_base_stat(stat_key as Enums.Stat) - growth
 	_refresh()
-
-
-func _rebuild_stat_rows() -> void:
-	for child in _stats_container.get_children():
-		child.queue_free()
-	_stat_labels.clear()
-	_minus_buttons.clear()
-	_plus_buttons.clear()
-	var stat_names := Enums.Stat.keys()
-	for stat_key in Enums.Stat.values():
-		if stat_key == Enums.Stat.DEFENSE:
-			continue
-		var row := HBoxContainer.new()
-		var label := Label.new()
-		label.custom_minimum_size = Vector2(200, 0)
-		label.text = "%s: %.0f" % [stat_names[stat_key], _player.get_effective_stat(stat_key as Enums.Stat)]
-		var minus_btn := Button.new()
-		minus_btn.text = "-"
-		minus_btn.pressed.connect(_on_minus_pressed.bind(stat_key as Enums.Stat))
-		var plus_btn := Button.new()
-		plus_btn.text = "+"
-		plus_btn.pressed.connect(_on_plus_pressed.bind(stat_key as Enums.Stat))
-		row.add_child(label)
-		row.add_child(minus_btn)
-		row.add_child(plus_btn)
-		_stats_container.add_child(row)
-		_stat_labels[stat_key] = label
-		_minus_buttons[stat_key] = minus_btn
-		_plus_buttons[stat_key] = plus_btn
 
 
 func _refresh() -> void:
@@ -73,20 +61,19 @@ func _refresh() -> void:
 	_title_label.text = "Level Up!  You are now level %d." % _player.level
 	_points_label.text = "Points remaining: %d" % _player.pending_stat_points
 	_confirm_button.disabled = _player.pending_stat_points > 0
-	var stat_names := Enums.Stat.keys()
-	for stat_key in Enums.Stat.values():
-		if stat_key == Enums.Stat.DEFENSE:
-			continue
-		var label: Label = _stat_labels.get(stat_key)
-		var minus_btn: Button = _minus_buttons.get(stat_key)
-		var plus_btn: Button = _plus_buttons.get(stat_key)
-		if label == null:
-			continue
-		var value: float = _player.get_effective_stat(stat_key as Enums.Stat)
-		label.text = "%s: %.0f" % [stat_names[stat_key], value]
-		var spent_on_this: int = _session_allocations.get(stat_key, 0)
-		minus_btn.disabled = spent_on_this <= 0
-		plus_btn.disabled = _player.pending_stat_points <= 0
+	for stat_key in _rows:
+		var row: Dictionary = _rows[stat_key]
+		var growth: float = _player.pending_growth_bonuses.get(stat_key, 0.0)
+		var spent: int = _session_allocations.get(stat_key, 0)
+		var pre_base: float = _pre_session_bases.get(stat_key, 0.0)
+		row.number.text = "%d" % int(pre_base)
+		row.bonus.text = "+%d" % (int(growth) + spent)
+		if growth > 0.0:
+			row.bonus.add_theme_color_override("font_color", Color.GREEN)
+		else:
+			row.bonus.remove_theme_color_override("font_color")
+		row.minus.disabled = spent <= 0
+		row.plus.disabled = _player.pending_stat_points <= 0
 
 
 func _on_plus_pressed(stat: Enums.Stat) -> void:
@@ -108,4 +95,5 @@ func _on_minus_pressed(stat: Enums.Stat) -> void:
 func _on_confirm_pressed() -> void:
 	if _player != null and _player.pending_stat_points > 0:
 		return
+	_player.clear_pending_growth_bonuses()
 	level_up_confirmed.emit()

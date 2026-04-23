@@ -1,10 +1,17 @@
 class_name ConsumableBeltUI
-extends HBoxContainer
+extends HFlowContainer
 
 signal consumable_use_requested(index: int)
 
+@export var template_button: Button
+
 var _inventory: Inventory
 var _can_use: bool = true
+
+
+func _ready() -> void:
+	if template_button == null:
+		template_button = get_parent().get_node_or_null("ConsumableButton") as Button
 
 
 func setup(inventory: Inventory) -> void:
@@ -25,25 +32,27 @@ func set_can_use(value: bool) -> void:
 func _rebuild() -> void:
 	for child in get_children():
 		child.queue_free()
-	if _inventory == null:
+	if _inventory == null or template_button == null:
 		return
 	var belt := _inventory.get_consumable_belt()
 	for i in belt.size():
-		var btn := Button.new()
-		var data: ConsumableData = belt[i]
-		btn.text = data.item_name if data != null else "—"
-		btn.disabled = not _can_use or data == null
+		var btn := template_button.duplicate() as Button
+		_apply_slot_state(btn, belt[i])
+		btn.visible = true
 		btn.pressed.connect(consumable_use_requested.emit.bind(i))
 		add_child(btn)
+
+
+func _apply_slot_state(btn: Button, data: ConsumableData) -> void:
+	btn.text = data.item_name if data != null else "—"
+	btn.disabled = not _can_use or data == null
 
 
 func _on_belt_changed(index: int, _new_data: ConsumableData, _old_data: ConsumableData) -> void:
 	var btn := get_child(index) as Button
 	if btn == null:
 		return
-	var data: ConsumableData = _inventory.get_consumable_at(index)
-	btn.text = data.item_name if data != null else "—"
-	btn.disabled = not _can_use or data == null
+	_apply_slot_state(btn, _inventory.get_consumable_at(index))
 
 
 func _on_belt_size_changed(_new_size: int) -> void:

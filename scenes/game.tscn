@@ -21,7 +21,7 @@
 [ext_resource type="Script" path="res://scripts/player_class_data.gd" id="20_bt5mj"]
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
-[ext_resource type="Resource" path="res://resources/classes/warrior.tres" id="22_warrior"]
+[ext_resource type="Resource" uid="uid://gd05xm21dlnr" path="res://resources/classes/warrior.tres" id="22_warrior"]
 [ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]
 [ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
 [ext_resource type="Script" uid="uid://qloduutsnv77" path="res://scripts/victory_panel.gd" id="25_bhx41"]
@@ -30,6 +30,9 @@
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
 font_size = 64
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bhx41"]
+bg_color = Color(0.011764706, 0.011764706, 0.011764706, 0.43137255)
 
 [node name="Game" type="Node2D" unique_id=579372869]
 script = ExtResource("1_uwrxv")
@@ -86,6 +89,7 @@ script = ExtResource("8_gui")
 _health_bar_scene = ExtResource("9_hbar")
 
 [node name="MainMenu" type="Control" parent="GUI" unique_id=100000001]
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -225,20 +229,34 @@ grow_horizontal = 0
 grow_vertical = 0
 icon = ExtResource("7_u5sy4")
 
-[node name="ConsumableBelt" type="HBoxContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=-2060399406]
+[node name="ConsumableBelt" type="HFlowContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=1764667387 node_paths=PackedStringArray("template_button")]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -320.0
-offset_top = -104.0
-offset_right = -160.0
-offset_bottom = -73.0
+offset_left = -1013.0
+offset_top = -204.0
+offset_right = -245.0
+offset_bottom = -68.0
 grow_horizontal = 0
 grow_vertical = 0
+alignment = 2
+last_wrap_alignment = 3
 script = ExtResource("26_cbeltu")
+template_button = NodePath("../ConsumableButton")
+
+[node name="ConsumableButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=620861353]
+visible = false
+custom_minimum_size = Vector2(136, 136)
+layout_mode = 0
+theme_override_colors/icon_disabled_color = Color(0.012617188, 0.012617188, 0.012617188, 0.49803922)
+theme_override_styles/disabled = SubResource("StyleBoxFlat_bhx41")
+disabled = true
+text = "Major Healing Potion"
+text_overrun_behavior = 2
+autowrap_mode = 2
 
 [node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
 layout_mode = 0
@@ -636,10 +654,230 @@ layout_mode = 2
 [node name="TitleLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=2086038799]
 layout_mode = 2
 
-[node name="PointsLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=421197201]
+[node name="PointsContainer" type="HBoxContainer" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=6704678]
+layout_mode = 2
+alignment = 2
+
+[node name="PointsLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/PointsContainer" unique_id=421197201]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "3"
+
+[node name="Control" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/PointsContainer" unique_id=1365369476]
+custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 
 [node name="StatsContainer" type="VBoxContainer" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=1151611754]
+layout_mode = 2
+
+[node name="StrengthContainer" type="HBoxContainer" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer" unique_id=30808078]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+alignment = 1
+
+[node name="Buffer" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/StrengthContainer" unique_id=446028149]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/StrengthContainer" unique_id=295537857]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Strength"
+
+[node name="NumberLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/StrengthContainer" unique_id=513698314]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "60"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BonusLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/StrengthContainer" unique_id=448380733]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/StrengthContainer" unique_id=377840204]
+layout_mode = 2
+size_flags_vertical = 4
+text = "+"
+
+[node name="MinusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/StrengthContainer" unique_id=1531296228]
+layout_mode = 2
+size_flags_vertical = 4
+text = "-"
+
+[node name="Buffer2" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/StrengthContainer" unique_id=1787650373]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="ConstitutionContainer" type="HBoxContainer" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer" unique_id=2138246701]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+alignment = 1
+
+[node name="Buffer" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/ConstitutionContainer" unique_id=1571606748]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/ConstitutionContainer" unique_id=1769837727]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Constitution"
+
+[node name="NumberLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/ConstitutionContainer" unique_id=1913307999]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "60"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BonusLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/ConstitutionContainer" unique_id=1490425985]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/ConstitutionContainer" unique_id=340536462]
+layout_mode = 2
+size_flags_vertical = 4
+text = "+"
+
+[node name="MinusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/ConstitutionContainer" unique_id=1352361036]
+layout_mode = 2
+size_flags_vertical = 4
+text = "-"
+
+[node name="Buffer2" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/ConstitutionContainer" unique_id=633477703]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="AgilityContainer" type="HBoxContainer" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer" unique_id=19276420]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+alignment = 1
+
+[node name="Buffer" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/AgilityContainer" unique_id=699766827]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/AgilityContainer" unique_id=1656398039]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Agility"
+
+[node name="NumberLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/AgilityContainer" unique_id=1389038128]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "60"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BonusLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/AgilityContainer" unique_id=1896866531]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/AgilityContainer" unique_id=1889633287]
+layout_mode = 2
+size_flags_vertical = 4
+text = "+"
+
+[node name="MinusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/AgilityContainer" unique_id=586403099]
+layout_mode = 2
+size_flags_vertical = 4
+text = "-"
+
+[node name="Buffer2" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/AgilityContainer" unique_id=200327138]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="SpiritContainer" type="HBoxContainer" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer" unique_id=1594957226]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+alignment = 1
+
+[node name="Buffer" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/SpiritContainer" unique_id=1244300720]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/SpiritContainer" unique_id=2102067695]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Spirit"
+
+[node name="NumberLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/SpiritContainer" unique_id=1044150410]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "60"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BonusLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/SpiritContainer" unique_id=2080558210]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/SpiritContainer" unique_id=1504960671]
+layout_mode = 2
+size_flags_vertical = 4
+text = "+"
+
+[node name="MinusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/SpiritContainer" unique_id=428545354]
+layout_mode = 2
+size_flags_vertical = 4
+text = "-"
+
+[node name="Buffer2" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/SpiritContainer" unique_id=1577296383]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="LuckContainer" type="HBoxContainer" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer" unique_id=1128453188]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+alignment = 1
+
+[node name="Buffer" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/LuckContainer" unique_id=719012991]
+custom_minimum_size = Vector2(20, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/LuckContainer" unique_id=1367309936]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Luck"
+
+[node name="NumberLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/LuckContainer" unique_id=1319544996]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "60"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BonusLabel" type="Label" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/LuckContainer" unique_id=1976150159]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/LuckContainer" unique_id=1117437926]
+layout_mode = 2
+size_flags_vertical = 4
+text = "+"
+
+[node name="MinusButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/LuckContainer" unique_id=1431006299]
+layout_mode = 2
+size_flags_vertical = 4
+text = "-"
+
+[node name="Buffer2" type="Control" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer/StatsContainer/LuckContainer" unique_id=615276558]
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
 [node name="ConfirmButton" type="Button" parent="GUI/LevelUpPanel/PanelContainer/VBoxContainer" unique_id=1679782761]

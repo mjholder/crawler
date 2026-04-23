@@ -207,7 +207,7 @@ func _enter_dungeon(configs: Array[Dictionary], event_index: int, world_node: Wo
 	_active_world_node = world_node
 	_pending_event_configs = configs
 	_event_index = event_index
-	player.inventory.set_dungeon_locked(true)
+	player.get_inventory().set_dungeon_locked(true)
 	_gui.set_dungeon_locked(true)
 	_start_next_dungeon_event()
 
@@ -217,7 +217,7 @@ func _exit_dungeon() -> void:
 	_pending_event_configs = []
 	_event_index = 0
 	_active_world_node = null
-	player.inventory.set_dungeon_locked(false)
+	player.get_inventory().set_dungeon_locked(false)
 	_gui.set_dungeon_locked(false)
 
 
