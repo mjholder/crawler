@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://choice_btn01"]
+
+[node name="ChoiceButton" type="Button"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+alignment = 0

@@ -188,6 +188,7 @@ func _enter_world_map(completed_node: WorldMapNode = null) -> void:
 	state = Enums.TurnState.NO_TURN
 	_start_exploration_music()
 	player.set_weapon_visible(false)
+	_gui.hide_event_hud()
 	if completed_node != null:
 		_gui.world_map_on_dungeon_complete(completed_node)
 	else:
@@ -252,10 +253,14 @@ func _exit_victory() -> void:
 # --- Event Control ---
 
 func _enter_event(event: Event) -> void:
+	_gui.show_event_hud()
 	$EventContainer.add_child(event)
 	current_event = event
 	current_event.event_complete.connect(_on_event_complete, CONNECT_ONE_SHOT)
 	event._on_enter(self)
+	if game_state == Enums.GameState.DUNGEON and event.allows_inventory:
+		player.get_inventory().set_dungeon_locked(false)
+		_gui.set_dungeon_locked(false)
 	current_event.start()
 	if event is CombatEvent and state != Enums.TurnState.DIALOGUE:
 		_start_player_turn()
@@ -267,6 +272,9 @@ func _exit_event() -> void:
 	current_event._on_exit(self)
 	current_event.queue_free()
 	current_event = null
+	if game_state == Enums.GameState.DUNGEON:
+		player.get_inventory().set_dungeon_locked(true)
+		_gui.set_dungeon_locked(true)
 
 
 func _on_event_complete() -> void:

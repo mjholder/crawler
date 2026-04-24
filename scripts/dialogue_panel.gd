@@ -11,6 +11,8 @@ signal dialogue_complete(terminal_node_id: String)
 @onready var _text_label: RichTextLabel = $TextLabel
 @onready var _choices_container: VBoxContainer = $ChoicesContainer
 
+@export var _choice_button: PackedScene
+
 # --- State ---
 
 var _data: Dictionary
@@ -49,14 +51,14 @@ func _render_node(node: Dictionary) -> void:
 		child.queue_free()
 
 	if node["choices"].is_empty():
-		var button: Button = Button.new()
+		var button: Button = _choice_button.instantiate()
 		button.text = "Continue"
 		button.pressed.connect(_on_continue_pressed)
 		_choices_container.add_child(button)
 		return
 
 	for i: int in node["choices"].size():
-		var button: Button = Button.new()
+		var button: Button = _choice_button.instantiate()
 		button.text = node["choices"][i]["text"]
 		button.pressed.connect(_on_choice_pressed.bind(i))
 		_choices_container.add_child(button)

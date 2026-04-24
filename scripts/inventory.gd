@@ -9,7 +9,7 @@ signal consumable_belt_changed(index: int, new_data: ConsumableData, old_data: C
 signal belt_size_changed(new_size: int)
 
 # --- Config ---
-@export var max_bag_size: int = 20
+@export var max_bag_size: int = 15
 @export var max_rings: int = 2
 @export var belt_size: int = 2
 

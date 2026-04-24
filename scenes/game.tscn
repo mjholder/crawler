@@ -26,6 +26,7 @@
 [ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
 [ext_resource type="Script" uid="uid://qloduutsnv77" path="res://scripts/victory_panel.gd" id="25_bhx41"]
 [ext_resource type="Script" uid="uid://biwwcl2cyveoh" path="res://scripts/consumable_belt_ui.gd" id="26_cbeltu"]
+[ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
@@ -96,6 +97,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="Title" type="Label" parent="GUI/MainMenu" unique_id=100000002]
 layout_mode = 1
@@ -145,6 +147,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="PlayerHealthLabel" type="Label" parent="GUI/PlayerHUD" unique_id=2034464028]
 layout_mode = 1
@@ -191,76 +194,6 @@ offset_right = 180.0
 offset_bottom = 170.0
 text = "Bag"
 
-[node name="CombatHUD" type="Control" parent="GUI" unique_id=1958488847]
-visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="EnemyHUD" type="Control" parent="GUI/CombatHUD" unique_id=1616746194]
-layout_mode = 1
-anchors_preset = 0
-offset_left = 1.0
-offset_right = 1.0
-
-[node name="ActionMenu" type="Control" parent="GUI/CombatHUD" unique_id=2111488421]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="AttackButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=1018194264]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -151.0
-offset_top = -104.0
-offset_right = -83.0
-offset_bottom = -73.0
-grow_horizontal = 0
-grow_vertical = 0
-icon = ExtResource("7_u5sy4")
-
-[node name="ConsumableBelt" type="HFlowContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=1764667387 node_paths=PackedStringArray("template_button")]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -1013.0
-offset_top = -204.0
-offset_right = -245.0
-offset_bottom = -68.0
-grow_horizontal = 0
-grow_vertical = 0
-alignment = 2
-last_wrap_alignment = 3
-script = ExtResource("26_cbeltu")
-template_button = NodePath("../ConsumableButton")
-
-[node name="ConsumableButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=620861353]
-visible = false
-custom_minimum_size = Vector2(136, 136)
-layout_mode = 0
-theme_override_colors/icon_disabled_color = Color(0.012617188, 0.012617188, 0.012617188, 0.49803922)
-theme_override_styles/disabled = SubResource("StyleBoxFlat_bhx41")
-disabled = true
-text = "Major Healing Potion"
-text_overrun_behavior = 2
-autowrap_mode = 2
-
-[node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
-layout_mode = 0
-
 [node name="DialoguePanel" type="Control" parent="GUI" unique_id=1753475285]
 visible = false
 layout_mode = 3
@@ -269,7 +202,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("12_kvuet")
+_choice_button = ExtResource("27_chbtn")
 
 [node name="Background" type="ColorRect" parent="GUI/DialoguePanel" unique_id=308607430]
 layout_mode = 1
@@ -278,6 +213,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0.14767182, 0.14767179, 0.14767179, 0.21568628)
 
 [node name="SpeakerLabel" type="Label" parent="GUI/DialoguePanel" unique_id=220640129]
@@ -321,24 +257,6 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/separation = 10
 
-[node name="TestButton" type="Button" parent="GUI/DialoguePanel/ChoicesContainer" unique_id=1848228524]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Choice A"
-alignment = 0
-
-[node name="TestButton2" type="Button" parent="GUI/DialoguePanel/ChoicesContainer" unique_id=70693981]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Choice B"
-alignment = 0
-
-[node name="TestButton3" type="Button" parent="GUI/DialoguePanel/ChoicesContainer" unique_id=839597156]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "Choice C"
-alignment = 0
-
 [node name="SkillCheckPanel" type="Control" parent="GUI" unique_id=200000001]
 visible = false
 layout_mode = 3
@@ -347,6 +265,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("13_skcp")
 
 [node name="Background" type="ColorRect" parent="GUI/SkillCheckPanel" unique_id=200000002]
@@ -356,6 +275,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0.14767182, 0.14767179, 0.14767179, 0.6)
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/SkillCheckPanel" unique_id=200000003]
@@ -417,6 +337,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("14_rstp")
 
 [node name="Background" type="ColorRect" parent="GUI/RestPanel" unique_id=254139058]
@@ -426,6 +347,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0.14767182, 0.14767179, 0.14767179, 0.6)
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/RestPanel" unique_id=754822467]
@@ -466,118 +388,6 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Continue"
 
-[node name="WorldMap" parent="GUI" unique_id=703812870 instance=ExtResource("16_ca42v")]
-visible = false
-offset_left = 548.0
-offset_top = 3.0
-offset_right = -1116.0
-offset_bottom = -721.0
-scale = Vector2(3, 3)
-
-[node name="InventoryPanel" type="Control" parent="GUI" unique_id=300000001]
-visible = false
-layout_mode = 3
-anchors_preset = 0
-offset_left = 540.0
-offset_top = 190.0
-offset_right = 1380.0
-offset_bottom = 810.0
-size_flags_horizontal = 3
-size_flags_vertical = 3
-script = ExtResource("20_invpanel")
-
-[node name="HBoxContainer" type="HBoxContainer" parent="GUI/InventoryPanel" unique_id=1186197966]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = 210.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="StatsContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=806304740]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-
-[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/StatsContainer" unique_id=1928758384]
-layout_mode = 2
-size_flags_vertical = 1
-
-[node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=300000002]
-custom_minimum_size = Vector2(420, 0)
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer" unique_id=300000003]
-layout_mode = 2
-
-[node name="EquipmentLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000004]
-layout_mode = 2
-text = "EQUIPMENT"
-
-[node name="EquippedSlots" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000005]
-layout_mode = 2
-
-[node name="HSeparator" type="HSeparator" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000006]
-layout_mode = 2
-
-[node name="BagLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000007]
-layout_mode = 2
-text = "BAG"
-
-[node name="BagGrid" type="GridContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000008]
-layout_mode = 2
-columns = 5
-
-[node name="DetailPanel" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=861729727]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel" unique_id=322018376]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="DetailNameLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1280028534]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
-
-[node name="DetailStatsLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=2089626390]
-layout_mode = 2
-autowrap_mode = 3
-
-[node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
-visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Overlay" type="ColorRect" parent="GUI/PauseMenu" unique_id=100000006]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.5)
-
-[node name="ResumeButton" type="Button" parent="GUI/PauseMenu" unique_id=100000007]
-layout_mode = 1
-offset_left = 100.0
-offset_top = 200.0
-offset_right = 300.0
-offset_bottom = 250.0
-text = "Resume"
-
-[node name="QuitToMainButton" type="Button" parent="GUI/PauseMenu" unique_id=100000008]
-layout_mode = 1
-offset_left = 100.0
-offset_top = 270.0
-offset_right = 300.0
-offset_bottom = 320.0
-text = "Quit to Main Menu"
-
 [node name="CharacterCreationPanel" type="Control" parent="GUI" unique_id=1828471361]
 visible = false
 layout_mode = 3
@@ -586,6 +396,7 @@ offset_left = 634.0
 offset_top = 136.0
 offset_right = 1254.0
 offset_bottom = 936.0
+mouse_filter = 2
 script = ExtResource("19_264po")
 available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior")])
 
@@ -596,6 +407,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer" unique_id=1126939891]
 layout_mode = 2
@@ -630,6 +442,472 @@ autowrap_mode = 2
 layout_mode = 2
 text = "Continue"
 
+[node name="ShopPanel" type="Control" parent="GUI" unique_id=401685104]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 655.0
+offset_top = 170.0
+offset_right = 1275.0
+offset_bottom = 970.0
+mouse_filter = 2
+script = ExtResource("23_e1j6l")
+
+[node name="Background" type="ColorRect" parent="GUI/ShopPanel" unique_id=1436720945]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.39215687)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GUI/ShopPanel" unique_id=896757521]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/ShopPanel/HBoxContainer" unique_id=793999606]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer" unique_id=2141776869]
+layout_mode = 2
+
+[node name="ShopNameLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=24708768]
+layout_mode = 2
+text = "Old Pete's Wares"
+
+[node name="GoldLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1852634516]
+layout_mode = 2
+text = "Gold: 120"
+
+[node name="ModeButtons" type="HBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=436701028]
+layout_mode = 2
+
+[node name="BuyTabButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer/ModeButtons" unique_id=411976625]
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "BUY"
+
+[node name="SellTabButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer/ModeButtons" unique_id=16609802]
+layout_mode = 2
+toggle_mode = true
+text = "SELL"
+
+[node name="ItemList" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1614516119]
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=872961338]
+visible = false
+layout_mode = 2
+
+[node name="LeaveButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1980216277]
+layout_mode = 2
+text = "LEAVE"
+
+[node name="DetailPanel" type="PanelContainer" parent="GUI/ShopPanel/HBoxContainer" unique_id=1604226815]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/DetailPanel" unique_id=1671773795]
+layout_mode = 2
+
+[node name="DetailNameLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=927477380]
+layout_mode = 2
+
+[node name="DetailPriceLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1143221156]
+layout_mode = 2
+
+[node name="DetailStatsLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=179962363]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="DetailDescLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1248119488]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="CombatHUD" type="Control" parent="GUI" unique_id=1958488847]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="EnemyHUD" type="Control" parent="GUI/CombatHUD" unique_id=1616746194]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 1.0
+offset_right = 1.0
+
+[node name="ActionMenu" type="Control" parent="GUI/CombatHUD" unique_id=2111488421]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="AttackButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=1018194264]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -151.0
+offset_top = -104.0
+offset_right = -83.0
+offset_bottom = -73.0
+grow_horizontal = 0
+grow_vertical = 0
+icon = ExtResource("7_u5sy4")
+
+[node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
+layout_mode = 0
+
+[node name="ConsumableBelt" type="HFlowContainer" parent="GUI" unique_id=1764667387 node_paths=PackedStringArray("template_button")]
+visible = false
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1013.0
+offset_top = -204.0
+offset_right = -245.0
+offset_bottom = -68.0
+grow_horizontal = 0
+grow_vertical = 0
+alignment = 2
+last_wrap_alignment = 3
+script = ExtResource("26_cbeltu")
+template_button = NodePath("../ConsumableButton")
+
+[node name="ConsumableButton" type="Button" parent="GUI" unique_id=620861353]
+visible = false
+custom_minimum_size = Vector2(136, 136)
+theme_override_colors/icon_disabled_color = Color(0.012617188, 0.012617188, 0.012617188, 0.49803922)
+theme_override_styles/disabled = SubResource("StyleBoxFlat_bhx41")
+disabled = true
+text = "Major Healing Potion"
+text_overrun_behavior = 2
+autowrap_mode = 2
+
+[node name="WorldMap" parent="GUI" unique_id=703812870 instance=ExtResource("16_ca42v")]
+visible = false
+offset_left = 548.0
+offset_top = 3.0
+offset_right = -1116.0
+offset_bottom = -721.0
+scale = Vector2(3, 3)
+mouse_filter = 2
+
+[node name="InventoryPanel" type="Control" parent="GUI" unique_id=300000001]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+offset_left = 540.0
+offset_top = 190.0
+offset_right = 1380.0
+offset_bottom = 810.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("20_invpanel")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GUI/InventoryPanel" unique_id=1186197966]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StatsContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=806304740]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/StatsContainer" unique_id=1928758384]
+layout_mode = 2
+size_flags_vertical = 1
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=300000002]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer" unique_id=300000003]
+layout_mode = 2
+
+[node name="EquipmentLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000004]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "EQUIPMENT"
+vertical_alignment = 1
+
+[node name="EquippedSlots" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000005]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HeadEquipment" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=1301115147]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/HeadEquipment" unique_id=1972653098]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "HEAD"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/HeadEquipment" unique_id=1253090025]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/HeadEquipment" unique_id=1021296958]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="TorsoEquipment" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=2092876600]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/TorsoEquipment" unique_id=1202942132]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "TORSO"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/TorsoEquipment" unique_id=241480572]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/TorsoEquipment" unique_id=608665583]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="HandsEquipment" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=191533140]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/HandsEquipment" unique_id=899851858]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "HANDS"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/HandsEquipment" unique_id=1834603018]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/HandsEquipment" unique_id=535138013]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="LegsEquipment" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=596517228]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/LegsEquipment" unique_id=1235049273]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "LEGS"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/LegsEquipment" unique_id=1660939834]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/LegsEquipment" unique_id=294514562]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="FeetEquipment" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=598314096]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/FeetEquipment" unique_id=1677845620]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "FEET"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/FeetEquipment" unique_id=1526782537]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/FeetEquipment" unique_id=763024147]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="WeaponEquipment" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=350932568]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/WeaponEquipment" unique_id=1227596868]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "WEAPON"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/WeaponEquipment" unique_id=1906199081]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/WeaponEquipment" unique_id=44219131]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="RingEquipment1" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=379016035]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/RingEquipment1" unique_id=63594692]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "RING"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/RingEquipment1" unique_id=942341452]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/RingEquipment1" unique_id=1146783274]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="RingEquipment2" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=1896373557]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/RingEquipment2" unique_id=1083308127]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "RING"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/RingEquipment2" unique_id=2099918848]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/RingEquipment2" unique_id=358459152]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="HSeparator" type="HSeparator" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000006]
+layout_mode = 2
+
+[node name="BagLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000007]
+layout_mode = 2
+text = "BAG"
+
+[node name="BagGrid" type="GridContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=300000008]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 4
+columns = 5
+
+[node name="InventorySlot" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=863223410]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot2" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=503923460]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot3" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=1977385114]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot4" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=1823172273]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot5" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=424928908]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot6" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=1583251106]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot7" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=883804887]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot8" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=307057870]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot9" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=618604063]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot10" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=2078465598]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot11" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=873372965]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot12" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=1131129121]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot13" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=1697186828]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot14" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=844003180]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="InventorySlot15" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/BagGrid" unique_id=310149751]
+custom_minimum_size = Vector2(72, 72)
+layout_mode = 2
+
+[node name="DetailPanel" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=861729727]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel" unique_id=322018376]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DetailNameLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1280028534]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="DetailStatsLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=2089626390]
+layout_mode = 2
+autowrap_mode = 3
+
 [node name="LevelUpPanel" type="Control" parent="GUI" unique_id=1889606457]
 visible = false
 layout_mode = 3
@@ -638,6 +916,7 @@ offset_left = 639.0
 offset_top = 136.0
 offset_right = 1259.0
 offset_bottom = 936.0
+mouse_filter = 2
 script = ExtResource("21_lvlup")
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/LevelUpPanel" unique_id=1292820667]
@@ -647,6 +926,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="GUI/LevelUpPanel/PanelContainer" unique_id=434184280]
 layout_mode = 2
@@ -884,92 +1164,39 @@ layout_mode = 2
 layout_mode = 2
 text = "Confirm"
 
-[node name="ShopPanel" type="Control" parent="GUI" unique_id=401685104]
+[node name="PauseMenu" type="Control" parent="GUI" unique_id=100000005]
 visible = false
 layout_mode = 3
-anchors_preset = 0
-offset_left = 655.0
-offset_top = 170.0
-offset_right = 1275.0
-offset_bottom = 970.0
-script = ExtResource("23_e1j6l")
-
-[node name="Background" type="ColorRect" parent="GUI/ShopPanel" unique_id=1436720945]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.39215687)
-
-[node name="HBoxContainer" type="HBoxContainer" parent="GUI/ShopPanel" unique_id=896757521]
-layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PanelContainer" type="PanelContainer" parent="GUI/ShopPanel/HBoxContainer" unique_id=793999606]
-layout_mode = 2
+[node name="Overlay" type="ColorRect" parent="GUI/PauseMenu" unique_id=100000006]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer" unique_id=2141776869]
-layout_mode = 2
+[node name="ResumeButton" type="Button" parent="GUI/PauseMenu" unique_id=100000007]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 200.0
+offset_right = 300.0
+offset_bottom = 250.0
+text = "Resume"
 
-[node name="ShopNameLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=24708768]
-layout_mode = 2
-text = "Old Pete's Wares"
-
-[node name="GoldLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1852634516]
-layout_mode = 2
-text = "Gold: 120"
-
-[node name="ModeButtons" type="HBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=436701028]
-layout_mode = 2
-
-[node name="BuyTabButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer/ModeButtons" unique_id=411976625]
-layout_mode = 2
-toggle_mode = true
-button_pressed = true
-text = "BUY"
-
-[node name="SellTabButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer/ModeButtons" unique_id=16609802]
-layout_mode = 2
-toggle_mode = true
-text = "SELL"
-
-[node name="ItemList" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1614516119]
-custom_minimum_size = Vector2(0, 240)
-layout_mode = 2
-
-[node name="StatusLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=872961338]
-visible = false
-layout_mode = 2
-
-[node name="LeaveButton" type="Button" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1980216277]
-layout_mode = 2
-text = "LEAVE"
-
-[node name="DetailPanel" type="PanelContainer" parent="GUI/ShopPanel/HBoxContainer" unique_id=1604226815]
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/DetailPanel" unique_id=1671773795]
-layout_mode = 2
-
-[node name="DetailNameLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=927477380]
-layout_mode = 2
-
-[node name="DetailPriceLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1143221156]
-layout_mode = 2
-
-[node name="DetailStatsLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=179962363]
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="DetailDescLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/DetailPanel/VBoxContainer" unique_id=1248119488]
-layout_mode = 2
-autowrap_mode = 2
+[node name="QuitToMainButton" type="Button" parent="GUI/PauseMenu" unique_id=100000008]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 270.0
+offset_right = 300.0
+offset_bottom = 320.0
+text = "Quit to Main Menu"
 
 [node name="GameOverPanel" type="Control" parent="GUI" unique_id=1214527441]
 visible = false
@@ -979,6 +1206,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("24_pl11u")
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/GameOverPanel" unique_id=1735145783]
@@ -988,6 +1216,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="GUI/GameOverPanel/PanelContainer" unique_id=1187673798]
 layout_mode = 2
@@ -1004,6 +1233,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("25_bhx41")
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/VictoryPanel" unique_id=269297850]
@@ -1013,6 +1243,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="GUI/VictoryPanel/PanelContainer" unique_id=609608261]
 layout_mode = 2

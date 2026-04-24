@@ -14,6 +14,7 @@ var phase: Phase = Phase.SETUP
 # --- Globals ---
 
 var rewards: Dictionary = {}
+@export var allows_inventory: bool = false
 
 # --- Public API ---
 

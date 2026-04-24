@@ -31,7 +31,8 @@ signal consumable_use_requested(index: int)
 @onready var _combat_hud: Control = $CombatHUD
 @onready var _enemy_hud: Control = $CombatHUD/EnemyHUD
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
-@onready var _consumable_belt: ConsumableBeltUI = $CombatHUD/ActionMenu/ConsumableBelt
+@onready var _attack_button: Button = $CombatHUD/ActionMenu/AttackButton
+@onready var _consumable_belt: ConsumableBeltUI = $ConsumableBelt
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
 @onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
@@ -78,7 +79,7 @@ func _ready() -> void:
 	_shop_panel.buy_requested.connect(func(item: EquipmentData) -> void: shop_buy_requested.emit(item))
 	_shop_panel.sell_requested.connect(func(item: EquipmentData) -> void: shop_sell_requested.emit(item))
 	_shop_panel.leave_requested.connect(func() -> void: shop_leave_requested.emit())
-	_consumable_belt.consumable_use_requested.connect(func(idx: int) -> void: consumable_use_requested.emit(idx))
+	_consumable_belt.consumable_pressed.connect(_on_consumable_belt_pressed)
 	_game_over_panel.hide()
 	_game_over_panel.main_menu_requested.connect(func() -> void: quit_to_main_requested.emit())
 	_victory_panel.hide()
@@ -94,6 +95,15 @@ func setup_inventory(inventory: Inventory) -> void:
 func toggle_inventory(can_equip: bool = true) -> void:
 	_inventory_panel.set_can_equip(can_equip)
 	_inventory_panel.visible = not _inventory_panel.visible
+	_consumable_belt.set_management_mode(_inventory_panel.visible)
+	if _inventory_panel.visible:
+		_consumable_belt.show()
+	elif not _combat_hud.visible:
+		_consumable_belt.hide()
+
+
+func is_inventory_open() -> bool:
+	return _inventory_panel.visible
 
 
 func set_dungeon_locked(locked: bool) -> void:
@@ -138,24 +148,41 @@ func return_to_main_menu() -> void:
 	_rest_panel.hide()
 	_shop_panel.hide()
 	_inventory_panel.hide()
+	_consumable_belt.set_management_mode(false)
+	_consumable_belt.hide()
 	_game_over_panel.hide()
 	_victory_panel.hide()
 	_player_hud.hide()
 	_main_menu.show()
 
 
-# --- Combat HUD ---
+# --- Event HUD ---
 
-func show_combat_hud() -> void:
+func show_event_hud() -> void:
+	set_sheathed(true)
 	_combat_log.text = ""
 	_combat_hud.show()
+	_consumable_belt.show()
 
 
-func hide_combat_hud() -> void:
+func hide_event_hud() -> void:
 	for child in _enemy_hud.get_children():
 		child.queue_free()
 	_enemy_bars.clear()
 	_combat_hud.hide()
+	if not _inventory_panel.visible:
+		_consumable_belt.hide()
+
+
+func set_sheathed(sheathed: bool) -> void:
+	_attack_button.disabled = sheathed
+
+
+func _on_consumable_belt_pressed(index: int) -> void:
+	if _inventory_panel.visible:
+		_inventory_panel.unequip_belt_slot(index)
+	else:
+		consumable_use_requested.emit(index)
 
 
 func update_player_health(current: float, maximum: float) -> void:

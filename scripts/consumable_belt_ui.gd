@@ -1,12 +1,13 @@
 class_name ConsumableBeltUI
 extends HFlowContainer
 
-signal consumable_use_requested(index: int)
+signal consumable_pressed(index: int)
 
 @export var template_button: Button
 
 var _inventory: Inventory
 var _can_use: bool = true
+var _management_mode: bool = false
 
 
 func _ready() -> void:
@@ -26,7 +27,15 @@ func set_can_use(value: bool) -> void:
 	for i in get_child_count():
 		var btn := get_child(i) as Button
 		if btn != null:
-			btn.disabled = not value or _inventory == null or _inventory.get_consumable_at(i) == null
+			btn.disabled = (not _can_use and not _management_mode) or _inventory == null or _inventory.get_consumable_at(i) == null
+
+
+func set_management_mode(value: bool) -> void:
+	_management_mode = value
+	for i in get_child_count():
+		var btn := get_child(i) as Button
+		if btn != null:
+			btn.disabled = (not _can_use and not _management_mode) or _inventory == null or _inventory.get_consumable_at(i) == null
 
 
 func _rebuild() -> void:
@@ -39,13 +48,13 @@ func _rebuild() -> void:
 		var btn := template_button.duplicate() as Button
 		_apply_slot_state(btn, belt[i])
 		btn.visible = true
-		btn.pressed.connect(consumable_use_requested.emit.bind(i))
+		btn.pressed.connect(consumable_pressed.emit.bind(i))
 		add_child(btn)
 
 
 func _apply_slot_state(btn: Button, data: ConsumableData) -> void:
 	btn.text = data.item_name if data != null else "—"
-	btn.disabled = not _can_use or data == null
+	btn.disabled = (not _can_use and not _management_mode) or data == null
 
 
 func _on_belt_changed(index: int, _new_data: ConsumableData, _old_data: ConsumableData) -> void:

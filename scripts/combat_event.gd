@@ -42,7 +42,7 @@ func _on_enter(game: Node) -> void:
 	player_attacked.connect(game._on_player_attacked)
 	enemy_turns_complete.connect(game._on_enemy_turns_complete)
 	game.player.attack.connect(game._on_player_attack_action)
-	game._gui.show_combat_hud()
+	game._gui.set_sheathed(false)
 	game._gui.set_player_turn(false)
 	game._start_combat_music()
 	game.player.set_weapon_visible(true)
@@ -56,7 +56,7 @@ func _on_exit(game: Node) -> void:
 	game.player.attack.disconnect(game._on_player_attack_action)
 	for enemy in _enemies:
 		game._gui.remove_enemy_health_bar(enemy)
-	game._gui.hide_combat_hud()
+	game._gui.set_sheathed(true)
 	game.player.set_weapon_visible(false)
 
 
