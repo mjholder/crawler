@@ -25,6 +25,7 @@ journal/   # Developer docs (design decisions, ideas, daily logs)
 | `scripts/equipment.gd` | `Equipment` base node — visuals, modifiers, hooks |
 | `scripts/weapon.gd` | `Weapon extends Equipment` — attack animation and SFX |
 | `journal/design.md` | Architectural decisions with rationale — read before changing structure |
+| `journal/architecture.md` | Mermaid architecture map — high-level graph, event hierarchy, signal flow, equipment model |
 | `journal/ideas.md` | Future systems backlog |
 | `journal/daily/` | Session logs |
 
@@ -61,11 +62,20 @@ Log significant decisions in `journal/design.md` using the template at the top o
 
 When updating a daily journal entry, merge new content into existing sections — never duplicate a section header. There is exactly one "Next session" section per entry; add new items to it and check off completed ones within the same update. Check off completed tasks regardless of which section they appear in — including items carried forward from a previous entry. Verify against the actual code before marking complete.
 
+## Architecture map
+
+`journal/architecture.md` holds Mermaid diagrams of the code structure — high-level graph, Event class hierarchy, turn/signal flow, and the Equipment/Inventory data model. It is a snapshot; keep it current.
+
+Update it, without waiting to be asked, when any of the following change:
+- A class is added, removed, or renamed (especially Event subclasses, Enemy subclasses, or top-level systems like Inventory/GUI/WorldMap).
+- A signal is added, removed, or rewired between emitter and listener.
+- The turn flow or event phase machine changes.
+- The Equipment/Weapon/Inventory data model changes shape.
+
+Edit only the affected diagram — don't regenerate the whole file. Verify each change against the actual code before committing. If an architectural *decision* is changing (not just its shape), log the decision in `journal/design.md` first; `architecture.md` reflects *what is*, not *why*.
+
 ## What's Not Built Yet
 
-- `Event` base class and concrete implementations (`CombatEvent`, `SkillCheckEvent`, `LootEvent`, `RoleplaysEvent`)
-- UI layer (health bars, combat log, action menus)
-- Full stat system — base stats are `@export` floats; equipment modifier layer (`get_effective_stat()`) **is implemented** — see `journal/detailed/character.md`
-- Inventory system — equipment slots, rings, and bag are implemented; carrying/picking up items from the world is not
-- Procedural dungeon/floor generation
-- Loot and XP systems
+- Procedural dungeon / floor generation — `WorldMap` is hand-authored via `initial_nodes` in the editor
+- World item pickup / loot drops — rewards are delivered as `event.rewards` dicts (XP, gold, stock mutations); there is no ground-drop or pickup interaction yet
+- Save / load
