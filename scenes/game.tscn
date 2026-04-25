@@ -21,6 +21,7 @@
 [ext_resource type="Script" path="res://scripts/player_class_data.gd" id="20_bt5mj"]
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
+[ext_resource type="PackedScene" uid="uid://c6yng6pikfy1w" path="res://scenes/item_button.tscn" id="21_sww3w"]
 [ext_resource type="Resource" uid="uid://gd05xm21dlnr" path="res://resources/classes/warrior.tres" id="22_warrior"]
 [ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]
 [ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
@@ -452,6 +453,7 @@ offset_right = 1275.0
 offset_bottom = 970.0
 mouse_filter = 2
 script = ExtResource("23_e1j6l")
+_button = ExtResource("21_sww3w")
 
 [node name="Background" type="ColorRect" parent="GUI/ShopPanel" unique_id=1436720945]
 layout_mode = 1
@@ -473,6 +475,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/ShopPanel/HBoxContainer" unique_id=793999606]
+custom_minimum_size = Vector2(360, 0)
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer" unique_id=2141776869]
@@ -503,6 +506,7 @@ text = "SELL"
 [node name="ItemList" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=1614516119]
 custom_minimum_size = Vector2(0, 240)
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="StatusLabel" type="Label" parent="GUI/ShopPanel/HBoxContainer/PanelContainer/VBoxContainer" unique_id=872961338]
 visible = false
@@ -514,6 +518,7 @@ text = "LEAVE"
 
 [node name="DetailPanel" type="PanelContainer" parent="GUI/ShopPanel/HBoxContainer" unique_id=1604226815]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShopPanel/HBoxContainer/DetailPanel" unique_id=1671773795]
 layout_mode = 2

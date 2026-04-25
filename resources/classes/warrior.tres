@@ -12,8 +12,8 @@
 script = ExtResource("1_pcd")
 class_name_text = "Warrior"
 description = "A sturdy frontline fighter. High STR and CON growth. Starts with a battle axe and leather armour."
-strength = 60.0
-defense = 57.0
+strength = 70.0
+defense = 55.0
 constitution = 55.0
 agility = 40.0
 spirit = 30.0

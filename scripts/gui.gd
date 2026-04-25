@@ -179,7 +179,7 @@ func set_sheathed(sheathed: bool) -> void:
 
 
 func _on_consumable_belt_pressed(index: int) -> void:
-	if _inventory_panel.visible:
+	if _consumable_belt.is_management_mode():
 		_inventory_panel.unequip_belt_slot(index)
 	else:
 		consumable_use_requested.emit(index)

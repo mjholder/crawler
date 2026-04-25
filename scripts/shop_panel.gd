@@ -22,6 +22,8 @@ signal leave_requested
 @onready var _detail_stats_label: Label = $HBoxContainer/DetailPanel/VBoxContainer/DetailStatsLabel
 @onready var _detail_desc_label: Label = $HBoxContainer/DetailPanel/VBoxContainer/DetailDescLabel
 
+@export var _button: PackedScene
+
 # --- State ---
 
 enum Mode { BUY, SELL }
@@ -127,7 +129,7 @@ func _rebuild_list() -> void:
 	var items: Array[EquipmentData] = _stock if _mode == Mode.BUY else _bag
 	for item in items:
 		var price := _get_display_price(item)
-		var btn := Button.new()
+		var btn : Button = _button.instantiate()
 		btn.text = "%s — %dg" % [item.item_name, price]
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if _mode == Mode.BUY:

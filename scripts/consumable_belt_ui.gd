@@ -30,6 +30,10 @@ func set_can_use(value: bool) -> void:
 			btn.disabled = (not _can_use and not _management_mode) or _inventory == null or _inventory.get_consumable_at(i) == null
 
 
+func is_management_mode() -> bool:
+	return _management_mode
+
+
 func set_management_mode(value: bool) -> void:
 	_management_mode = value
 	for i in get_child_count():

@@ -5,3 +5,4 @@
 
 [node name="RestEvent" instance=ExtResource("1_event")]
 script = ExtResource("2_script")
+allows_inventory = true
