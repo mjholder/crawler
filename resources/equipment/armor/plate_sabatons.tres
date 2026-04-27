@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_boots")
-item_name = "Leather Boots"
-description = "Sturdy boots. Easier to move in than nothing."
+item_name = "Plate Sabatons"
+description = "Heavy iron sabatons. Slower than bare feet, but far safer."
 stat_modifiers = {
 3: 5.0
 }
