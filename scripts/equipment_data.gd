@@ -4,6 +4,8 @@ extends Resource
 @export var item_name: String = ""
 @export var description: String = ""
 @export var sprite_frames: SpriteFrames
+@export var paper_doll_front: Texture2D
+@export var paper_doll_back: Texture2D
 @export var equip_sfx: AudioStream
 @export var unequip_sfx: AudioStream
 @export var stat_modifiers: Dictionary  # Enums.Stat → float

@@ -3,6 +3,7 @@ extends Control
 
 # --- Node References ---
 
+@onready var _paper_doll: PaperDoll = get_node_or_null("HBoxContainer/PaperDollPanel/PaperDoll")
 @onready var _equipped_slots: VBoxContainer = $HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots
 @onready var _bag_grid: GridContainer = $HBoxContainer/PanelContainer/VBoxContainer/BagGrid
 @onready var _detail_panel: PanelContainer = $HBoxContainer/DetailPanel
@@ -67,6 +68,8 @@ func setup(inventory: Inventory) -> void:
 	_refresh_rings()
 	_refresh_bag()
 	_hide_detail()
+	if _paper_doll != null:
+		_paper_doll.setup(inventory)
 
 
 # --- Node Collection ---

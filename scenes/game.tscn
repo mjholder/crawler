@@ -27,6 +27,7 @@
 [ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
 [ext_resource type="Script" uid="uid://qloduutsnv77" path="res://scripts/victory_panel.gd" id="25_bhx41"]
 [ext_resource type="Script" uid="uid://biwwcl2cyveoh" path="res://scripts/consumable_belt_ui.gd" id="26_cbeltu"]
+[ext_resource type="Script" uid="uid://ctce0wdnj5igm" path="res://scripts/paper_doll.gd" id="26_suyxu"]
 [ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
@@ -618,6 +619,7 @@ scale = Vector2(3, 3)
 mouse_filter = 2
 
 [node name="InventoryPanel" type="Control" parent="GUI" unique_id=300000001]
+visible = false
 layout_mode = 3
 anchors_preset = 0
 offset_left = 540.0
@@ -645,6 +647,71 @@ layout_mode = 2
 [node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/StatsContainer" unique_id=1928758384]
 layout_mode = 2
 size_flags_vertical = 1
+
+[node name="PaperDollPanel" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=626798975]
+custom_minimum_size = Vector2(320, 540)
+layout_mode = 2
+
+[node name="PaperDoll" type="Control" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel" unique_id=2122464982]
+custom_minimum_size = Vector2(320, 620)
+layout_mode = 2
+script = ExtResource("26_suyxu")
+
+[node name="BaseLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=1481900951]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HandsBackLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=1927630430]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LegsLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=979017847]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="FeetLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=922920561]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TorsoLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=2117642391]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HandsFrontLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=1678930950]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HeadLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=1876747298]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=300000002]
 custom_minimum_size = Vector2(420, 0)

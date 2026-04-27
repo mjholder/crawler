@@ -1,11 +1,13 @@
 [gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://db1bvel3krb2"]
 
 [ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_chest"]
+[ext_resource type="Texture2D" uid="uid://bp4ynl7211xeq" path="res://assets/sprites/chest.png" id="2_chest"]
 
 [resource]
 script = ExtResource("1_chest")
 item_name = "Plate Chest"
 description = "A full plate chest piece. Your best defense so far."
+paper_doll_front = ExtResource("2_chest")
 stat_modifiers = {
 1: 10.0
 }

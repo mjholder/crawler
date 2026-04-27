@@ -1,11 +1,15 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://test_gloves001"]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://d1nvy8kmtr4df"]
 
 [ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_gloves"]
+[ext_resource type="Texture2D" uid="uid://bbmyalks2b35f" path="res://assets/sprites/arms_right.png" id="1_yko0e"]
+[ext_resource type="Texture2D" uid="uid://cb4riwpblydkc" path="res://assets/sprites/arms_left.png" id="2_uen8b"]
 
 [resource]
 script = ExtResource("1_gloves")
 item_name = "Plate Gauntlets"
 description = "Heavy iron gauntlets. Sacrifice flexibility for protection."
+paper_doll_front = ExtResource("2_uen8b")
+paper_doll_back = ExtResource("1_yko0e")
 stat_modifiers = {
 3: 4.0
 }
