@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/weapon_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/attacks/brace.tres" id="2_attack"]
+
+[resource]
+script = ExtResource("1_script")
+item_name = "Debug Brace Shield"
+description = "Debug item for testing self-targeted actions. No weapon scene."
+slot = 0
+attacks = Array[Resource]([ExtResource("2_attack")])

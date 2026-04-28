@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/effects/damage_str_half.tres" id="2_effect"]
+
+[resource]
+script = ExtResource("1_script")
+attack_name = "Cleave"
+description = "A wide swing hitting all enemies"
+target_mode = 1
+effects = Array[Resource]([ExtResource("2_effect")])

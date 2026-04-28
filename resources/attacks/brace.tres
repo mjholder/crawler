@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/attack_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+attack_name = "Brace"
+description = "A defensive stance"
+target_mode = 2
+effects = Array[Resource]([])

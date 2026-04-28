@@ -16,7 +16,7 @@ func _ready() -> void:
 	_sprite.animation_finished.connect(_on_sprite_animation_finished)
 
 
-func _on_player_attacked(_damage: float) -> void:
+func _on_player_attacked(_attack_data: AttackData, _targets: Array) -> void:
 	if _attack_player.stream != null:
 		_attack_player.play()
 	print("[WEAPON] Player attacked with %s" % data.item_name)

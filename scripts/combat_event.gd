@@ -8,7 +8,6 @@ const DEFAULT_VICTORY_DIALOGUE := "res://resources/dialogue/post_combat_default.
 signal enemy_added(enemy: Enemy, total_expected: int)
 signal dialogue_trigger_fired(trigger_name: String, data: Dictionary)
 signal player_attacked(damage: float)
-signal player_attack_resolved(enemy: Enemy, damage: float)
 signal enemy_turns_complete
 
 # --- Config ---
@@ -41,7 +40,6 @@ func _on_enter(game: Node) -> void:
 	dialogue_trigger_fired.connect(game._on_combat_dialogue_trigger)
 	player_attacked.connect(game._on_player_attacked)
 	enemy_turns_complete.connect(game._on_enemy_turns_complete)
-	game.player.attack.connect(game._on_player_attack_action)
 	game._gui.set_sheathed(false)
 	game._gui.set_player_turn(false)
 	game._start_combat_music()
@@ -53,7 +51,6 @@ func _on_exit(game: Node) -> void:
 	dialogue_trigger_fired.disconnect(game._on_combat_dialogue_trigger)
 	player_attacked.disconnect(game._on_player_attacked)
 	enemy_turns_complete.disconnect(game._on_enemy_turns_complete)
-	game.player.attack.disconnect(game._on_player_attack_action)
 	for enemy in _enemies:
 		game._gui.remove_enemy_health_bar(enemy)
 	game._gui.set_sheathed(true)
@@ -203,11 +200,6 @@ func apply_consumable_damage(amount: float) -> void:
 	for enemy in _enemies:
 		if not enemy.is_dead:
 			enemy.take_damage(amount)
-
-
-func receive_player_attack(enemy: Enemy, damage: float) -> void:
-	enemy.take_damage(damage)
-	player_attack_resolved.emit(enemy, damage)
 
 
 # --- Enemy Turn Loop ---

@@ -67,7 +67,6 @@ classDiagram
     class CombatEvent {
         +signal enemy_added
         +signal player_attacked
-        +signal player_attack_resolved
         +signal enemy_turns_complete
         +signal dialogue_trigger_fired
     }
@@ -116,12 +115,18 @@ sequenceDiagram
     participant Event as CombatEvent
 
     rect rgb(230, 245, 255)
-    note over User,Weapon: Player turn
-    User->>GUI: click Attack
-    GUI->>Game: attack_requested
-    Game->>Player: execute_action("attack")
-    Player-->>Weapon: attack(damage)
+    note over User,Weapon: Player turn (with targeting)
+    User->>GUI: click action button
+    GUI->>Game: attack_requested(name)
+    Game->>Game: enter targeting state
+    note over Game: indicator shown on target
+    User->>GUI: click same button (confirm)
+    GUI->>Game: attack_requested(name)
+    Game->>Player: set_pending_attack_payload(AttackData, targets)
+    Game->>Player: execute_action(name)
+    Player-->>Weapon: attack_performed(AttackData, targets)
     Weapon->>Weapon: play "attack" anim
+    Game->>Game: apply effects to each target
     Weapon-->>Player: animation_finished
     Player-->>Game: turn_ended
     Game->>Game: state = ENEMY_TURN
@@ -166,6 +171,20 @@ classDiagram
     }
     class WeaponData {
         +AudioStream attack_sfx
+        +Array~Resource~ attacks
+    }
+    class AttackData {
+        <<Resource>>
+        +String attack_name
+        +TargetMode target_mode
+        +Array~Resource~ effects
+    }
+    class Effect {
+        <<Resource>>
+        +apply(source, target)
+    }
+    class DamageEffect {
+        +String damage_expression
     }
     class ConsumableData {
         +Effect effect
@@ -215,4 +234,7 @@ classDiagram
     Inventory o-- EquipmentData : stores
     PlayerClassData o-- EquipmentData : starting loadout
     ShopData o-- EquipmentData : stock
+    WeaponData o-- AttackData : attacks
+    AttackData o-- Effect : effects
+    Effect <|-- DamageEffect
 ```

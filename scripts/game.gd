@@ -43,6 +43,19 @@ var _pending_event_configs: Array[Dictionary] = []
 var _event_index: int = 0
 var _active_world_node: WorldMapNode = null
 
+# --- Targeting State ---
+
+var _targeting_action: String = ""
+var _targeting_attack: AttackData = null
+var _targeting_candidates: Array = []
+var _targeting_index: int = 0
+var _target_indicators: Array = []
+
+# --- Vignette (SELF targeting) ---
+
+var _vignette_layer: CanvasLayer = null
+var _self_vignette: ColorRect = null
+
 # --- GUI ---
 
 @onready var _gui: GUI = $GUI
@@ -52,6 +65,7 @@ var _active_world_node: WorldMapNode = null
 func _ready() -> void:
 	screen_size = get_viewport_rect().size
 	screen_center = screen_size / 2
+	_setup_vignette()
 	set_player($Player)
 	$Player.position = screen_center
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
@@ -62,7 +76,7 @@ func _ready() -> void:
 	_gui.start_dialogue_requested.connect(start_dialogue_game)
 	_gui.start_skill_check_requested.connect(start_skill_check_game)
 	_gui.quit_to_main_requested.connect(quit_to_main)
-	_gui.attack_requested.connect(attack_action)
+	_gui.attack_requested.connect(_on_attack_requested)
 	_gui.consumable_use_requested.connect(_on_consumable_use_requested)
 	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
 	_gui.skill_check_complete.connect(_on_gui_skill_check_complete)
@@ -76,10 +90,28 @@ func _ready() -> void:
 	_enter_main_menu()
 
 
+# --- Vignette Setup ---
+
+func _setup_vignette() -> void:
+	_vignette_layer = CanvasLayer.new()
+	_vignette_layer.layer = 2
+	add_child(_vignette_layer)
+	_self_vignette = ColorRect.new()
+	_self_vignette.color = Color(0.4, 0.0, 0.5, 0.3)
+	_self_vignette.size = screen_size
+	_self_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_vignette_layer.add_child(_self_vignette)
+	_vignette_layer.visible = false
+
+
 # --- Input Handling ---
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		if _targeting_action != "":
+			_cancel_targeting()
+			get_viewport().set_input_as_handled()
+			return
 		if game_started and state not in [Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
 			_gui.handle_esc()
 		return
@@ -91,16 +123,143 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if state != Enums.TurnState.PLAYER_TURN:
 		return
+	if _targeting_action != "":
+		if event.is_action_pressed("attack"):
+			_confirm_targeting()
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("ui_right"):
+			_cycle_target(1)
+			get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("ui_left"):
+			_cycle_target(-1)
+			get_viewport().set_input_as_handled()
+
+
+# --- Targeting ---
+
+func _on_attack_requested(action_name: String) -> void:
+	if state != Enums.TurnState.PLAYER_TURN:
+		return
+	if _targeting_action == action_name:
+		_confirm_targeting()
+		return
+	_cancel_targeting()
+	var weapon_data := player.get_inventory().get_equipped(Enums.Slot.WEAPON)
+	if weapon_data == null or not weapon_data is WeaponData:
+		return
+	_targeting_attack = null
+	for atk_res in (weapon_data as WeaponData).attacks:
+		var atk := atk_res as AttackData
+		if atk != null and atk.attack_name == action_name:
+			_targeting_attack = atk
+			break
+	if _targeting_attack == null:
+		return
+	_targeting_action = action_name
+	_targeting_candidates = _build_candidates(_targeting_attack.target_mode)
+	if _targeting_candidates.is_empty():
+		_targeting_action = ""
+		_targeting_attack = null
+		return
+	_targeting_index = 0
+	_show_targeting_visuals()
+	_gui.set_targeting_action(action_name)
+
+
+func _confirm_targeting() -> void:
+	if _targeting_attack == null:
+		return
+	var targets: Array = []
+	match _targeting_attack.target_mode:
+		AttackData.TargetMode.SINGLE_ENEMY:
+			if _targeting_index < _targeting_candidates.size():
+				var candidate = _targeting_candidates[_targeting_index]
+				if candidate is Enemy and not (candidate as Enemy).is_dead:
+					targets = [candidate]
+		AttackData.TargetMode.ALL_ENEMIES:
+			for c in _targeting_candidates:
+				if c is Enemy and not (c as Enemy).is_dead:
+					targets.append(c)
+		AttackData.TargetMode.SELF:
+			targets = [player]
+	if targets.is_empty():
+		_cancel_targeting()
+		return
+	var confirmed_action := _targeting_action
+	var confirmed_attack := _targeting_attack
+	_hide_targeting_visuals()
+	_gui.set_targeting_action("")
+	_targeting_action = ""
+	_targeting_attack = null
+	_targeting_candidates = []
+	_targeting_index = 0
+	_gui.set_player_turn(false)
+	player.set_pending_attack_payload(confirmed_attack, targets)
+	player.execute_action(confirmed_action)
+
+
+func _cancel_targeting() -> void:
+	if _targeting_action == "":
+		return
+	_hide_targeting_visuals()
+	_gui.set_targeting_action("")
+	_targeting_action = ""
+	_targeting_attack = null
+	_targeting_candidates = []
+	_targeting_index = 0
+
+
+func _build_candidates(mode: AttackData.TargetMode) -> Array:
+	match mode:
+		AttackData.TargetMode.SINGLE_ENEMY, AttackData.TargetMode.ALL_ENEMIES:
+			if not current_event is CombatEvent:
+				return []
+			return (current_event as CombatEvent)._enemies.filter(
+				func(e: Enemy) -> bool: return not e.is_dead)
+		AttackData.TargetMode.SELF:
+			return [player]
+	return []
+
+
+func _show_targeting_visuals() -> void:
+	_hide_targeting_visuals()
+	match _targeting_attack.target_mode:
+		AttackData.TargetMode.SINGLE_ENEMY:
+			_spawn_indicator(_targeting_candidates[_targeting_index])
+		AttackData.TargetMode.ALL_ENEMIES:
+			for c in _targeting_candidates:
+				_spawn_indicator(c)
+		AttackData.TargetMode.SELF:
+			_vignette_layer.visible = true
+
+
+func _hide_targeting_visuals() -> void:
+	for ind in _target_indicators:
+		if is_instance_valid(ind):
+			ind.queue_free()
+	_target_indicators.clear()
+	_vignette_layer.visible = false
+
+
+func _spawn_indicator(target: Node) -> void:
+	var ind := TargetIndicator.new()
+	target.add_child(ind)
+	_target_indicators.append(ind)
+
+
+func _cycle_target(direction: int) -> void:
+	if _targeting_attack == null or _targeting_attack.target_mode != AttackData.TargetMode.SINGLE_ENEMY:
+		return
+	if _targeting_candidates.is_empty():
+		return
+	_hide_targeting_visuals()
+	_targeting_index = (_targeting_index + direction) % _targeting_candidates.size()
+	if _targeting_index < 0:
+		_targeting_index += _targeting_candidates.size()
+	_show_targeting_visuals()
 
 
 # --- GUI Callbacks ---
-
-func attack_action() -> void:
-	if state != Enums.TurnState.PLAYER_TURN:
-		return
-	_gui.set_player_turn(false)
-	player.execute_action("attack")
-
 
 func start_dialogue_game() -> void:
 	if debug_dialogue_scene == null:
@@ -140,6 +299,8 @@ func set_player(p: Player) -> void:
 	player.gold_changed.connect(_on_player_gold_changed)
 	player.experience_changed.connect(_on_player_experience_changed)
 	player.stats_changed.connect(_on_player_stats_changed)
+	player.attack_performed.connect(_on_player_attack_performed)
+	player.weapon_attacks_changed.connect(_on_player_weapon_attacks_changed)
 	_gui.setup_consumable_belt(player.get_node("Inventory") as Inventory)
 	_gui.update_player_health(player.max_health, player.max_health)
 	_gui.update_player_stats(player.build_stats_dict())
@@ -166,6 +327,26 @@ func _on_player_experience_changed(new_total: int) -> void:
 func _on_player_stats_changed(stats: Dictionary) -> void:
 	_gui.update_player_stats(stats)
 	_gui.update_player_health(player.health, player.max_health)
+
+
+func _on_player_attack_performed(attack_data: AttackData, targets: Array) -> void:
+	for target in targets:
+		if target == null:
+			continue
+		if target is Enemy and (target as Enemy).is_dead:
+			continue
+		for effect_res in attack_data.effects:
+			var effect := effect_res as Effect
+			if effect != null:
+				effect.apply(player, target)
+				if target is Enemy:
+					print("[PLAYER] %s on %s" % [attack_data.attack_name, (target as Enemy).enemy_name])
+
+
+func _on_player_weapon_attacks_changed(attacks: Array) -> void:
+	if _targeting_action != "":
+		_cancel_targeting()
+	_gui.rebuild_action_buttons(attacks)
 
 
 # --- State Enter / Exit ---
@@ -269,6 +450,7 @@ func _enter_event(event: Event) -> void:
 func _exit_event() -> void:
 	if current_event == null:
 		return
+	_cancel_targeting()
 	current_event._on_exit(self)
 	current_event.queue_free()
 	current_event = null
@@ -439,6 +621,12 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 		_gui.update_enemy_health_bar(enemy, enemy.health))
 	enemy.died.connect(func() -> void:
 		_gui.remove_enemy_health_bar(enemy))
+	# Refresh targeting candidates if we're mid-targeting for enemies
+	if _targeting_action != "" and _targeting_attack != null:
+		var mode := _targeting_attack.target_mode
+		if mode == AttackData.TargetMode.SINGLE_ENEMY or mode == AttackData.TargetMode.ALL_ENEMIES:
+			_targeting_candidates = _build_candidates(mode)
+			_show_targeting_visuals()
 
 
 func _on_combat_dialogue_trigger(_trigger_name: String, data: Dictionary) -> void:
@@ -478,14 +666,14 @@ func _on_consumable_use_requested(index: int) -> void:
 
 func _apply_consumable_effect(data: ConsumableData) -> void:
 	match data.effect:
-		ConsumableData.Effect.HEAL_FLAT:
+		ConsumableData.EffectType.HEAL_FLAT:
 			player.heal(data.effect_value)
-		ConsumableData.Effect.HEAL_PERCENT:
+		ConsumableData.EffectType.HEAL_PERCENT:
 			player.heal(player.max_health * data.effect_value * 0.01)
-		ConsumableData.Effect.DAMAGE_ALL:
+		ConsumableData.EffectType.DAMAGE_ALL:
 			if current_event is CombatEvent:
 				(current_event as CombatEvent).apply_consumable_damage(data.effect_value)
-		ConsumableData.Effect.STAT_BUFF:
+		ConsumableData.EffectType.STAT_BUFF:
 			player.apply_buff(data.buff_stat, data.effect_value, data.buff_duration)
 
 
@@ -519,17 +707,6 @@ func _on_enemy_turns_complete() -> void:
 	if state in [Enums.TurnState.DIALOGUE, Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
 		return
 	_start_player_turn()
-
-
-func _on_player_attack_action(damage: float) -> void:
-	if current_event is CombatEvent:
-		var ce := current_event as CombatEvent
-		# Target selection: first living enemy for now
-		for enemy in ce._enemies:
-			if not enemy.is_dead:
-				print("[PLAYER] Attacks %s for %.0f damage" % [enemy.enemy_name, damage])
-				ce.receive_player_attack(enemy, damage)
-				break
 
 
 # --- Music ---

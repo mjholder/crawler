@@ -6,7 +6,8 @@ signal damaged(amount: float)
 signal healed(amount: float)
 signal died
 signal turn_ended
-signal attack(damage: float)
+signal attack_performed(attack_data: AttackData, targets: Array)
+signal weapon_attacks_changed(attacks: Array)
 signal gold_changed(new_total: int)
 signal experience_changed(new_total: int)
 signal stats_changed(stats: Dictionary)
@@ -50,6 +51,8 @@ var _weapon_visible: bool = false
 var _hurt_overlay: ColorRect = null
 var _class_data: PlayerClassData = null
 var _active_buffs: Array = []  # Array of {stat, amount, turns_remaining}
+var _pending_attack_data: AttackData = null
+var _pending_targets: Array = []
 
 # --- Node References ---
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
@@ -114,11 +117,15 @@ func _setup_starting_equipment(class_data: PlayerClassData) -> void:
 # --- Actions ---
 
 func _register_actions() -> void:
-	register_action("attack", _do_attack)
+	pass
 
 
 func register_action(action_name: String, callable: Callable) -> void:
 	_actions[action_name] = callable
+
+
+func unregister_action(action_name: String) -> void:
+	_actions.erase(action_name)
 
 
 func execute_action(action_name: String) -> void:
@@ -129,14 +136,26 @@ func execute_action(action_name: String) -> void:
 	_turn_pending = true
 
 
+func set_pending_attack_payload(attack_data: AttackData, targets: Array) -> void:
+	_pending_attack_data = attack_data
+	_pending_targets = targets
+
+
 # --- Action Implementations ---
 
 func _do_attack() -> void:
+	var attack_data := _pending_attack_data
+	var targets := _pending_targets.duplicate()
+	_pending_attack_data = null
+	_pending_targets = []
+	if attack_data == null:
+		push_warning("[PLAYER] _do_attack() called with no pending payload")
+		return
 	var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
-	if weapon_data != null and weapon_data.scene != null:
+	if weapon_data != null and weapon_data.scene != null and attack_data.target_mode != AttackData.TargetMode.SELF:
 		_attack_animation_pending = true
-	print("  Player attacks for %.1f damage!" % _calculate_damage())
-	attack.emit(_calculate_damage())
+	print("  Player performs: %s" % attack_data.attack_name)
+	attack_performed.emit(attack_data, targets)
 
 
 # --- Rewards ---
@@ -252,10 +271,6 @@ func _apply_defense(amount: float) -> float:
 	return maxf(amount - get_effective_stat(Enums.Stat.DEFENSE), 0.0)
 
 
-func _calculate_damage() -> float:
-	return get_effective_stat(Enums.Stat.STRENGTH) * 0.5
-
-
 # --- Equipment ---
 
 func _recalculate_max_health() -> void:
@@ -290,30 +305,49 @@ func _on_ring_changed(_index: int, new_data: EquipmentData, old_data: EquipmentD
 
 
 func _setup_equipment(slot, data: EquipmentData) -> void:
-	if data.scene == null:
-		return
-	var node := data.scene.instantiate() as Equipment
-	node.data = data
-	add_child(node)
-	node.play_equip()
-	node._on_equipped()
-	if slot == Enums.Slot.WEAPON:
+	if data.scene != null:
+		var node := data.scene.instantiate() as Equipment
+		node.data = data
+		add_child(node)
+		node.play_equip()
+		node._on_equipped()
+		if slot == Enums.Slot.WEAPON:
+			print("[PLAYER] Equipped weapon scene: %s" % data.item_name)
+			node.visible = _weapon_visible
+			attack_performed.connect((node as Weapon)._on_player_attacked)
+			(node as Weapon).animation_finished.connect(_on_weapon_animation_finished)
+	if slot == Enums.Slot.WEAPON and data is WeaponData:
 		print("[PLAYER] Equipped weapon: %s" % data.item_name)
-		node.visible = _weapon_visible
-		attack.connect((node as Weapon)._on_player_attacked)
-		(node as Weapon).animation_finished.connect(_on_weapon_animation_finished)
+		var wdata := data as WeaponData
+		for atk_res in wdata.attacks:
+			var atk := atk_res as AttackData
+			if atk == null:
+				continue
+			if _actions.has(atk.attack_name):
+				push_warning("[PLAYER] Duplicate attack name: %s" % atk.attack_name)
+			register_action(atk.attack_name, _do_attack)
+		weapon_attacks_changed.emit(wdata.attacks)
 
 
 func _teardown_equipment(slot, data: EquipmentData) -> void:
-	for child in get_children():
-		if child is Equipment and child.data == data:
-			child.play_unequip()
-			child._on_unequipped()
-			if slot == Enums.Slot.WEAPON:
-				attack.disconnect((child as Weapon)._on_player_attacked)
-				(child as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
-			child.queue_free()
-			return
+	if data.scene != null:
+		for child in get_children():
+			if child is Equipment and child.data == data:
+				child.play_unequip()
+				child._on_unequipped()
+				if slot == Enums.Slot.WEAPON:
+					attack_performed.disconnect((child as Weapon)._on_player_attacked)
+					(child as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
+				child.queue_free()
+				break
+	if slot == Enums.Slot.WEAPON and data is WeaponData:
+		var wdata := data as WeaponData
+		for atk_res in wdata.attacks:
+			var atk := atk_res as AttackData
+			if atk == null:
+				continue
+			unregister_action(atk.attack_name)
+		weapon_attacks_changed.emit([])
 
 
 func get_equipped_node(slot: Enums.Slot) -> Equipment:
