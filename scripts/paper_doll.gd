@@ -8,7 +8,8 @@ const _BASE_TEXTURE := preload("res://assets/sprites/man.png")
 	Enums.Slot.TORSO: {"front": $TorsoLayer},
 	Enums.Slot.LEGS:  {"front": $LegsLayer},
 	Enums.Slot.FEET:  {"front": $FeetLayer},
-	Enums.Slot.HANDS: {"front": $HandsFrontLayer, "back": $HandsBackLayer},
+	Enums.Slot.HANDS:  {"front": $HandsFrontLayer, "back": $HandsBackLayer},
+	Enums.Slot.WEAPON: {"front": $WeaponLayer},
 }
 
 var _inventory: Inventory

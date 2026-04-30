@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://dbv4prm15qp3l" path="res://assets/sprites/BattleAxeSwingFiltered.png" id="3_o157q"]
 [ext_resource type="Texture2D" uid="uid://bx8qgjpp08r0n" path="res://assets/sprites/BattleAxeIdleFiltered.png" id="4_sggdg"]
 [ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="5_weapon"]
+[ext_resource type="Texture2D" uid="uid://bj083b7w7egw7" path="res://assets/sprites/battle_axe.png" id="8_pdf"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_p4cbs"]
 animations = [{
@@ -34,6 +35,7 @@ animations = [{
 script = ExtResource("1_84utr")
 item_name = "Battle Axe"
 description = "One Handed axe"
+paper_doll_front = ExtResource("8_pdf")
 sprite_frames = SubResource("SpriteFrames_p4cbs")
 stat_modifiers = {
 0: 10.0

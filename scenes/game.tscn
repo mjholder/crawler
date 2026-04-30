@@ -682,6 +682,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="WeaponLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=1543210123]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
 [node name="HandsFrontLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=1678930950]
 layout_mode = 1
 anchors_preset = 15
