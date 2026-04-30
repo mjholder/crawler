@@ -1,10 +1,11 @@
 [gd_resource type="Resource" script_class="ConsumableData" format=3 uid="uid://cdat_throwbomb"]
 
 [ext_resource type="Script" path="res://scripts/consumable_data.gd" id="1_cdat"]
+[ext_resource type="Resource" path="res://resources/effects/damage_40_flat.tres" id="2_dmg"]
 
 [resource]
 script = ExtResource("1_cdat")
 item_name = "Throwing Bomb"
 description = "Deals 40 damage to all enemies."
-effect = 2
-effect_value = 40.0
+target_mode = 1
+effects = [ExtResource("2_dmg")]

@@ -9,7 +9,16 @@ Turn-based roguelike dungeon crawler. **Godot 4.6**, GDScript only. Early protot
 ```
 scripts/   # GDScript source
 scenes/    # Godot .tscn files
-assets/    # Audio, sprites
+assets/    # Raw media only
+  audio/
+  sprites/
+    ui/          # background, health bar
+    world_map/   # map background, node icons
+    paper_doll/  # body/armor/arms layers
+    enemies/     # per-enemy animation frames
+    weapons/     # per-weapon icon + animation frames
+    _archive/    # unreferenced legacy art (not deleted)
+resources/ # All .tres data resources (equipment, events, world_map, effects…)
 journal/   # Developer docs (design decisions, ideas, daily logs)
 ```
 

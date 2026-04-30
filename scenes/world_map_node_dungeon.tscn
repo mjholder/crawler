@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://br6bt78br4bmu"]
 
 [ext_resource type="Script" path="res://scripts/dungeon_map_node.gd" id="1_vcn2f"]
-[ext_resource type="Texture2D" uid="uid://dvaexssxsglsq" path="res://assets/resources/dungeon-unvisited.tres" id="2_ytvmy"]
-[ext_resource type="Texture2D" uid="uid://b2pnvyw6huetx" path="res://assets/resources/dungeon-locked.tres" id="3_3c8kt"]
-[ext_resource type="Texture2D" uid="uid://b41d3anyfx13e" path="res://assets/resources/dungeon-visited.tres" id="4_fpowt"]
+[ext_resource type="Texture2D" uid="uid://dvaexssxsglsq" path="res://resources/world_map/dungeon_unvisited.tres" id="2_ytvmy"]
+[ext_resource type="Texture2D" uid="uid://b2pnvyw6huetx" path="res://resources/world_map/dungeon_locked.tres" id="3_3c8kt"]
+[ext_resource type="Texture2D" uid="uid://b41d3anyfx13e" path="res://resources/world_map/dungeon_visited.tres" id="4_fpowt"]
 
 [node name="WorldMapNodeDungeon" type="Control" unique_id=376924348]
 layout_mode = 3

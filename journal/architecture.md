@@ -186,11 +186,17 @@ classDiagram
     class DamageEffect {
         +String damage_expression
     }
+    class HealEffect {
+        +String heal_expression
+    }
+    class BuffEffect {
+        +Enums.Stat stat
+        +String amount_expression
+        +int duration
+    }
     class ConsumableData {
-        +Effect effect
-        +float effect_value
-        +Enums.Stat buff_stat
-        +int buff_duration
+        +TargetMode target_mode
+        +Array~Resource~ effects
     }
     class PlayerClassData {
         <<Resource>>
@@ -236,5 +242,8 @@ classDiagram
     ShopData o-- EquipmentData : stock
     WeaponData o-- AttackData : attacks
     AttackData o-- Effect : effects
+    ConsumableData o-- Effect : effects
     Effect <|-- DamageEffect
+    Effect <|-- HealEffect
+    Effect <|-- BuffEffect
 ```

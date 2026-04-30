@@ -194,14 +194,6 @@ func add_enemy(enemy: Enemy) -> void:
 	enemy_added.emit(enemy, _total_expected_enemies)
 
 
-# --- Player Attack ---
-
-func apply_consumable_damage(amount: float) -> void:
-	for enemy in _enemies:
-		if not enemy.is_dead:
-			enemy.take_damage(amount)
-
-
 # --- Enemy Turn Loop ---
 
 func run_enemy_turns() -> void:

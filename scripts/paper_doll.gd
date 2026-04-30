@@ -1,7 +1,7 @@
 class_name PaperDoll
 extends Control
 
-const _BASE_TEXTURE := preload("res://assets/sprites/man.png")
+const _BASE_TEXTURE := preload("res://assets/sprites/paper_doll/man.png")
 
 @onready var _layers: Dictionary = {
 	Enums.Slot.HEAD:  {"front": $HeadLayer},

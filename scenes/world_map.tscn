@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b0sqp1dfwigqy"]
 
-[ext_resource type="Texture2D" uid="uid://bnm7iaexjbl5t" path="res://assets/sprites/map-no-nodes.png" id="1_oru6e"]
+[ext_resource type="Texture2D" uid="uid://bnm7iaexjbl5t" path="res://assets/sprites/world_map/map_background.png" id="1_oru6e"]
 [ext_resource type="Script" uid="uid://bu1g3a1ifp8yy" path="res://scripts/world_map.gd" id="1_qqero"]
 [ext_resource type="Script" path="res://scripts/boss_map_node.gd" id="1_bossscript"]
 [ext_resource type="PackedScene" uid="uid://diohdjsg4s5j2" path="res://scenes/world_map_node_rest.tscn" id="3_qj3iy"]

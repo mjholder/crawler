@@ -1,10 +1,11 @@
 [gd_resource type="Resource" script_class="ConsumableData" format=3 uid="uid://cdat_minorhealpot"]
 
 [ext_resource type="Script" path="res://scripts/consumable_data.gd" id="1_cdat"]
+[ext_resource type="Resource" path="res://resources/effects/heal_25_flat.tres" id="2_heal"]
 
 [resource]
 script = ExtResource("1_cdat")
 item_name = "Minor Healing Potion"
-description = "Restores 30 HP."
-effect = 0
-effect_value = 30.0
+description = "Restores 25 HP."
+target_mode = 0
+effects = [ExtResource("2_heal")]

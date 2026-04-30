@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://bq5o044b4yvpf"]
 
-[ext_resource type="Texture2D" uid="uid://8wbmtefgqsr3" path="res://assets/sprites/legs.png" id="1_12rci"]
+[ext_resource type="Texture2D" uid="uid://8wbmtefgqsr3" path="res://assets/sprites/paper_doll/legs.png" id="1_12rci"]
 [ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_pants"]
 
 [resource]

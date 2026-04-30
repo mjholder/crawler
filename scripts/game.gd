@@ -665,16 +665,22 @@ func _on_consumable_use_requested(index: int) -> void:
 
 
 func _apply_consumable_effect(data: ConsumableData) -> void:
-	match data.effect:
-		ConsumableData.EffectType.HEAL_FLAT:
-			player.heal(data.effect_value)
-		ConsumableData.EffectType.HEAL_PERCENT:
-			player.heal(player.max_health * data.effect_value * 0.01)
-		ConsumableData.EffectType.DAMAGE_ALL:
-			if current_event is CombatEvent:
-				(current_event as CombatEvent).apply_consumable_damage(data.effect_value)
-		ConsumableData.EffectType.STAT_BUFF:
-			player.apply_buff(data.buff_stat, data.effect_value, data.buff_duration)
+	var targets := _resolve_consumable_targets(data.target_mode)
+	for target in targets:
+		for effect_res in data.effects:
+			var effect := effect_res as Effect
+			if effect != null:
+				effect.apply(player, target)
+
+
+func _resolve_consumable_targets(mode: ConsumableData.TargetMode) -> Array:
+	match mode:
+		ConsumableData.TargetMode.ALL_ENEMIES:
+			if not current_event is CombatEvent:
+				return []
+			return (current_event as CombatEvent)._enemies.filter(
+				func(e: Enemy) -> bool: return not e.is_dead)
+	return [player]
 
 
 # --- Turn Flow ---

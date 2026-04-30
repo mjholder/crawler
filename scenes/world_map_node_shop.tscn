@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://d1irr22r3o36q"]
 
 [ext_resource type="Script" path="res://scripts/shop_map_node.gd" id="1_rjn6h"]
-[ext_resource type="Texture2D" uid="uid://dvwr1khgn0iqm" path="res://assets/resources/shop-unvisited.tres" id="2_amtnd"]
-[ext_resource type="Texture2D" uid="uid://buqyaly5xs4is" path="res://assets/resources/shop-locked.tres" id="3_4slwb"]
-[ext_resource type="Texture2D" uid="uid://bxu2nddklnt8q" path="res://assets/resources/shop-visited.tres" id="4_8ldfk"]
+[ext_resource type="Texture2D" uid="uid://dvwr1khgn0iqm" path="res://resources/world_map/shop_unvisited.tres" id="2_amtnd"]
+[ext_resource type="Texture2D" uid="uid://buqyaly5xs4is" path="res://resources/world_map/shop_locked.tres" id="3_4slwb"]
+[ext_resource type="Texture2D" uid="uid://bxu2nddklnt8q" path="res://resources/world_map/shop_visited.tres" id="4_8ldfk"]
 
 [node name="WorldMapNodeShop" type="Control" unique_id=514620726]
 layout_mode = 3

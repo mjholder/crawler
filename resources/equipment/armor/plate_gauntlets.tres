@@ -1,8 +1,8 @@
 [gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://d1nvy8kmtr4df"]
 
 [ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_gloves"]
-[ext_resource type="Texture2D" uid="uid://bbmyalks2b35f" path="res://assets/sprites/arms_right.png" id="1_yko0e"]
-[ext_resource type="Texture2D" uid="uid://cb4riwpblydkc" path="res://assets/sprites/arms_left.png" id="2_uen8b"]
+[ext_resource type="Texture2D" uid="uid://bbmyalks2b35f" path="res://assets/sprites/paper_doll/arms_right.png" id="1_yko0e"]
+[ext_resource type="Texture2D" uid="uid://cb4riwpblydkc" path="res://assets/sprites/paper_doll/arms_left.png" id="2_uen8b"]
 
 [resource]
 script = ExtResource("1_gloves")
