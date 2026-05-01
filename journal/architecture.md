@@ -38,7 +38,7 @@ flowchart TD
     GUI -. "attack_requested<br/>node_selected<br/>dialogue_complete<br/>..." .-> Game
     Player -. "turn_ended / damaged<br/>died / leveled_up / ..." .-> Game
     Event -. event_complete .-> Game
-    Enemy -. "damaged / died<br/>turn_ended / attack" .-> Game
+    Enemy -. "damaged / died / death_finished<br/>turn_ended / attack" .-> Game
     Inventory -. "slot_changed<br/>bag_changed / ..." .-> GUI
 
     classDef hub fill:#ffeaa7,stroke:#333,stroke-width:2px
@@ -82,8 +82,9 @@ classDiagram
         +signal dialogue_requested
     }
     class RestEvent {
+        +String heal_expression
         +signal rest_requested
-        +get_heal_amount(max_hp)
+        +get_heal_amount(target)
     }
     class ShopEvent {
         +signal shop_requested
@@ -145,6 +146,7 @@ sequenceDiagram
 
     rect rgb(235, 255, 235)
     note over Event,Game: Event completion
+    Event->>Enemy: await death_finished (all dying enemies)
     Event->>Event: _advance_phase (all enemies dead)
     Event-->>Game: event_complete
     Game->>Game: _apply_rewards(event.rewards)

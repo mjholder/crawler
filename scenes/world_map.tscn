@@ -65,6 +65,9 @@ debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
 skill_check_scene = ExtResource("6_0hitc")
 skill_check_json_dir = "res://resources/events/skill_check/"
 debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
+rest_scene = ExtResource("7_rest")
+rest_json_dir = "res://resources/events/rest/"
+debug_rest_json_path = "res://resources/events/rest/quarter_heal.json"
 miniboss_scene = ExtResource("4_gqm84")
 miniboss_json_path = "res://resources/events/combat/example.json"
 
@@ -84,6 +87,9 @@ debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
 skill_check_scene = ExtResource("6_0hitc")
 skill_check_json_dir = "res://resources/events/skill_check/"
 debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
+rest_scene = ExtResource("7_rest")
+rest_json_dir = "res://resources/events/rest/"
+debug_rest_json_path = "res://resources/events/rest/quarter_heal.json"
 miniboss_scene = ExtResource("4_gqm84")
 miniboss_json_path = "res://resources/events/combat/example.json"
 
@@ -122,6 +128,9 @@ debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
 skill_check_scene = ExtResource("6_0hitc")
 skill_check_json_dir = "res://resources/events/skill_check/"
 debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
+rest_scene = ExtResource("7_rest")
+rest_json_dir = "res://resources/events/rest/"
+debug_rest_json_path = "res://resources/events/rest/quarter_heal.json"
 miniboss_scene = ExtResource("4_gqm84")
 miniboss_json_path = "res://resources/events/combat/example.json"
 
@@ -141,6 +150,9 @@ debug_dialogue_json_path = "res://resources/events/dialogue/example.json"
 skill_check_scene = ExtResource("6_0hitc")
 skill_check_json_dir = "res://resources/events/skill_check/"
 debug_skill_check_json_path = "res://resources/events/skill_check/example.json"
+rest_scene = ExtResource("7_rest")
+rest_json_dir = "res://resources/events/rest/"
+debug_rest_json_path = "res://resources/events/rest/quarter_heal.json"
 miniboss_scene = ExtResource("4_gqm84")
 miniboss_json_path = "res://resources/events/combat/example.json"
 

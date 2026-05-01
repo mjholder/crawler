@@ -9,7 +9,6 @@ var _state: State = State.IDLE
 
 # --- Node References ---
 
-@onready var _sprite: AnimatedSprite2D = $Sprite
 @onready var _anim_player: AnimationPlayer = $AnimationPlayer
 @onready var _attack_player: AudioStreamPlayer2D = $SFX/AttackPlayer
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
@@ -22,7 +21,6 @@ func _on_ready() -> void:
 	super._on_ready()
 	enemy_name = "Skeleton"
 	_anim_player.animation_finished.connect(_on_anim_player_finished)
-	_sprite.animation_finished.connect(_on_sprite_animation_finished)
 	_transition(State.IDLE)
 
 
@@ -46,6 +44,10 @@ func _on_death() -> void:
 	_transition(State.DEAD)
 
 
+func _death_is_immediate() -> bool:
+	return false
+
+
 # --- Turn Gate ---
 
 func _is_turn_complete() -> bool:
@@ -54,22 +56,21 @@ func _is_turn_complete() -> bool:
 
 # --- Internal ---
 
-func _on_anim_player_finished(_anim_name: StringName) -> void:
-	_transition(State.IDLE)
-
-
-func _on_sprite_animation_finished() -> void:
-	if _state == State.HIT:
-		_transition(State.IDLE)
+func _on_anim_player_finished(anim_name: StringName) -> void:
+	match anim_name:
+		&"attack", &"hit":
+			_transition(State.IDLE)
+		&"death":
+			_emit_death_finished()
 
 
 func _transition(next: State) -> void:
 	_state = next
 	match _state:
-		State.IDLE:      _sprite.play("idle")
-		State.ATTACKING: _anim_player.play("attack")
-		State.HIT:       _sprite.play("hit")
-		State.DEAD:      _sprite.play("death")
+		State.IDLE:      _anim_player.play(&"idle")
+		State.ATTACKING: _anim_player.play(&"attack")
+		State.HIT:       _anim_player.play(&"hit")
+		State.DEAD:      _anim_player.play(&"death")
 
 
 func _play_sfx(player: AudioStreamPlayer2D) -> void:

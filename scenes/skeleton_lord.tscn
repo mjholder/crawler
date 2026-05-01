@@ -71,9 +71,66 @@ tracks/0/keys = {
 }]
 }
 
+[sub_resource type="Animation" id="Animation_idle01"]
+resource_name = "idle"
+length = 0.1
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [&"idle"],
+"method": &"play"
+}]
+}
+
+[sub_resource type="Animation" id="Animation_hit01"]
+resource_name = "hit"
+length = 0.2
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [&"hit"],
+"method": &"play"
+}]
+}
+
+[sub_resource type="Animation" id="Animation_death01"]
+resource_name = "death"
+length = 0.2
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [&"death"],
+"method": &"play"
+}]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_7dyss"]
 _data = {
-&"attack": SubResource("Animation_atk01")
+&"attack": SubResource("Animation_atk01"),
+&"death": SubResource("Animation_death01"),
+&"hit": SubResource("Animation_hit01"),
+&"idle": SubResource("Animation_idle01")
 }
 
 [node name="SkeletonLord" type="Node2D" unique_id=187789442]

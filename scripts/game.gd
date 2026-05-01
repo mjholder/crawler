@@ -546,12 +546,12 @@ func _on_gui_skill_check_complete(success: bool) -> void:
 # --- Rest ---
 
 func _on_rest_requested() -> void:
-	var heal_amount: float = (current_event as RestEvent).get_heal_amount(player.max_health)
+	var heal_amount: float = minf((current_event as RestEvent).get_heal_amount(player), player.max_health - player.health)
 	_gui.show_rest_panel(heal_amount)
 
 
 func _on_gui_rest_requested() -> void:
-	var heal_amount: float = (current_event as RestEvent).get_heal_amount(player.max_health)
+	var heal_amount: float = (current_event as RestEvent).get_heal_amount(player)
 	player.heal(heal_amount)
 
 

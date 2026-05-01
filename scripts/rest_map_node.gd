@@ -9,4 +9,4 @@ extends WorldMapNode
 # --- Event Generation ---
 
 func generate_event_configs() -> Array[Dictionary]:
-	return [{ "scene": rest_scene, "data": { "heal_percent": 1.0 } }]
+	return [{ "scene": rest_scene, "data": { "heal_expression": "max_health" } }]

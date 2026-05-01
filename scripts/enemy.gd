@@ -4,6 +4,7 @@ extends Node2D
 # --- Signals ---
 signal damaged(amount: float)
 signal died
+signal death_finished
 signal turn_ended
 signal attack(damage: float)
 
@@ -18,6 +19,7 @@ signal attack(damage: float)
 var health: float
 var is_dead: bool = false
 var _turn_pending: bool = false
+var _death_finished_emitted: bool = false
 
 
 func _ready() -> void:
@@ -71,6 +73,19 @@ func _die() -> void:
 	is_dead = true
 	_on_death()
 	died.emit()
+	if _death_is_immediate():
+		_emit_death_finished()
+
+
+func _death_is_immediate() -> bool:
+	return true
+
+
+func _emit_death_finished() -> void:
+	if _death_finished_emitted:
+		return
+	_death_finished_emitted = true
+	death_finished.emit()
 
 
 # --- Extension Hooks ---

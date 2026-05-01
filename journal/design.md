@@ -19,6 +19,22 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## AnimationPlayer as the single animation driver; AnimatedSprite2D as a passive renderer
+
+**Date:** 2026-05-01
+
+**Decision:** `AnimationPlayer` is the single timeline driver for every animated entity. `AnimatedSprite2D` holds sprite frames but is never called from script — instead, `AnimationPlayer` clips drive it via method tracks (`Sprite.play("idle")` etc.). Scripts hold one `_anim_player` reference, call `_anim_player.play(clip_name)`, and react to `animation_finished(name)`.
+
+**Context:** Animation was split across two systems: `AnimatedSprite2D` drove idle/hit/death directly from script; `AnimationPlayer` drove the attack via a method track. This meant two separate `animation_finished` handlers per entity and no way to layer additional effects (modulate, scale, hitstop, screen shake, pauses) without more ad-hoc code. Adding a longer post-death pause, a scale punch on impact, or a frame-timed SFX cue required the timeline model that `AnimationPlayer` provides.
+
+**Alternatives considered:** (a) Keep the hybrid — cheap but blocks every effect the user wants to add. (b) Fully drive `AnimatedSprite2D.frame` via property tracks rather than calling `Sprite.play()` — more precise frame control but defeats the SpriteFrames speed/duration authoring already in place.
+
+**Rationale:** The attack clip already used this pattern (method track → `Sprite.play()`). Extending it to idle/hit/death is uniform and low-risk. Scripts become thinner: one connection, one handler, one call site. Clip length in `AnimationPlayer` becomes the truth source for timing — a post-death pause is a timeline extension, not a code timer. Layered effects (scale, modulate, screen-shake method calls) can be added per-clip in the Godot editor without touching script.
+
+**Trade-offs / risks:** Per-weapon attack durations are now baked into `weapon.tscn`'s `AnimationLibrary` (currently a single 0.2s clip). If different weapons need different swing timings, the path is a `WeaponData.animation_library: AnimationLibrary` field that `Weapon._ready()` assigns — out of scope for now but the design supports it cleanly.
+
+---
+
 ## Effect pipeline: composable, data-driven attack effects via Expression formulas
 
 **Daily:** [[daily/2026-04-27]]

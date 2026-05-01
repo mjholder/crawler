@@ -8,6 +8,7 @@ extends Node2D
 # --- Node References ---
 
 @onready var _sprite: AnimatedSprite2D = $Sprite
+@onready var _anim_player: AnimationPlayer = $AnimationPlayer
 @onready var _equip_player: AudioStreamPlayer2D = $SFX/EquipPlayer
 @onready var _unequip_player: AudioStreamPlayer2D = $SFX/UnequipPlayer
 
@@ -17,7 +18,7 @@ func _ready() -> void:
 		_sprite.sprite_frames = data.sprite_frames
 		_equip_player.stream = data.equip_sfx
 		_unequip_player.stream = data.unequip_sfx
-	_sprite.play("idle")
+	_anim_player.play(&"idle")
 
 
 func get_modifier(stat: Enums.Stat) -> float:

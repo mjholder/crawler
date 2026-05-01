@@ -7,17 +7,19 @@ signal rest_requested
 
 # --- Config ---
 
-var _heal_percent: float = 1.0
+var heal_expression: String = "max_health"
+
+var _eval := StatExprEval.new()
 
 
 # --- Public API ---
 
 func initialize(data: Dictionary) -> void:
-	_heal_percent = data.get("heal_percent", 1.0)
+	heal_expression = data.get("heal_expression", "max_health")
 
 
-func get_heal_amount(max_health: float) -> float:
-	return max_health * _heal_percent
+func get_heal_amount(target: Node) -> float:
+	return _eval.evaluate(heal_expression, target)
 
 
 func on_rest_complete() -> void:

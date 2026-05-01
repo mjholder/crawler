@@ -228,4 +228,7 @@ func _on_enemy_died() -> void:
 	var all_dead := _enemies.all(func(e: Enemy) -> bool: return e.is_dead)
 	if all_dead:
 		print("[EVENT] All enemies defeated!")
+		for e in _enemies:
+			if not e._death_finished_emitted:
+				await e.death_finished
 		_advance_phase()

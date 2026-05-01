@@ -17,6 +17,10 @@ extends WorldMapNode
 @export var skill_check_json_dir: String
 @export var debug_skill_check_json_path: String
 
+@export var rest_scene: PackedScene
+@export var rest_json_dir: String
+@export var debug_rest_json_path: String
+
 @export var miniboss_scene: PackedScene
 @export var miniboss_json_path: String
 
@@ -45,6 +49,8 @@ func _build_random_event_config() -> Dictionary:
 		candidates.append({ "scene": dialogue_scene, "dir": dialogue_json_dir, "debug": debug_dialogue_json_path })
 	if skill_check_scene:
 		candidates.append({ "scene": skill_check_scene, "dir": skill_check_json_dir, "debug": debug_skill_check_json_path })
+	if rest_scene:
+		candidates.append({ "scene": rest_scene, "dir": rest_json_dir, "debug": debug_rest_json_path })
 
 	if candidates.is_empty():
 		push_warning("[DungeonMapNode] No event types configured on node '%s'" % name)
