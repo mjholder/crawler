@@ -9,7 +9,7 @@ Merged from: `event-scene-design.md`, `dialogue-system.md`, `skill-check-system.
 
 ## Overview
 
-All game events extend the base `Event` class and follow a four-phase state machine. This document is the source of truth for every event type — node trees, phase flows, signal contracts, JSON formats, and `game.gd` wiring. Panel node trees and `gui.gd` API live in `gui-design.md`.
+All game events extend the base `Event` class and follow a four-phase state machine. This document is the source of truth for every event type — node trees, phase flows, signal contracts, JSON formats, and `game.gd` wiring. Panel node trees and `gui.gd` API live in [[detailed/gui-design.md]].
 
 **Adding a new event type?** See the checklist at the bottom of this document.
 
@@ -131,7 +131,7 @@ Waves are out of scope. When added, CombatEvent refills `_enemies` internally an
 
 **Date:** 2026-04-17
 
-> **Status: Planned — not yet implemented.** See `journal/daily/2026-04-17.md` for the implementation punch list (`scripts/boss_event.gd`, `scenes/boss_event.tscn`, `resources/events/boss/debug_boss.json`, game.gd wiring).
+> **Status: Planned — not yet implemented.** See [[daily/2026-04-17]] for the implementation punch list (`scripts/boss_event.gd`, `scenes/boss_event.tscn`, `resources/events/boss/debug_boss.json`, game.gd wiring).
 
 ### Node Tree
 
@@ -452,7 +452,7 @@ game.start_event(skill_check_event)
 ShopEvent           Node2D          scripts/shop_event.gd
 ```
 
-Root node only. Shop UI lives in `ShopPanel` (see `gui-design.md`). `ShopEvent` owns transient stock and phase flow; never touches the player, inventory, or UI directly.
+Root node only. Shop UI lives in `ShopPanel` (see [[detailed/gui-design.md]]). `ShopEvent` owns transient stock and phase flow; never touches the player, inventory, or UI directly.
 
 ### Signal Contract
 

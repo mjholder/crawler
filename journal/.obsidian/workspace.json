@@ -11,10 +11,14 @@
             "id": "91068d1f6b2e61bf",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "design.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "design"
             }
           }
         ]
@@ -90,6 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "architecture.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -99,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Backlinks for architecture"
             }
           },
           {
@@ -108,11 +113,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "architecture.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Outgoing links from architecture"
             }
           },
           {
@@ -150,12 +156,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "architecture.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of architecture"
             }
           }
         ]
@@ -178,12 +185,23 @@
   },
   "active": "91068d1f6b2e61bf",
   "lastOpenFiles": [
+    "architecture.md",
+    "design.md",
+    "detailed/character.md.tmp.6278.1777598233648",
+    "detailed/character.md.tmp.6278.1777598226794",
+    "detailed/character.md.tmp.6278.1777598224134",
+    "detailed/character.md.tmp.6278.1777598219572",
+    "detailed/character.md.tmp.6278.1777598217205",
+    "detailed/gui-design.md.tmp.6278.1777598212764",
+    "detailed/gui-design.md.tmp.6278.1777598208630",
+    "detailed/game-flow.md.tmp.6278.1777598205759",
+    "detailed/game-flow.md.tmp.6278.1777598204042",
+    "detailed/game-flow.md.tmp.6278.1777598200380",
     "detailed/character.md",
     "detailed/enemy-system.md",
     "daily/2026-04-30.md",
     "canvas/Untitled.canvas",
     "Untitled.canvas",
-    "canvas",
     "2026-04-30.md"
   ]
 }

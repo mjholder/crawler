@@ -42,7 +42,7 @@ Game                Node2D              scripts/game.gd
     └── VictoryPanel    VictoryPanel    (planned) shown on boss defeat
 ```
 
-> **Planned:** `GameOverPanel` and `VictoryPanel` are part of the 2026-04-17 game-end design and are **not yet built**. See `journal/daily/2026-04-17.md` for the punch list and `gui-design.md` for node-tree specs.
+> **Planned:** `GameOverPanel` and `VictoryPanel` are part of the 2026-04-17 game-end design and are **not yet built**. See [[daily/2026-04-17]] for the punch list and [[detailed/gui-design.md]] for node-tree specs.
 
 ---
 
@@ -67,7 +67,7 @@ Grouping container. `game.gd` controls transitions via `$Music/BGM` and `$Music/
 `HurtRect` is a `ColorRect` filling the full viewport (anchors: full rect), base color `Color(0.6, 0.0, 0.0, 0.0)`. Player gets a reference via `set_hurt_overlay()` and tweens alpha on `take_damage()`. Tween logic stays in `player.gd`; the node lives in the game scene. Layer 3 puts it above the game world but below GUI (layer 4). Lives here rather than under `Player` because a `ColorRect` child of a `Node2D` not at the viewport origin would not reliably cover the screen.
 
 ### GUI (CanvasLayer, layer = 4)
-All HUD elements. See `gui-design.md` for internal node structures and the full `gui.gd` API.
+All HUD elements. See [[detailed/gui-design.md]] for internal node structures and the full `gui.gd` API.
 
 ---
 
@@ -82,7 +82,7 @@ enum NodeType { DUNGEON, SHOP, REST }
 enum NodeState { LOCKED, AVAILABLE, COMPLETED }
 ```
 
-> See `character.md` for `Enums.Stat` and `Enums.Slot`.
+> See [[detailed/character.md]] for `Enums.Stat` and `Enums.Slot`.
 
 ---
 
@@ -585,7 +585,7 @@ func _build_boss_config() -> Array[Dictionary]:
 
 ## Open Questions
 
-- **End node behaviour** — Resolved in design (NodeType.BOSS). Implementation pending — see `journal/daily/2026-04-17.md`.
+- **End node behaviour** — Resolved in design (NodeType.BOSS). Implementation pending — see [[daily/2026-04-17]].
 - **Start node** — Currently auto-completed by unlocking `initial_nodes`. If it needs content (intro cutscene), revisit `_ready()` init logic.
 - **Dungeon modifiers** — Reserve `@export var modifier: Resource` on `WorldMapNode`; leave null for now.
 - **Pool weighting** — `_build_random_event_config()` picks uniformly. Weighted pool possible via `weight: int` field if needed.

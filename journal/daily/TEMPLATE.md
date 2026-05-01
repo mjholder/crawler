@@ -26,7 +26,7 @@
 
 ## Key decisions made
 
-<!-- Brief notes. Anything worth logging in design.md should be cross-referenced here. -->
+<!-- Brief notes. Anything worth logging in [[design.md]] should be cross-referenced here. Use [[wikilinks]] for any other journal file you mention — e.g. [[detailed/character.md]], [[daily/YYYY-MM-DD]]. -->
 
 ## Blockers / struggles
 

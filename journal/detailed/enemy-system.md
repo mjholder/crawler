@@ -11,7 +11,7 @@ Consolidated from: `skeleton-enemy.md`
 
 All enemies extend the base `Enemy` class (`enemy.gd`). The base class owns the turn hook, turn gate, extension hooks, and signal emission. Subclasses declare their behavioral state machine, override `_is_turn_complete()`, and implement `_perform_action()`. They do not touch `take_turn()`, `take_damage()`, or `_die()`.
 
-CombatEvent signal wiring (how enemies are connected to the event) is documented in `event-system.md § CombatEvent`.
+CombatEvent signal wiring (how enemies are connected to the event) is documented in [[detailed/event-system.md]].
 
 ---
 

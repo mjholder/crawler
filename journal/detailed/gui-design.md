@@ -56,7 +56,7 @@ GUI  (CanvasLayer, layer 4)  [gui.gd]
 └── VictoryPanel  (Control)                [victory_panel.gd] (planned) hidden by default
 ```
 
-> **Planned:** `GameOverPanel` and `VictoryPanel` are not yet built. See `journal/daily/2026-04-17.md`.
+> **Planned:** `GameOverPanel` and `VictoryPanel` are not yet built. See [[daily/2026-04-17]].
 
 **Notes:**
 - `PlayerHUD` is a sibling of `CombatHUD`, not a child. It persists across world map, combat, dialogue, skill check — only hidden on the main menu.
@@ -618,7 +618,7 @@ When the player picks up an item mid-dungeon, the InventoryPanel cannot be used 
 
 The "Equip" choice for non-consumable equipment is simply not offered inside a dungeon. Outside a dungeon (world map, rest, shop contexts), standard InventoryPanel flows handle equip instead.
 
-Wiring signal (planned): `PickupChoicePanel.choice_made(choice, target_index, displaced_action)` → `game.gd._on_consumable_pickup()` / `_on_equipment_pickup()`. See `journal/detailed/character.md § Consumable Pickup Flow` for the handler contract.
+Wiring signal (planned): `PickupChoicePanel.choice_made(choice, target_index, displaced_action)` → `game.gd._on_consumable_pickup()` / `_on_equipment_pickup()`. See [[detailed/character.md]] for the handler contract.
 
 ---
 

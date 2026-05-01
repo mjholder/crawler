@@ -69,6 +69,8 @@ These decisions are documented in `journal/design.md`. Do not change them withou
 
 Log significant decisions in `journal/design.md` using the template at the top of that file. Log daily work in `journal/daily/YYYY-MM-DD.md` using `journal/daily/TEMPLATE.md`.
 
+Cross-references between journal files use Obsidian wikilinks: `[[design.md]]`, `[[detailed/character.md]]`, `[[daily/YYYY-MM-DD]]`. This keeps the graph view useful. Class and system names stay as inline code.
+
 When updating a daily journal entry, merge new content into existing sections — never duplicate a section header. There is exactly one "Next session" section per entry; add new items to it and check off completed ones within the same update. Check off completed tasks regardless of which section they appear in — including items carried forward from a previous entry. Verify against the actual code before marking complete.
 
 ## Architecture map

@@ -1,7 +1,7 @@
 # Design Decisions
 
 A log of significant design and architectural decisions, and the reasoning behind them.
-Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision is made.
+Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` when a decision is made.
 
 ---
 
@@ -9,6 +9,7 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 **Decision:** [What was decided]
 **Date:** YYYY-MM-DD
+**Daily:** [[daily/YYYY-MM-DD]]
 **Context:** [What problem or question prompted this]
 **Alternatives considered:** [What else was on the table]
 **Rationale:** [Why this option]
@@ -19,6 +20,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 <!-- Add entries below, newest first -->
 
 ## Effect pipeline: composable, data-driven attack effects via Expression formulas
+
+**Daily:** [[daily/2026-04-27]]
 
 **Decision:** Attack effects are modelled as a `Effect` base `Resource` with a virtual `apply(source, target)` method, subclassed per behaviour (currently only `DamageEffect`). Each `AttackData` carries an `effects: Array[Resource]` that is iterated by `game.gd` across all resolved targets. `DamageEffect` stores a `damage_expression: String` (e.g. `"strength * 0.5"`) evaluated at runtime using Godot's `Expression` class against the source's six stats as named variables. The array is typed `Array[Resource]` rather than `Array[Effect]` throughout.
 **Date:** 2026-04-27
@@ -31,10 +34,12 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 ## Consumable belt: single-use items dispatched outside the action registry
 
+**Daily:** [[daily/2026-04-20]]
+
 **Decision:** Consumables are a new `ConsumableData` subclass of `EquipmentData`, stored on `Inventory` in a variable-size `_consumable_belt: Array` (index-based, may contain nulls) alongside — but separate from — the existing bag. Unequipped consumables share the main `_bag` with weapons, armor, and rings; the belt is the "equipped" projection. Belt size is driven by `PlayerClassData.starting_consumable_slots`; `Inventory.set_belt_size(n)` supports runtime resize (spilling overflow to the bag) and emits `belt_size_changed` for the UI. Single-use semantics: activation destroys the item, leaving the slot empty until re-equipped outside combat. Four MVP effect types — `HEAL_FLAT`, `HEAL_PERCENT`, `DAMAGE_ALL`, `STAT_BUFF`. Activation is routed by a new `gui.consumable_use_requested(index)` signal into a new `game.gd._on_consumable_use_requested(index)` dispatcher, which validates state ∉ {ENEMY_TURN, GAME_OVER, VICTORY}, applies the effect via a per-branch match (`player.heal`, `player.apply_buff`, `CombatEvent.apply_consumable_damage`), calls `Inventory.consume(index)`, and emits `player.consumable_used` for log/SFX. The dispatcher **deliberately does not go through `player.execute_action()` and never sets `_turn_pending` or emits `turn_ended`** — that way the player can drink a potion or throw a bomb without surrendering the turn to enemies. Combat UI adds a `ConsumableBelt` HBoxContainer inside `ActionMenu` with one button per belt slot, rebuilt from `Inventory.consumable_belt_changed` / `belt_size_changed`. Usage is permitted during `PLAYER_TURN`, `NO_TURN`, and `DIALOGUE`; `game.gd` flips a new `gui.set_consumables_enabled()` independently of `set_player_turn()` so the belt stays active outside the strict player turn. Buffs from `STAT_BUFF` effects are tracked on Player as `_active_buffs: Array[{stat, amount, turns_remaining}]`, tick down once per player turn (just before `turn_ended.emit()`), and are summed into `get_effective_stat()` alongside equipment modifiers.
 **Date:** 2026-04-20
 **Context:** The game had no mid-combat utility options. Every player action today ends the turn; there was no way to spend a resource to heal, buff, or AoE without forfeiting initiative. The combat loop needed a "quick slot" channel for disposable items, and the equipment/inventory infrastructure was the natural place to host it. Yesterday's daily log closed with "Plan consumables system" — this design is the answer.
-**Alternatives considered:** (a) Add an `ends_turn: bool` parameter to `register_action()` / `execute_action()` and register consumables as non-turn-ending actions — rejected: muddies the action registry's single invariant ("actions end turns") and risks future actions being mis-tagged. (b) Special-case the consumable branch inside `execute_action()` to skip `_turn_pending` — rejected: breaks the explicit CLAUDE.md rule "`execute_action()` is the single point that emits `turn_ended`" and scatters turn-ending logic. (c) Separate consumable pouch with its own bag — rejected: duplicates bag-management code and storage rules (capacity, spillover) with no gameplay benefit. (d) Multi-charge or stackable consumables — rejected for MVP: single-use keeps loadout decisions sharp (one slot = one use = one careful choice), and stacking can be layered in later via a per-item `charges` field without re-architecting. (e) `ConsumableBelt` as a standalone HUD overlay (always visible, outside `CombatHUD`) — deferred: fine idea given that usage is allowed outside combat, but scoping it inside `CombatHUD` for MVP keeps the HUD tree change minimal. Flagged as an open question in `gui-design.md`. (f) Per-consumable `combat_only: bool` flag to disable buttons when context doesn't match — deferred: MVP no-ops `DAMAGE_ALL` outside combat rather than hiding the button; we can tighten later if players find it confusing.
+**Alternatives considered:** (a) Add an `ends_turn: bool` parameter to `register_action()` / `execute_action()` and register consumables as non-turn-ending actions — rejected: muddies the action registry's single invariant ("actions end turns") and risks future actions being mis-tagged. (b) Special-case the consumable branch inside `execute_action()` to skip `_turn_pending` — rejected: breaks the explicit CLAUDE.md rule "`execute_action()` is the single point that emits `turn_ended`" and scatters turn-ending logic. (c) Separate consumable pouch with its own bag — rejected: duplicates bag-management code and storage rules (capacity, spillover) with no gameplay benefit. (d) Multi-charge or stackable consumables — rejected for MVP: single-use keeps loadout decisions sharp (one slot = one use = one careful choice), and stacking can be layered in later via a per-item `charges` field without re-architecting. (e) `ConsumableBelt` as a standalone HUD overlay (always visible, outside `CombatHUD`) — deferred: fine idea given that usage is allowed outside combat, but scoping it inside `CombatHUD` for MVP keeps the HUD tree change minimal. Flagged as an open question in [[detailed/gui-design.md]]. (f) Per-consumable `combat_only: bool` flag to disable buttons when context doesn't match — deferred: MVP no-ops `DAMAGE_ALL` outside combat rather than hiding the button; we can tighten later if players find it confusing.
 **Rationale:** Dispatching from `game.gd` rather than the action registry preserves the "one source of `turn_ended`" invariant verbatim — no registry changes, no new flags, no risk of a future action forgetting to declare itself turn-ending. The belt mirrors the existing ring pattern (index-based fixed-size array with nullable entries, auto-fill equip helper, emit-on-change signal) so `Inventory` code and `InventoryPanel` UI extend by analogy. Single-use semantics match typical roguelike potion conventions and avoid the bookkeeping of charge counters or per-slot stacks. Routing `DAMAGE_ALL` through `CombatEvent.apply_consumable_damage()` respects the "Player doesn't reach into enemies" rule — Player only emits `consumable_used`; combat-aware damage application lives with the event that owns enemies. Buff tracking on Player (rather than on consumables as nodes) keeps the `EquipmentData → Equipment node` distinction clean: consumables are pure data, consumed once, never leaving an `Equipment` scene on the tree.
 **Trade-offs / risks:** Empty belt slots take persistent HUD space (mitigated: greyed buttons are a legible "you spent this, loadout is thinner now" signal). `DAMAGE_ALL` used outside combat silently no-ops — acceptable MVP behaviour, not error-state; documented. Buff stacking is rudimentary (plain additive, no caps, no diminishing returns) and may allow unintended optimization if buff consumables become plentiful — flagged as tuning concern, not a design one. `ConsumableBelt` lives inside `CombatHUD`, so the "usable anywhere except enemy turn / game-over" decision is partially undermined — players can't press the belt on the world map until the overlay question is resolved. Save/load must eventually serialize `_active_buffs` alongside `_consumable_belt`; out of scope for this pass but noted.
 
@@ -43,6 +48,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 ---
 
 ## Rewards follow player choice, not event identity
+
+**Daily:** [[daily/2026-04-19]]
 
 **Decision:** `DialogueEvent` and `SkillCheckEvent` no longer declare rewards at the event level. Dialogue rewards live on **terminal nodes** (empty `choices`) of the dialogue tree as an optional `rewards: { experience, gold }` dict; `DialoguePanel` now emits `dialogue_complete(terminal_node_id: String)`, and `DialogueEvent.on_dialogue_complete(terminal_node_id)` populates the inherited `rewards` field from that node before `_advance_phase()`. SkillCheckEvent replaces its flat `rewards` with `rewards_on_success` / `rewards_on_failure`; `_on_resolution()` picks the right dict based on `_success` at its first line, so rewards are set even when no result dialogue fires. No event-level fallback — paths without declared rewards grant nothing. `game._apply_rewards()` is untouched; it still reads `current_event.rewards` at `_on_event_complete()`.
 **Date:** 2026-04-19
@@ -55,16 +62,20 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 ## Game-end system: VICTORY state + BossEvent intercepts at the event layer
 
+**Daily:** [[daily/2026-04-17]]
+
 **Decision:** Game over and victory are two distinct terminal flows. **Game over** is triggered by `player.died` in any event; `game.gd._on_player_died()` sets `state = GAME_OVER`, calls a new shared helper `_teardown_current_event()` to clean up whatever event was active, then calls `gui.show_game_over()`. **Victory** is triggered by an explicit new event subclass `BossEvent extends CombatEvent`, placed on a new `NodeType.BOSS` world-map node. BossEvent overrides `_advance_phase()` so that when all enemies die it emits a dedicated `boss_defeated` signal instead of transitioning to RESOLUTION/COMPLETE; `event_complete` is intentionally never emitted on boss victory. `game.gd._on_boss_defeated()` sets `state = VICTORY`, applies rewards off the event, tears it down, nulls all dungeon-progress state (skipping `_on_dungeon_complete` entirely), shows the level-up panel if points are pending (so the player can allocate the final earned points), then shows the victory panel. Both GameOverPanel and VictoryPanel emit a unified `main_menu_requested` intent that `gui.gd` re-emits as the existing `quit_to_main_requested`, routing to `game.quit_to_main()`. A shared `_teardown_current_event()` extracted from `_on_event_complete()` is called by the normal completion path, the death path, and the victory path so cleanup stays symmetric across all three terminations.
 **Date:** 2026-04-17
 **Context:** The game had no terminal states. `player.died` set `state = GAME_OVER` but no UI responded and gameplay hung. Finishing every world-map node just looped back to the map. Two things were needed: a loss flow, and an explicit win flow. The user specifically did not want the win to be detected programmatically ("is this the last event?") — it should be a deliberate design decision per-map, marked by an explicit node type and event type.
 **Alternatives considered:** (a) Flag on CombatEvent data (`is_final_boss: bool`) reusing the existing combat scene — rejected for mixing terminal-flow concerns inside CombatEvent and making the win path implicit in JSON. (b) Standalone `BossEvent extends Event` that reimplements combat — rejected for duplicating enemy-spawn and turn-resolution logic. (c) Intercepting victory at `_finish_event()` with a `state == VICTORY` guard — rejected because it smears terminal logic across two functions and still routes through `_on_dungeon_complete → world_map_on_dungeon_complete`, which incorrectly marks the node COMPLETED and re-shows the map. (d) Flag on WorldMapNode (`is_boss_node: bool`) — rejected for muddying the `node_type` contract with a parallel boolean.
 **Rationale:** BossEvent as a `CombatEvent` subclass is the cheapest possible structural change — all enemy, HUD, music, and per-event signal wiring is inherited for free via the existing `event is CombatEvent` branch in `start_event()`. Only one extra connection is needed (`boss_defeated` on an `event is BossEvent` check). A dedicated terminal signal at the event layer (rather than overloading `event_complete`) keeps victory handling in one dedicated function, skips the reward-→-level-up-→-next-event pipeline that doesn't apply when the run is over, and avoids the wrong-semantics problem of `_on_dungeon_complete` re-showing the map. A new `NodeType.BOSS` mirrors the existing SHOP/REST handling in `world_map_node.gd` exactly — `_build_boss_config()` alongside `_build_rest_config()` and `_build_shop_config()`. Unified `main_menu_requested` → `quit_to_main_requested` preserves the one-intent-one-destination principle; both panels ask game.gd to do the same thing, so they feed the same signal. The shared `_teardown_current_event()` helper is the load-bearing refactor — it fixes the "GAME_OVER does nothing" bug, makes the death flow symmetric with normal completion, and gives victory a clean path to reuse existing disconnect logic without duplication.
-**Trade-offs / risks:** BossEvent deliberately does not emit `event_complete` on win, which is a minor reinterpretation of the event contract — previously, every event emitted `event_complete` when done. The contract is now "events emit `event_complete` OR a dedicated terminal signal when done." Documented in `event-system.md § BossEvent`. Multiple BOSS nodes on one map are mechanically allowed but any `boss_defeated` ends the run; if future design wants a mid-run boss-tier encounter that doesn't terminate, that will require a distinct subclass. `quit_to_main()` currently does not reset player state (HP/XP/gold/inventory) — relevant when starting a new run after death/victory. Not resolved here; flagged in the plan as an implementation-time check (`_on_character_created` may already do enough on a fresh character create).
+**Trade-offs / risks:** BossEvent deliberately does not emit `event_complete` on win, which is a minor reinterpretation of the event contract — previously, every event emitted `event_complete` when done. The contract is now "events emit `event_complete` OR a dedicated terminal signal when done." Documented in [[detailed/event-system.md]]. Multiple BOSS nodes on one map are mechanically allowed but any `boss_defeated` ends the run; if future design wants a mid-run boss-tier encounter that doesn't terminate, that will require a distinct subclass. `quit_to_main()` currently does not reset player state (HP/XP/gold/inventory) — relevant when starting a new run after death/victory. Not resolved here; flagged in the plan as an implementation-time check (`_on_character_created` may already do enough on a fresh character create).
 
 ---
 
 ## Shop transactions route through game.gd, not the panel or the event
+
+**Daily:** [[daily/2026-04-14]]
 
 **Decision:** For the upcoming `ShopEvent` / `ShopPanel`, all validation and state mutation for buy/sell transactions live in `game.gd`. `ShopPanel` emits intent signals (`buy_requested`, `sell_requested`, `leave_requested`) with only an `EquipmentData` payload; `GUI` re-emits them; `game.gd` reads `player.gold`, validates price and bag capacity, calls `player.spend_gold` / `player.add_gold`, mutates the bag via `inventory.add_to_bag` / `remove_from_bag`, and tells `ShopEvent` what happened via `on_buy(item)` / `on_sell(item)` so it can update its `_stock`. `ShopPanel` holds no references to `Player`, `Inventory`, or `ShopEvent`.
 **Date:** 2026-04-14
@@ -76,6 +87,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 ---
 
 ## UI Architecture — Passive GUI with Intent-Based API
+
+**Daily:** [[daily/2026-03-12]]
 
 **Decision:** Use a single CanvasLayer as the top-level UI node, with sections (CombatUI, PauseMenu, MainMenu, etc.) as children. A `gui.gd` script exposes an intent-based API. `game.gd` drives all UI changes via direct method calls.
 **Date:** 2026-03-12
@@ -91,6 +104,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 ## POV Sprite Export Resolution
 
+**Daily:** [[daily/2026-03-08]]
+
 **Decision:** All player POV sprites (weapons, hands) are exported at 480x270 to match the internal pixel art reference resolution.
 **Date:** 2026-03-08
 **Context:** The game runs at 1920x1080 or higher, but we needed a fixed export size for POV sprites so that Godot's upscaling preserves the retro pixel art aesthetic. Tested 480x270 in-engine and confirmed it looks correct.
@@ -101,6 +116,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 ---
 
 ## Signal-based attacks and player reference isolation
+
+**Daily:** [[daily/2026-03-01]]
 
 **Decision:** Player and Enemy both emit `attacked(damage: float)` signals when they act rather than calling `take_damage()` directly on a target reference. `game.gd` is the sole class that holds a `var player` reference. Events expose `receive_player_attack(damage)` for routing player damage to the appropriate enemy, and emit `player_attacked(damage)` for routing enemy damage back to `game.gd`. `Event.start()` takes no arguments — events no longer receive a player reference at all.
 **Date:** 2026-03-01
@@ -113,6 +130,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 ## Visual style — pixel art rendered from 3D models
 
+**Daily:** [[daily/2026-03-01]]
+
 **Decision:** Sprites are produced by rendering 3D models into pixel art frames rather than hand-drawn pixel art or ASCII art. Each enemy and character is modelled, rigged, posed, and exported as a spritesheet per state (idle, attack, hurt, death).
 **Date:** 2026-03-01
 **Context:** Needed to commit to a visual style before building the UI and enemy display systems. ASCII art was the implicit placeholder; pixel art from 3D renders was explored as an alternative.
@@ -121,6 +140,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 **Trade-offs / risks:** Asset production requires a 3D modelling and rigging step before any in-game sprite exists. Pipeline (model → rig → pose → render → import) needs to stay consistent across all characters or visual coherence breaks. Sprite resolution and palette should be standardised early.
 
 ## Scoped state ownership — enemies belong to events, player belongs to game.gd
+
+**Daily:** [[daily/2026-02-22]]
 
 **Decision:** The player reference lives on game.gd and persists across all events. Enemy references live on the event that spawned them and are gone when the event ends. Events receive the player as an argument on `start(player)` for the duration of the encounter.
 **Date:** 2026-02-22
@@ -133,6 +154,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 ## Event state machine with virtual phase hooks
 
+**Daily:** [[daily/2026-02-22]]
+
 **Decision:** Events are implemented as a base `Event` class with a fixed phase enum (`SETUP → RUNNING → RESOLUTION → COMPLETE`) and virtual hooks (`_on_setup()`, `_on_running()`, `_on_resolution()`) that subclasses override. The base class owns phase transition logic and emits `event_complete` when done; game.gd waits for that signal without ever inspecting phase state directly.
 **Date:** 2026-02-22
 **Context:** Event types need to be independently complex (e.g. a combat event with pre-fight dialogue, multiple enemy waves, and a post-fight loot phase) without that complexity leaking into game.gd or requiring architectural changes later.
@@ -143,6 +166,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 ---
 
 ## Explicit participant setup over scene-tree auto-collection
+
+**Daily:** [[daily/2026-02-22]]
 
 **Decision:** Player is set via `set_player()` and enemies are loaded via `load_combat_event()` rather than auto-discovered from scene children in `_ready()`.
 **Date:** 2026-02-22
@@ -155,6 +180,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 ## Player action registry
 
+**Daily:** [[daily/2026-02-22]]
+
 **Decision:** Player actions are stored as a `Dictionary` of `Callable`s and executed via `execute_action(name, target)`.
 **Date:** 2026-02-22
 **Context:** Player turns need to support multiple actions (attack, spells, items, etc.) without game.gd needing to know about specific methods, and without a growing match/switch block.
@@ -166,6 +193,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 
 ## Enemy AI via override hook
 
+**Daily:** [[daily/2026-02-22]]
+
 **Decision:** Enemy decision-making lives entirely in `_perform_action(target)`, which subclasses override to implement different behaviours.
 **Date:** 2026-02-22
 **Context:** Different enemy types need different AI without the game manager needing to know the difference between them.
@@ -174,6 +203,8 @@ Cross-reference daily logs with `See design.md — YYYY-MM-DD` when a decision i
 **Trade-offs / risks:** Deep inheritance trees get hard to manage. If behaviours need to be composed (e.g. an enemy that sometimes charges, sometimes heals), a strategy/component approach may be needed later.
 
 ## Signal-based UI/logic separation
+
+**Daily:** [[daily/2026-02-22]]
 
 **Decision:** Player and Enemy emit signals for game events; UI and game manager connect to those signals externally.
 **Date:** 2026-02-22
