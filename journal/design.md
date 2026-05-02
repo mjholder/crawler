@@ -19,6 +19,69 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Effect System v2: lifecycle signal bus, statuses, blessings, and equipment procs
+
+**Date:** 2026-05-02
+**Daily:** [[daily/2026-05-02]]
+
+**Decision:** Expand the Effect pipeline along three axes without changing the core `Effect.apply(source, target)` contract:
+
+1. **Lifecycle signal bus on `game.gd`.** `game.gd` publishes a comprehensive set of lifecycle signals covering every game-state and turn-state transition: `player_turn_started`, `player_turn_ended`, `enemy_turn_started(enemy)`, `enemy_turn_ended(enemy)`, `event_started(event)`, `event_completed(event)`, `combat_wave_started`, `combat_wave_completed`, `player_attack_hit(attack_data, targets)` (re-emit), `enemy_attack_hit(enemy, damage)` (re-emit), `player_damaged(amount)`, `enemy_damaged(enemy, amount)`, `enemy_died(enemy)`, `consumable_used(data)`. Statuses, blessings, and equipment procs subscribe to whichever signals they need; nothing else owns its own tick loop.
+
+2. **`Combatant` base / mixin.** Extract `_active_buffs`, `_active_statuses`, `apply_buff`, `apply_status`, `remove_status`, `_tick_statuses`, `get_effective_stat`, and the buff/status signals into a shared `Combatant` base (or composition node — to be decided at implementation time; prefer the lower-churn option). Player and Enemy each connect their own status tick to the appropriate `*_turn_ended(self)` signal from the bus. Enemy gains full parity — `BuffEffect` against an enemy stops being a no-op.
+
+3. **Status as a tagged, Effect-driven entity.** A new `StatusData` resource holds:
+   - `tag: StringName` — e.g. `"poison"`, `"bleed"`, `"stun"`, `"regen"`, `"burn"`
+   - `display_name: String`, `icon: Texture2D`
+   - `duration: int` — turns; `-1` = permanent (used internally by on-equip statuses)
+   - `stat_modifiers: Dictionary` — optional flat stat layer while active
+   - `prevents_action: bool` — combatant skips its turn
+   - `on_apply: Effect`, `on_tick: Effect`, `on_expire: Effect` — any may be null
+   - `stack_policy: enum { REFRESH, STACK, MAX_DURATION }` — default `REFRESH`
+
+   New `StatusEffect extends Effect` applies a `StatusData` via `target.apply_status(data, source)`. The existing `BuffEffect` becomes a thin wrapper that constructs an inline `StatusData` carrying only `stat_modifiers` and `duration`, so all existing `.tres` files load unchanged.
+
+4. **Run-long blessings live on `Player`.** A new `_blessings: Array[BlessingData]` array on Player, summed into `get_effective_stat()` alongside equipment and active statuses. `BlessingData extends Resource` carries `display_name`, `description`, `icon`, optional `stat_modifiers`, and an optional `subscriptions: Dictionary[StringName, Effect]` mapping bus signal name → Effect to fire when that signal fires. `Player.add_blessing(data)` wires its subscriptions to `game.gd` lifecycle signals; `remove_blessing(data)` disconnects them. Blessings are never ticked. Acquired via `event.rewards.blessings: Array[BlessingData]` (extends the existing reward dict shape) and via `PlayerClassData.starting_blessings`.
+
+5. **Equipment passives — four kinds, all on `EquipmentData`.**
+   - `stat_modifiers: Dictionary` — already exists, unchanged.
+   - `on_equip_effects: Array[Resource]` / `on_unequip_effects: Array[Resource]` — fired by `Equipment._on_equipped()` / `_on_unequipped()` (currently empty extension hooks, `equipment.gd:42-47`).
+   - `proc_effects: Array[ProcDef]` — `ProcDef` holds `trigger: StringName` (a bus signal name), `chance_expression: String` (default `"1.0"`), and `effect: Effect`. On equip, the Equipment node subscribes to `game.gd` for each proc's trigger; the handler rolls the chance and calls `effect.apply(player, target_from_signal_payload)`.
+   - `conditional_modifiers: Array[ConditionalModifier]` — `{stat, amount_expression, guard_expression}`. `Player.get_effective_stat()` evaluates each guard via `StatExprEval` per call; if true, the amount is summed in. Per-call cost is bounded by `StatExprEval`'s compile cache.
+
+**Context:** The current Effect pipeline handles one-shot active application (damage, heal, flat-N-turn buff) but is inert for reactive gameplay. Enemies have no buff system — `BuffEffect` against an enemy silently no-ops. There is no concept of named statuses with rich behaviour (Poison ticks per turn, Stun skips a turn, Bleed procs on hit). Equipment cannot react to combat events. There is no run-state layer for permanent boons. Addressing each gap in isolation would invent separate tick loops and subscription mechanisms, producing several uncoordinated event systems. Unifying around a single lifecycle signal bus on `game.gd` lets every reactive system share one pattern: subscribe to a signal, run an Effect.
+
+**Alternatives considered:**
+
+- **(a) Extend `_active_buffs` schema in-place** with `on_tick_callable`, `prevents_action`, etc. Rejected: leaves enemies without parity, doesn't unify equipment procs or blessings, and `Array[Dictionary]` grows unwieldy. `StatusData` as a Resource is authorable in `.tres` files.
+- **(b) Per-system signal bus** (Player has its own, Enemy its own, equipment its own). Rejected: every new feature must wire into N buses; cross-system rules ("blessing X buffs whenever an enemy is poisoned") are impossible without bridges.
+- **(c) Hardcoded status enum** with behaviour in code. Rejected — per established direction, the Effect pipeline is preferred over enum dispatch (see effect-pipeline entry, 2026-04-27).
+- **(d) `RunState` node sibling to `DialogueConsequences`** for blessings. Rejected: Player owns "everything about itself" so save/load has one authoritative source (user decision, 2026-05-02).
+- **(e) Autoload event-bus singleton.** Rejected: `game.gd` is already the orchestrator; a parallel autoload duplicates that role and violates the established "game.gd is the brain" invariant.
+
+**Rationale:** The lifecycle signal bus is the load-bearing idea — once it exists, statuses, blessings, equipment procs, and future reactive systems all collapse into the same pattern: a Resource naming a signal and carrying an Effect. New reactive content is authored entirely in `.tres` files. A `Combatant` base eliminates the Player/Enemy asymmetry. `StatusData` cleanly absorbs existing `_active_buffs` semantics (flat-stat-for-N-turns is `StatusData` with only `stat_modifiers`) while also expressing Poison (`on_tick = DamageEffect`), Stun (`prevents_action = true`), and Regen (`on_tick = HealEffect`). Blessings on Player keep run-state authoritative on the entity that survives the run; the `subscriptions` dict makes reactive blessings a one-line authoring task. Equipment proc/conditional types reuse `StatExprEval` for chance rolls and guards, consistent with all other formula evaluation.
+
+**Implementation phases (deferred — see [[daily/2026-05-02]]):**
+
+1. Lifecycle signal bus on `game.gd` — declare signals, emit at existing transition points; add `Subscription` helper (`scripts/subscription.gd`). Behaviour-neutral.
+2. `Combatant` base/mixin — extract from Player; Enemy adopts. Verify combat unchanged.
+3. `StatusData` + `StatusEffect` — author MVP statuses (poison, bleed, stun, regen); convert `BuffEffect` to wrapper; fix `_recalculate_max_health()` omission; replace `buff_applied`/`buff_expired` with `status_applied`/`status_expired`.
+4. Status HUD — icon row with duration counters; `prevents_action` wired into turn loop.
+5. Equipment passives — all four kinds on `EquipmentData`; subscription wiring in `Equipment`.
+6. Blessings — `BlessingData`; `Player.add_blessing`/`remove_blessing`; `event.rewards.blessings`; `PlayerClassData.starting_blessings`.
+7. Save/load shape — verify `_active_statuses` and `_blessings` as `Resource` arrays serialise cleanly.
+
+**Trade-offs / risks:**
+
+- **Signal-bus surface area.** Many signals; each must emit at the right point. Mitigation: `game.gd` emits only (never consumes its own bus); subscribers own connect/disconnect. Document the full contract in the `game.gd` header.
+- **Subscription leaks.** Every status/blessing/proc holds a `game.gd` connection. Must disconnect on removal/expiry/unequip. Mitigation: `Subscription` helper (signal + callable pair); removal is mechanical.
+- **Stack semantics require per-status authoring.** Default `REFRESH` is correct for most cases; `STACK` (e.g. Bleed) must not crash the HUD. Mitigation: cap *visible* stack count in HUD; logic stays uncapped.
+- **`apply_buff` doc/code drift.** `character.md:530` claims `apply_buff` emits `stats_changed`; actual `player.gd:399` does not call `_recalculate_max_health()` — CON buffs do not update max HP until next equip change. Fix in phase 3.
+- **Conditional modifier per-frame cost.** Bounded by `StatExprEval` compile cache; dirty-flag optimisation available later if needed.
+- **Phase ordering is strict.** Each phase must land independently and pass existing combat (Skeleton, SkeletonLord) before the next begins. Do not interleave.
+
+---
+
 ## AnimationPlayer as the single animation driver; AnimatedSprite2D as a passive renderer
 
 **Date:** 2026-05-01

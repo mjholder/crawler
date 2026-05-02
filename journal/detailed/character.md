@@ -551,6 +551,8 @@ func _tick_buffs() -> void:
 
 Buffs are additive and independent — applying `+5 STR` twice stacks to `+10` until each entry expires. There are no diminishing returns, no caps, and no stat-grouped merging for MVP.
 
+> **Note (2026-05-02):** The v1 buff system above is superseded by the Effect System v2 design. The `_active_buffs` schema, `apply_buff`, `_tick_buffs`, and `buff_applied`/`buff_expired` signals will migrate to a shared `Combatant` base alongside a new `StatusData`-driven status system covering named statuses (Poison, Bleed, Stun, Regen), `prevents_action`, per-turn tick Effects, and stack policy. Enemy will gain full parity. The v1 code remains in place until implementation phases 2–3 land. See [[design.md]] — "Effect System v2" (2026-05-02).
+
 ### Node Wiring
 
 ```gdscript
