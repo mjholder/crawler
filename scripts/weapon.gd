@@ -2,6 +2,7 @@ class_name Weapon
 extends Equipment
 
 signal animation_finished
+signal hit_landed
 
 # --- Node References ---
 
@@ -21,6 +22,10 @@ func _on_player_attacked(_attack_data: AttackData, _targets: Array) -> void:
 		_attack_player.play()
 	print("[WEAPON] Player attacked with %s" % data.item_name)
 	anim_player.play(&"attack")
+
+
+func _emit_hit_landed() -> void:
+	hit_landed.emit()
 
 
 func _on_anim_player_finished(anim_name: StringName) -> void:

@@ -2,6 +2,40 @@
 
 [ext_resource type="Script" uid="uid://boj3vs6vv4j7f" path="res://scripts/weapon.gd" id="1_xasec"]
 
+[sub_resource type="Animation" id="Animation_atk01"]
+resource_name = "attack"
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.1, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [&"wind_up"],
+"method": &"play"
+}, {
+"args": [&"swing"],
+"method": &"play"
+}]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0.5),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [],
+"method": &"_emit_hit_landed"
+}]
+}
+
 [sub_resource type="Animation" id="Animation_idle01"]
 resource_name = "idle"
 length = 0.1
@@ -16,24 +50,6 @@ tracks/0/keys = {
 "transitions": PackedFloat32Array(1),
 "values": [{
 "args": [&"idle"],
-"method": &"play"
-}]
-}
-
-[sub_resource type="Animation" id="Animation_atk01"]
-resource_name = "attack"
-length = 0.4
-tracks/0/type = "method"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("Sprite")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"values": [{
-"args": [&"attack"],
 "method": &"play"
 }]
 }

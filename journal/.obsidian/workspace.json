@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "ideas.md",
+                "file": "daily/2026-05-01.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ideas"
+              "title": "2026-05-01"
             }
           }
         ]
@@ -185,6 +185,10 @@
   },
   "active": "91068d1f6b2e61bf",
   "lastOpenFiles": [
+    "ideas.md",
+    "daily/2026-05-01.md.tmp.6278.1777685912280",
+    "daily/2026-05-01.md.tmp.6278.1777685907553",
+    "daily/2026-05-01.md.tmp.6278.1777685900453",
     "daily/2026-05-01.md.tmp.6278.1777649700649",
     "design.md.tmp.6278.1777648689231",
     "architecture.md.tmp.6278.1777634082870",
@@ -198,10 +202,6 @@
     "design.md",
     "architecture.md",
     "detailed/character.md.tmp.6278.1777598233648",
-    "detailed/character.md.tmp.6278.1777598226794",
-    "detailed/character.md.tmp.6278.1777598224134",
-    "detailed/character.md.tmp.6278.1777598219572",
-    "detailed/character.md.tmp.6278.1777598217205",
     "detailed/enemy-system.md",
     "Untitled.canvas",
     "2026-04-30.md"

@@ -7,6 +7,7 @@ signal healed(amount: float)
 signal died
 signal turn_ended
 signal attack_performed(attack_data: AttackData, targets: Array)
+signal attack_hit(attack_data: AttackData, targets: Array)
 signal weapon_attacks_changed(attacks: Array)
 signal gold_changed(new_total: int)
 signal experience_changed(new_total: int)
@@ -53,6 +54,8 @@ var _class_data: PlayerClassData = null
 var _active_buffs: Array = []  # Array of {stat, amount, turns_remaining}
 var _pending_attack_data: AttackData = null
 var _pending_targets: Array = []
+var _in_flight_attack_data: AttackData = null
+var _in_flight_targets: Array = []
 
 # --- Node References ---
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
@@ -154,8 +157,12 @@ func _do_attack() -> void:
 	var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
 	if weapon_data != null and weapon_data.scene != null and attack_data.target_mode != AttackData.TargetMode.SELF:
 		_attack_animation_pending = true
+		_in_flight_attack_data = attack_data
+		_in_flight_targets = targets
 	print("  Player performs: %s" % attack_data.attack_name)
 	attack_performed.emit(attack_data, targets)
+	if not _attack_animation_pending:
+		attack_hit.emit(attack_data, targets)
 
 
 # --- Rewards ---
@@ -316,6 +323,7 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 			node.visible = _weapon_visible
 			attack_performed.connect((node as Weapon)._on_player_attacked)
 			(node as Weapon).animation_finished.connect(_on_weapon_animation_finished)
+			(node as Weapon).hit_landed.connect(_on_weapon_hit_landed)
 	if slot == Enums.Slot.WEAPON and data is WeaponData:
 		print("[PLAYER] Equipped weapon: %s" % data.item_name)
 		var wdata := data as WeaponData
@@ -338,6 +346,7 @@ func _teardown_equipment(slot, data: EquipmentData) -> void:
 				if slot == Enums.Slot.WEAPON:
 					attack_performed.disconnect((child as Weapon)._on_player_attacked)
 					(child as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
+					(child as Weapon).hit_landed.disconnect(_on_weapon_hit_landed)
 				child.queue_free()
 				break
 	if slot == Enums.Slot.WEAPON and data is WeaponData:
@@ -437,6 +446,16 @@ func _transition(next: State) -> void:
 
 func _on_weapon_animation_finished() -> void:
 	_attack_animation_pending = false
+
+
+func _on_weapon_hit_landed() -> void:
+	if _in_flight_attack_data == null:
+		return
+	var attack_data := _in_flight_attack_data
+	var targets := _in_flight_targets
+	_in_flight_attack_data = null
+	_in_flight_targets = []
+	attack_hit.emit(attack_data, targets)
 
 
 func _flash_hurt_overlay() -> void:

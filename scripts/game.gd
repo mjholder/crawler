@@ -299,7 +299,7 @@ func set_player(p: Player) -> void:
 	player.gold_changed.connect(_on_player_gold_changed)
 	player.experience_changed.connect(_on_player_experience_changed)
 	player.stats_changed.connect(_on_player_stats_changed)
-	player.attack_performed.connect(_on_player_attack_performed)
+	player.attack_hit.connect(_on_player_attack_hit)
 	player.weapon_attacks_changed.connect(_on_player_weapon_attacks_changed)
 	_gui.setup_consumable_belt(player.get_node("Inventory") as Inventory)
 	_gui.update_player_health(player.max_health, player.max_health)
@@ -329,7 +329,7 @@ func _on_player_stats_changed(stats: Dictionary) -> void:
 	_gui.update_player_health(player.health, player.max_health)
 
 
-func _on_player_attack_performed(attack_data: AttackData, targets: Array) -> void:
+func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
 	for target in targets:
 		if target == null:
 			continue
