@@ -9,6 +9,10 @@ signal enemy_added(enemy: Enemy, total_expected: int)
 signal dialogue_trigger_fired(trigger_name: String, data: Dictionary)
 signal player_attacked(damage: float)
 signal enemy_turns_complete
+signal enemy_turn_started(enemy: Enemy)
+signal enemy_turn_ended(enemy: Enemy)
+signal wave_started
+signal wave_completed
 
 # --- Config ---
 
@@ -20,6 +24,7 @@ var _total_expected_enemies: int = 0
 
 var _enemies: Array[Enemy] = []
 var _turn_queue: Array[Enemy] = []
+var _current_turn_enemy: Enemy = null
 
 # --- Waves ---
 
@@ -40,6 +45,10 @@ func _on_enter(game: Node) -> void:
 	dialogue_trigger_fired.connect(game._on_combat_dialogue_trigger)
 	player_attacked.connect(game._on_player_attacked)
 	enemy_turns_complete.connect(game._on_enemy_turns_complete)
+	enemy_turn_started.connect(game._on_combat_enemy_turn_started)
+	enemy_turn_ended.connect(game._on_combat_enemy_turn_ended)
+	wave_started.connect(game._on_combat_wave_started)
+	wave_completed.connect(game._on_combat_wave_completed)
 	game._gui.set_sheathed(false)
 	game._gui.set_player_turn(false)
 	game._start_combat_music()
@@ -51,6 +60,10 @@ func _on_exit(game: Node) -> void:
 	dialogue_trigger_fired.disconnect(game._on_combat_dialogue_trigger)
 	player_attacked.disconnect(game._on_player_attacked)
 	enemy_turns_complete.disconnect(game._on_enemy_turns_complete)
+	enemy_turn_started.disconnect(game._on_combat_enemy_turn_started)
+	enemy_turn_ended.disconnect(game._on_combat_enemy_turn_ended)
+	wave_started.disconnect(game._on_combat_wave_started)
+	wave_completed.disconnect(game._on_combat_wave_completed)
 	for enemy in _enemies:
 		game._gui.remove_enemy_health_bar(enemy)
 	game._gui.set_sheathed(true)
@@ -101,6 +114,7 @@ func _start_next_wave() -> void:
 		push_warning("CombatEvent: _start_next_wave() called past end of waves array")
 		return
 
+	wave_started.emit()
 	var wave: Dictionary = _waves[_current_wave_index]
 	var entries: Array = wave.get("enemies", [])
 
@@ -132,6 +146,7 @@ func _start_next_wave() -> void:
 func _advance_phase() -> void:
 	match phase:
 		Phase.RUNNING:
+			wave_completed.emit()
 			if not _waves.is_empty():
 				var is_last_wave: bool = _current_wave_index >= _waves.size() - 1
 				if is_last_wave:
@@ -208,13 +223,16 @@ func _run_next_enemy_turn() -> void:
 	if _turn_queue.is_empty():
 		enemy_turns_complete.emit()
 		return
-	var enemy := _turn_queue.pop_front() as Enemy
-	print("[ENEMY] %s's turn" % enemy.enemy_name)
-	enemy.turn_ended.connect(_on_enemy_turn_ended, CONNECT_ONE_SHOT)
-	enemy.take_turn()
+	_current_turn_enemy = _turn_queue.pop_front() as Enemy
+	print("[ENEMY] %s's turn" % _current_turn_enemy.enemy_name)
+	enemy_turn_started.emit(_current_turn_enemy)
+	_current_turn_enemy.turn_ended.connect(_on_enemy_turn_ended, CONNECT_ONE_SHOT)
+	_current_turn_enemy.take_turn()
 
 
 func _on_enemy_turn_ended() -> void:
+	enemy_turn_ended.emit(_current_turn_enemy)
+	_current_turn_enemy = null
 	_run_next_enemy_turn()
 
 

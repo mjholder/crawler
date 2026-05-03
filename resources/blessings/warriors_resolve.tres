@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BlessingData" format=3 uid="uid://bfectmvqnnwuh"]
+
+[ext_resource type="Script" uid="uid://jvfhxoq8sxt2" path="res://scripts/blessing_data.gd" id="1_bdata"]
+[ext_resource type="Script" uid="uid://bt5lde7yv85qi" path="res://scripts/heal_effect.gd" id="2_heal"]
+
+[sub_resource type="Resource" id="HealEffect_resolve"]
+script = ExtResource("2_heal")
+heal_expression = "5"
+
+[resource]
+script = ExtResource("1_bdata")
+display_name = "Warrior's Resolve"
+description = "Each new turn, your wounds knit slightly. Restores 5 HP at the start of every player turn."
+subscriptions = {
+&"player_turn_started": SubResource("HealEffect_resolve")
+}

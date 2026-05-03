@@ -10,7 +10,6 @@
 [ext_resource type="PackedScene" uid="uid://nqeiejuuf4s4" path="res://scenes/dialogue_event.tscn" id="5_kvuet"]
 [ext_resource type="PackedScene" uid="uid://skchkevent01" path="res://scenes/skill_check_event.tscn" id="6_ir15t"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
-[ext_resource type="Texture2D" uid="uid://brv2m764g5v4n" path="res://icon.svg" id="7_u5sy4"]
 [ext_resource type="Script" uid="uid://kw77gbksi4x4" path="res://scripts/gui.gd" id="8_gui"]
 [ext_resource type="PackedScene" uid="uid://ciyvvtls2c4cd" path="res://scenes/health_bar.tscn" id="9_hbar"]
 [ext_resource type="Script" uid="uid://b1ry2py3hwthj" path="res://scripts/dialogue_panel.gd" id="12_kvuet"]
@@ -567,16 +566,15 @@ mouse_filter = 2
 layout_mode = 0
 
 [node name="ConsumableBelt" type="HFlowContainer" parent="GUI" unique_id=1764667387 node_paths=PackedStringArray("template_button")]
-visible = false
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -1013.0
-offset_top = -204.0
-offset_right = -245.0
-offset_bottom = -68.0
+offset_left = -806.0
+offset_top = -303.0
+offset_right = -38.0
+offset_bottom = -167.0
 grow_horizontal = 0
 grow_vertical = 0
 alignment = 2

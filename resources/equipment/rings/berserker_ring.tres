@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://boxig0ica641y"]
+
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_edata"]
+[ext_resource type="Script" uid="uid://bt5lde7yv85qi" path="res://scripts/heal_effect.gd" id="2_heal"]
+[ext_resource type="Script" uid="uid://bhek47yavbcbu" path="res://scripts/conditional_modifier.gd" id="3_cmod"]
+
+[sub_resource type="Resource" id="CM_str_low_hp"]
+script = ExtResource("3_cmod")
+amount_expression = "20"
+guard_expression = "health < max_health * 0.5"
+
+[sub_resource type="Resource" id="HealEffect_equip"]
+script = ExtResource("2_heal")
+heal_expression = "10"
+
+[resource]
+script = ExtResource("1_edata")
+item_name = "Berserker Ring"
+description = "Heals 10 HP on equip. Grants +20 STR while below half health."
+is_ring = true
+price = 200
+on_equip_effects = Array[Resource]([SubResource("HealEffect_equip")])
+conditional_modifiers = Array[Resource]([SubResource("CM_str_low_hp")])

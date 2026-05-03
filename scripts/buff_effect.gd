@@ -8,7 +8,13 @@ extends Effect
 var _eval := StatExprEval.new()
 
 
-func apply(_source: Node, target: Node) -> void:
-	if target == null or not target.has_method("apply_buff"):
+func apply(source: Node, target: Node) -> void:
+	if target == null or not target.has_method("apply_status"):
 		return
-	target.apply_buff(stat, _eval.evaluate(amount_expression, target), duration)
+	var data := StatusData.new()
+	data.tag = StringName("buff_" + Enums.Stat.keys()[stat].to_lower())
+	data.display_name = "Buff"
+	data.duration = duration
+	data.stat_modifiers = {stat: _eval.evaluate(amount_expression, target)}
+	data.stack_policy = StatusData.StackPolicy.REFRESH
+	target.apply_status(data, source)

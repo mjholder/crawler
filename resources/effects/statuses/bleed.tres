@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="StatusData" format=3]
+
+[ext_resource type="Script" path="res://scripts/status_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/damage_effect.gd" id="2_damage_script"]
+
+[sub_resource type="Resource" id="Tick_1"]
+script = ExtResource("2_damage_script")
+damage_expression = "2"
+
+[resource]
+script = ExtResource("1_script")
+tag = &"bleed"
+display_name = "Bleed"
+duration = 4
+on_tick = SubResource("Tick_1")
+stack_policy = 1

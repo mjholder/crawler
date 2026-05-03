@@ -5,6 +5,12 @@ extends Node2D
 
 @export var data: EquipmentData
 
+# --- Passive State ---
+
+var _game: Game = null
+var _subscription: Subscription = null
+var _eval: StatExprEval = StatExprEval.new()
+
 # --- Node References ---
 
 @onready var _sprite: AnimatedSprite2D = $Sprite
@@ -41,10 +47,62 @@ func play_unequip() -> void:
 
 func _on_equipped() -> void:
 	_scale_sprite_to_viewport()
+	if data == null or _game == null or data.proc_effects.is_empty():
+		return
+	var owner_node := get_parent()
+	_subscription = Subscription.new()
+	for proc_res in data.proc_effects:
+		var proc := proc_res as ProcDef
+		if proc == null or proc.effect == null or proc.trigger == &"":
+			continue
+		var sig := Signal(_game, proc.trigger)
+		_subscription.add(sig, _make_proc_handler(proc, owner_node))
 
 
 func _on_unequipped() -> void:
-	pass
+	if _subscription != null:
+		_subscription.clear_all()
+		_subscription = null
+
+
+# --- Proc Helpers ---
+
+func _make_proc_handler(proc: ProcDef, owner: Node) -> Callable:
+	var effect := proc.effect as Effect
+	var chance_expr := proc.chance_expression
+	match proc.trigger:
+		&"player_attack_hit":
+			return func(_atk: AttackData, targets: Array) -> void:
+				if not _roll_chance(chance_expr, owner):
+					return
+				for t in targets:
+					effect.apply(owner, t)
+		&"player_damaged", &"player_healed":
+			return func(_amount: float) -> void:
+				if not _roll_chance(chance_expr, owner):
+					return
+				effect.apply(owner, owner)
+		&"enemy_attack_hit":
+			return func(enemy: Enemy, _dmg: float) -> void:
+				if not _roll_chance(chance_expr, owner):
+					return
+				effect.apply(owner, enemy)
+		&"enemy_died":
+			return func(_enemy: Enemy) -> void:
+				if not _roll_chance(chance_expr, owner):
+					return
+				effect.apply(owner, owner)
+		_:
+			# Signals with no relevant payload: fire effect on owner.
+			# Godot drops extra signal args silently, so this works for any signal.
+			return func() -> void:
+				if not _roll_chance(chance_expr, owner):
+					return
+				effect.apply(owner, owner)
+
+
+func _roll_chance(chance_expr: String, owner: Node) -> bool:
+	return randf() < _eval.evaluate(chance_expr, owner)
 
 
 # --- Helpers ---

@@ -69,6 +69,10 @@ classDiagram
         +signal player_attacked
         +signal enemy_turns_complete
         +signal dialogue_trigger_fired
+        +signal enemy_turn_started
+        +signal enemy_turn_ended
+        +signal wave_started
+        +signal wave_completed
     }
     class BossEvent {
         +signal boss_defeated
@@ -104,6 +108,8 @@ classDiagram
 ## 3. Turn & signal flow
 
 Three flows that cover the combat loop end-to-end. See [[detailed/game-flow.md]] and [[detailed/enemy-system.md]]. The **player turn** is gated by the weapon's attack animation (`turn_ended` doesn't fire until the sprite finishes). The **enemy turn** runs one enemy at a time from a queue `CombatEvent` maintains. **Event completion** is the single exit point — `Game._on_event_complete` applies rewards and frees the event.
+
+`game.gd` also emits a **lifecycle signal bus** at each transition — `player_turn_started/ended`, `enemy_turn_started/ended(enemy)`, `event_started/completed(event)`, `combat_wave_started/completed`, `player_attack_hit`, `enemy_attack_hit`, `player_damaged/healed`, `enemy_damaged/died`, `consumable_used`. These are omitted from the flow below to keep it readable; they fire in parallel with the sequence shown. Statuses, blessings, and equipment procs will subscribe to them in later phases.
 
 ```mermaid
 sequenceDiagram
@@ -160,6 +166,10 @@ sequenceDiagram
 
 Equipment is data-driven. See [[detailed/character.md]]. `EquipmentData` is a `Resource` with a `scene: PackedScene` field; on equip, the `Inventory` hands the data to `Game` which instantiates the scene as a child of the `Player`. The runtime node (`Equipment` or `Weapon`) reads its visuals and audio back off the data. `ConsumableData` shares the `EquipmentData` base for the common fields (name, description, sprite, price) even though consumables aren't worn.
 
+Phase 5 added equipment passives: `on_equip_effects` / `on_unequip_effects` (fired by Player on equip/unequip for any item), `proc_effects` (`Array[ProcDef]`, wired to the game lifecycle bus by the scene-backed Equipment node on equip), and `conditional_modifiers` (`Array[ConditionalModifier]`, evaluated in `Player.get_effective_stat` with a re-entrancy guard). See [[design.md]] — Effect System v2.
+
+Phase 6 added `BlessingData` — run-long permanent boons held on `Player._blessings`. `add_blessing` / `remove_blessing` wire/unwire the blessing's `subscriptions` (signal name → Effect, applied to the player) to the game lifecycle bus via `Subscription`. Stat modifiers are summed into `get_effective_stat`. Blessings are granted via `event.rewards["blessings"]` or `PlayerClassData.starting_blessings`.
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -170,6 +180,22 @@ classDiagram
         +Enums.Slot slot
         +bool is_ring
         +int price
+        +Array on_equip_effects
+        +Array on_unequip_effects
+        +Array proc_effects
+        +Array conditional_modifiers
+    }
+    class ProcDef {
+        <<Resource>>
+        +StringName trigger
+        +String chance_expression
+        +Effect effect
+    }
+    class ConditionalModifier {
+        <<Resource>>
+        +Enums.Stat stat
+        +String amount_expression
+        +String guard_expression
     }
     class WeaponData {
         +AudioStream attack_sfx
@@ -200,11 +226,18 @@ classDiagram
         +TargetMode target_mode
         +Array~Resource~ effects
     }
+    class BlessingData {
+        <<Resource>>
+        +String display_name
+        +Dictionary stat_modifiers
+        +Dictionary subscriptions
+    }
     class PlayerClassData {
         <<Resource>>
         +Dictionary starting_equipped
         +Array starting_rings
         +Array starting_consumables
+        +Array starting_blessings
         +Dictionary growth_rates
     }
     class ShopData {
@@ -217,7 +250,11 @@ classDiagram
     class Equipment {
         <<Node2D>>
         +EquipmentData data
+        +Game _game
+        +Subscription _subscription
         +get_modifier(stat) float
+        +_on_equipped()
+        +_on_unequipped()
     }
     class Weapon {
         +AnimationPlayer anim_player
@@ -239,8 +276,13 @@ classDiagram
     EquipmentData <|-- ConsumableData
     Equipment <|-- Weapon
     EquipmentData ..> Equipment : scene instantiates
+    EquipmentData o-- ProcDef : proc_effects
+    EquipmentData o-- ConditionalModifier : conditional_modifiers
+    ProcDef o-- Effect : effect
     Inventory o-- EquipmentData : stores
     PlayerClassData o-- EquipmentData : starting loadout
+    PlayerClassData o-- BlessingData : starting_blessings
+    BlessingData o-- Effect : subscriptions
     ShopData o-- EquipmentData : stock
     WeaponData o-- AttackData : attacks
     AttackData o-- Effect : effects
@@ -248,4 +290,66 @@ classDiagram
     Effect <|-- DamageEffect
     Effect <|-- HealEffect
     Effect <|-- BuffEffect
+    Effect <|-- StatusEffect
+    StatusEffect o-- StatusData
+    StatusData o-- Effect : on_apply/on_tick/on_expire
+```
+
+---
+
+## 5. Combatant class hierarchy
+
+`Combatant` is a `Node2D`-extending base class shared by `Player` and `Enemy`. It owns the status system (`_active_statuses`, `apply_status`, `remove_status`, `_tick_statuses`) and a virtual `_get_base_stat`. `get_effective_stat` on `Combatant` computes base + active-status stat_modifiers; `Player` overrides to also sum equipment modifiers. `BuffEffect` and `StatusEffect` both call `target.apply_status()` — valid for both combatants. `Player._on_stat_modifiers_changed()` calls `_recalculate_max_health()` so CON statuses update max HP immediately. See [[design.md]] — Effect System v2 (2026-05-02).
+
+```mermaid
+classDiagram
+    class StatusInstance {
+        <<Resource>>
+        +StatusData data
+        +int turns_remaining
+        +Node source
+    }
+    class Combatant {
+        <<Node2D>>
+        +signal status_applied(data)
+        +signal status_ticked(data, turns_remaining)
+        +signal status_expired(data)
+        -Array~StatusInstance~ _active_statuses
+        +get_effective_stat(stat) float
+        +apply_status(data, source)
+        +remove_status(tag)
+        +has_preventing_status() bool
+        +get_active_statuses() Array
+        +_tick_statuses()
+        #_on_stat_modifiers_changed()
+        #_get_base_stat(stat) float
+    }
+    class Player {
+        +pass_turn()
+        +get_effective_stat(stat) float
+        +add_blessing(data)
+        +remove_blessing(data)
+        +get_blessings() Array
+        -Array _blessings
+        -Dictionary _blessing_subs
+        -Game _game
+        #_on_stat_modifiers_changed()
+        #_get_base_stat(stat) float
+    }
+    class Enemy {
+        +float defense
+        +take_turn()
+        #_get_base_stat(stat) float
+    }
+    class Skeleton {
+    }
+    class SkeletonLord {
+    }
+
+    Combatant o-- StatusInstance : _active_statuses
+    StatusInstance o-- StatusData : data
+    Combatant <|-- Player
+    Combatant <|-- Enemy
+    Enemy <|-- Skeleton
+    Enemy <|-- SkeletonLord
 ```

@@ -24,6 +24,25 @@ var game_started: bool = false
 var round_number: int = 0
 var _pre_dialogue_state: Enums.TurnState = Enums.TurnState.NO_TURN
 
+# --- Lifecycle Signal Bus ---
+# game.gd is the sole publisher. Statuses, blessings, and equipment procs subscribe here.
+# game.gd never subscribes to its own bus signals.
+signal player_turn_started
+signal player_turn_ended
+signal enemy_turn_started(enemy: Enemy)
+signal enemy_turn_ended(enemy: Enemy)
+signal event_started(event: Event)
+signal event_completed(event: Event)
+signal combat_wave_started
+signal combat_wave_completed
+signal player_attack_hit(attack_data: AttackData, targets: Array)
+signal enemy_attack_hit(enemy: Enemy, damage: float)
+signal player_damaged(amount: float)
+signal player_healed(amount: float)
+signal enemy_damaged(enemy: Enemy, amount: float)
+signal enemy_died(enemy: Enemy)
+signal consumable_used(data: ConsumableData)
+
 # --- Music ---
 
 @export var _combat_music: AudioStream
@@ -292,6 +311,7 @@ func _on_character_created(p_name: String, class_data: PlayerClassData) -> void:
 
 func set_player(p: Player) -> void:
 	player = p
+	player._game = self
 	player.turn_ended.connect(_on_player_turn_ended)
 	player.died.connect(_on_player_died)
 	player.damaged.connect(_on_player_damaged)
@@ -301,17 +321,22 @@ func set_player(p: Player) -> void:
 	player.stats_changed.connect(_on_player_stats_changed)
 	player.attack_hit.connect(_on_player_attack_hit)
 	player.weapon_attacks_changed.connect(_on_player_weapon_attacks_changed)
+	player.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
+	player.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
+	player.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
 	_gui.setup_consumable_belt(player.get_node("Inventory") as Inventory)
 	_gui.update_player_health(player.max_health, player.max_health)
 	_gui.update_player_stats(player.build_stats_dict())
 
 
-func _on_player_damaged(_amount: float) -> void:
+func _on_player_damaged(amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
+	player_damaged.emit(amount)
 
 
-func _on_player_healed(_amount: float) -> void:
+func _on_player_healed(amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
+	player_healed.emit(amount)
 
 
 func _on_player_gold_changed(new_total: int) -> void:
@@ -330,6 +355,10 @@ func _on_player_stats_changed(stats: Dictionary) -> void:
 
 
 func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
+	# SELF-mode attacks (e.g. Brace) keep targets=[player] for effect-application below,
+	# but don't fire the bus signal — procs want "hostile hit" semantics, not self-buffs.
+	if attack_data.target_mode != AttackData.TargetMode.SELF:
+		player_attack_hit.emit(attack_data, targets)
 	for target in targets:
 		if target == null:
 			continue
@@ -443,6 +472,7 @@ func _enter_event(event: Event) -> void:
 		player.get_inventory().set_dungeon_locked(false)
 		_gui.set_dungeon_locked(false)
 	current_event.start()
+	event_started.emit(current_event)
 	if event is CombatEvent and state != Enums.TurnState.DIALOGUE:
 		_start_player_turn()
 
@@ -461,6 +491,7 @@ func _exit_event() -> void:
 
 func _on_event_complete() -> void:
 	print("[GAME] Event complete")
+	event_completed.emit(current_event)
 	_apply_rewards(current_event.rewards)
 	_exit_event()
 	if player.pending_stat_points > 0:
@@ -617,16 +648,40 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 	enemy.position = _calculate_enemy_position(index, total_expected)
 	_scale_sprite_to_viewport(enemy.get_node("Sprite"))
 	_gui.add_enemy_health_bar(enemy)
-	enemy.damaged.connect(func(_amt: float) -> void:
-		_gui.update_enemy_health_bar(enemy, enemy.health))
+	_gui.add_enemy_status_label(enemy)
+	enemy.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
+	enemy.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
+	enemy.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
+	enemy.damaged.connect(func(amt: float) -> void:
+		_gui.update_enemy_health_bar(enemy, enemy.health)
+		enemy_damaged.emit(enemy, amt))
 	enemy.died.connect(func() -> void:
-		_gui.remove_enemy_health_bar(enemy))
+		_gui.remove_enemy_health_bar(enemy)
+		enemy_died.emit(enemy))
+	enemy.attack.connect(func(damage: float) -> void:
+		enemy_attack_hit.emit(enemy, damage))
 	# Refresh targeting candidates if we're mid-targeting for enemies
 	if _targeting_action != "" and _targeting_attack != null:
 		var mode := _targeting_attack.target_mode
 		if mode == AttackData.TargetMode.SINGLE_ENEMY or mode == AttackData.TargetMode.ALL_ENEMIES:
 			_targeting_candidates = _build_candidates(mode)
 			_show_targeting_visuals()
+
+
+func _on_combat_enemy_turn_started(enemy: Enemy) -> void:
+	enemy_turn_started.emit(enemy)
+
+
+func _on_combat_enemy_turn_ended(enemy: Enemy) -> void:
+	enemy_turn_ended.emit(enemy)
+
+
+func _on_combat_wave_started() -> void:
+	combat_wave_started.emit()
+
+
+func _on_combat_wave_completed() -> void:
+	combat_wave_completed.emit()
 
 
 func _on_combat_dialogue_trigger(_trigger_name: String, data: Dictionary) -> void:
@@ -662,6 +717,7 @@ func _on_consumable_use_requested(index: int) -> void:
 	inventory.consume(index)
 	_apply_consumable_effect(data)
 	player.consumable_used.emit(data)
+	consumable_used.emit(data)
 
 
 func _apply_consumable_effect(data: ConsumableData) -> void:
@@ -688,7 +744,12 @@ func _resolve_consumable_targets(mode: ConsumableData.TargetMode) -> Array:
 func _start_player_turn() -> void:
 	state = Enums.TurnState.PLAYER_TURN
 	round_number += 1
+	player_turn_started.emit()
 	print("[ROUND %d] === Player Turn ===" % round_number)
+	if player.has_preventing_status():
+		_gui.log_message("[Round %d] You are stunned! Turn skipped." % round_number)
+		player.pass_turn()
+		return
 	_gui.set_player_turn(true)
 	_gui.set_consumables_enabled(true)
 	_gui.log_message("[Round %d] Your turn." % round_number)
@@ -699,6 +760,7 @@ func _on_player_turn_ended() -> void:
 		return
 	if not current_event is CombatEvent:
 		return
+	player_turn_ended.emit()
 	_run_enemy_turns()
 
 
@@ -770,7 +832,11 @@ func _apply_rewards(r: Dictionary) -> void:
 		player.add_experience(xp)
 	if gold > 0:
 		player.add_gold(gold)
-	print("[GAME] Rewards applied: %d XP, %d gold" % [xp, gold])
+	var blessings: Array = r.get("blessings", [])
+	for b in blessings:
+		if b is BlessingData:
+			player.add_blessing(b)
+	print("[GAME] Rewards applied: %d XP, %d gold, %d blessings" % [xp, gold, blessings.size()])
 
 
 func _scale_sprite_to_viewport(sprite: AnimatedSprite2D) -> void:

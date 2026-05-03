@@ -37,3 +37,6 @@ extends Resource
 
 ## Consumables auto-equipped to belt slots on game start.
 @export var starting_consumables: Array[ConsumableData] = []
+
+## Blessings granted immediately at run start.
+@export var starting_blessings: Array[BlessingData] = []

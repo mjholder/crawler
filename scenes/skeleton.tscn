@@ -136,9 +136,9 @@ _data = {
 script = ExtResource("1_ssl1b")
 enemy_name = "Skeleton"
 max_health = 100.0
-attack_damage = 65.0
-experience_value = 15
-defense = 15.0
+attack_damage = 90.0
+experience_value = 20
+defense = 12.0
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1257614996]
 sprite_frames = SubResource("SpriteFrames_rjsi3")

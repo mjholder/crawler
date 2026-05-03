@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="StatusData" format=3]
+
+[ext_resource type="Script" path="res://scripts/status_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/heal_effect.gd" id="2_heal_script"]
+
+[sub_resource type="Resource" id="Tick_1"]
+script = ExtResource("2_heal_script")
+heal_expression = "5"
+
+[resource]
+script = ExtResource("1_script")
+tag = &"regen"
+display_name = "Regeneration"
+duration = 3
+on_tick = SubResource("Tick_1")
+stack_policy = 0

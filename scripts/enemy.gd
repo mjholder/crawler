@@ -1,5 +1,5 @@
 class_name Enemy
-extends Node2D
+extends Combatant
 
 # --- Signals ---
 signal damaged(amount: float)
@@ -31,6 +31,10 @@ func _ready() -> void:
 func take_turn() -> void:
 	if is_dead:
 		return
+	if has_preventing_status():
+		print("[ENEMY] %s is stunned! Turn skipped." % enemy_name)
+		_turn_pending = true
+		return
 	_turn_pending = true
 	_perform_action()
 
@@ -38,6 +42,7 @@ func take_turn() -> void:
 func _process(_delta: float) -> void:
 	if _turn_pending and _is_turn_complete():
 		_turn_pending = false
+		_tick_statuses()
 		turn_ended.emit()
 
 
@@ -65,7 +70,13 @@ func take_damage(amount: float) -> void:
 
 
 func _apply_defense(amount: float) -> float:
-	return maxf(amount - defense, 0.0)
+	return maxf(amount - get_effective_stat(Enums.Stat.DEFENSE), 0.0)
+
+
+func _get_base_stat(stat: Enums.Stat) -> float:
+	match stat:
+		Enums.Stat.DEFENSE: return defense
+	return 0.0
 
 
 func _die() -> void:

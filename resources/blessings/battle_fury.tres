@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BlessingData" format=3]
+
+[ext_resource type="Script" uid="uid://jvfhxoq8sxt2" path="res://scripts/blessing_data.gd" id="1_bdata"]
+
+[resource]
+script = ExtResource("1_bdata")
+display_name = "Battle Fury"
+description = "Violence sharpens your reflexes. Grants +15 STR for the run."
+stat_modifiers = {
+0: 15.0
+}

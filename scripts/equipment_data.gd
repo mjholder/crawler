@@ -13,3 +13,7 @@ extends Resource
 @export var slot: Enums.Slot = Enums.Slot.WEAPON
 @export var is_ring: bool = false
 @export var price: int = 0
+@export var on_equip_effects: Array[Resource] = []
+@export var on_unequip_effects: Array[Resource] = []
+@export var proc_effects: Array[Resource] = []       # Array[ProcDef]
+@export var conditional_modifiers: Array[Resource] = []  # Array[ConditionalModifier]

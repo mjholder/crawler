@@ -47,6 +47,8 @@ signal consumable_use_requested(index: int)
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
 
 var _enemy_bars: Dictionary = {}
+var _player_status_label: Label = null
+var _enemy_status_labels: Dictionary = {}
 
 const _BTN_WIDTH := 90
 const _BTN_HEIGHT := 35
@@ -89,6 +91,14 @@ func _ready() -> void:
 	_game_over_panel.main_menu_requested.connect(func() -> void: quit_to_main_requested.emit())
 	_victory_panel.hide()
 	_victory_panel.main_menu_requested.connect(func() -> void: quit_to_main_requested.emit())
+	_player_status_label = Label.new()
+	_player_status_label.name = "PlayerStatusLabel"
+	_player_status_label.layout_mode = 1
+	_player_status_label.offset_left = 38.0
+	_player_status_label.offset_top = 175.0
+	_player_status_label.offset_right = 400.0
+	_player_status_label.offset_bottom = 210.0
+	_player_hud.add_child(_player_status_label)
 
 
 # --- Inventory ---
@@ -174,6 +184,7 @@ func hide_event_hud() -> void:
 	for child in _enemy_hud.get_children():
 		child.queue_free()
 	_enemy_bars.clear()
+	_enemy_status_labels.clear()
 	_combat_hud.hide()
 	if not _inventory_panel.visible:
 		_consumable_belt.hide()
@@ -233,12 +244,45 @@ func remove_enemy_health_bar(enemy: Enemy) -> void:
 		return
 	_enemy_bars[enemy].queue_free()
 	_enemy_bars.erase(enemy)
+	_enemy_status_labels.erase(enemy)
 
 
 func update_enemy_health_bar(enemy: Enemy, current: float) -> void:
 	if not _enemy_bars.has(enemy):
 		return
 	_enemy_bars[enemy].set_current_health(current)
+
+
+func add_enemy_status_label(enemy: Enemy) -> void:
+	if not _enemy_bars.has(enemy):
+		return
+	var lbl := Label.new()
+	lbl.name = "StatusLabel"
+	lbl.position = Vector2(-32.0, -18.0)
+	_enemy_bars[enemy].add_child(lbl)
+	_enemy_status_labels[enemy] = lbl
+
+
+func refresh_enemy_statuses(enemy: Enemy, statuses: Array) -> void:
+	if not _enemy_status_labels.has(enemy):
+		return
+	var parts: PackedStringArray = []
+	for s in statuses:
+		if s.data.duration == -1:
+			parts.append(s.data.display_name)
+		else:
+			parts.append("%s(%d)" % [s.data.display_name, s.turns_remaining])
+	_enemy_status_labels[enemy].text = " ".join(parts)
+
+
+func refresh_player_statuses(statuses: Array) -> void:
+	var parts: PackedStringArray = []
+	for s in statuses:
+		if s.data.duration == -1:
+			parts.append(s.data.display_name)
+		else:
+			parts.append("%s(%d)" % [s.data.display_name, s.turns_remaining])
+	_player_status_label.text = " ".join(parts)
 
 
 func rebuild_action_buttons(attacks: Array) -> void:

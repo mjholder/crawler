@@ -1,5 +1,5 @@
 class_name Player
-extends Node2D
+extends Combatant
 
 # --- Signals ---
 signal damaged(amount: float)
@@ -14,8 +14,6 @@ signal experience_changed(new_total: int)
 signal stats_changed(stats: Dictionary)
 signal leveled_up(new_level: int)
 signal consumable_used(data: ConsumableData)
-signal buff_applied(stat: Enums.Stat, amount: float, duration: int)
-signal buff_expired(stat: Enums.Stat)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -48,19 +46,24 @@ var pending_growth_bonuses: Dictionary = {}
 var is_dead: bool = false
 var _turn_pending: bool = false
 var _attack_animation_pending: bool = false
+var _evaluating_conditionals: bool = false
 var _weapon_visible: bool = false
 var _hurt_overlay: ColorRect = null
 var _class_data: PlayerClassData = null
-var _active_buffs: Array = []  # Array of {stat, amount, turns_remaining}
 var _pending_attack_data: AttackData = null
 var _pending_targets: Array = []
 var _in_flight_attack_data: AttackData = null
 var _in_flight_targets: Array = []
+var _game: Game = null
+var _blessings: Array[BlessingData] = []
+var _blessing_subs: Dictionary = {}  # BlessingData -> Subscription
 
 # --- Node References ---
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
 @onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
 @onready var _inventory: Inventory = $Inventory
+
+var _cond_eval: StatExprEval = StatExprEval.new()
 
 # --- Actions ---
 # Maps action name -> Callable.
@@ -78,7 +81,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _turn_pending and _is_turn_complete():
 		_turn_pending = false
-		_tick_buffs()
+		_tick_statuses()
 		turn_ended.emit()
 
 
@@ -99,10 +102,13 @@ func initialize(p_name: String, class_data: PlayerClassData) -> void:
 	pending_growth_bonuses = {}
 	gold = 0
 	_inventory.clear()
+	for bd in _blessings.duplicate():
+		remove_blessing(bd)
 	is_dead = false
 	_recalculate_max_health()
 	health = max_health
 	_setup_starting_equipment(class_data)
+	_setup_starting_blessings(class_data)
 
 
 func _setup_starting_equipment(class_data: PlayerClassData) -> void:
@@ -117,6 +123,38 @@ func _setup_starting_equipment(class_data: PlayerClassData) -> void:
 		_inventory.add_to_bag(item)
 
 
+func _setup_starting_blessings(class_data: PlayerClassData) -> void:
+	for data in class_data.starting_blessings:
+		add_blessing(data)
+
+
+# --- Blessings ---
+
+func add_blessing(data: BlessingData) -> void:
+	_blessings.append(data)
+	if _game == null or data.subscriptions.is_empty():
+		return
+	var sub := Subscription.new()
+	var owner := self
+	for trigger in data.subscriptions:
+		var effect := data.subscriptions[trigger] as Effect
+		if effect == null:
+			continue
+		sub.add(Signal(_game, trigger), func() -> void: effect.apply(owner, owner))
+	_blessing_subs[data] = sub
+
+
+func remove_blessing(data: BlessingData) -> void:
+	_blessings.erase(data)
+	if _blessing_subs.has(data):
+		(_blessing_subs[data] as Subscription).clear_all()
+		_blessing_subs.erase(data)
+
+
+func get_blessings() -> Array[BlessingData]:
+	return _blessings
+
+
 # --- Actions ---
 
 func _register_actions() -> void:
@@ -129,6 +167,12 @@ func register_action(action_name: String, callable: Callable) -> void:
 
 func unregister_action(action_name: String) -> void:
 	_actions.erase(action_name)
+
+
+func pass_turn() -> void:
+	if is_dead or _turn_pending:
+		return
+	_turn_pending = true
 
 
 func execute_action(action_name: String) -> void:
@@ -293,6 +337,11 @@ func _recalculate_max_health() -> void:
 		health = minf(health, max_health)
 
 
+func _on_stat_modifiers_changed() -> void:
+	_recalculate_max_health()
+	stats_changed.emit(build_stats_dict())
+
+
 func _on_slot_changed(slot: Enums.Slot, new_data: EquipmentData, old_data: EquipmentData) -> void:
 	if old_data != null:
 		_teardown_equipment(slot, old_data)
@@ -312,9 +361,13 @@ func _on_ring_changed(_index: int, new_data: EquipmentData, old_data: EquipmentD
 
 
 func _setup_equipment(slot, data: EquipmentData) -> void:
+	for effect_res in data.on_equip_effects:
+		if effect_res is Effect:
+			(effect_res as Effect).apply(self, self)
 	if data.scene != null:
 		var node := data.scene.instantiate() as Equipment
 		node.data = data
+		node._game = get_parent() as Game
 		add_child(node)
 		node.play_equip()
 		node._on_equipped()
@@ -338,6 +391,9 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 
 
 func _teardown_equipment(slot, data: EquipmentData) -> void:
+	for effect_res in data.on_unequip_effects:
+		if effect_res is Effect:
+			(effect_res as Effect).apply(self, self)
 	if data.scene != null:
 		for child in get_children():
 			if child is Equipment and child.data == data:
@@ -385,31 +441,24 @@ func get_inventory() -> Inventory:
 
 
 func get_effective_stat(stat: Enums.Stat) -> float:
-	var base: float = _get_base_stat(stat)
-	var bonus: float = 0.0
-	for data in _inventory.get_all_equipped():
-		if data.stat_modifiers.has(stat):
-			bonus += data.stat_modifiers[stat]
-	for buff in _active_buffs:
-		if buff.stat == stat:
-			bonus += buff.amount
-	return base + bonus
-
-
-func apply_buff(stat: Enums.Stat, amount: float, duration: int) -> void:
-	_active_buffs.append({stat = stat, amount = amount, turns_remaining = duration})
-	buff_applied.emit(stat, amount, duration)
-
-
-func _tick_buffs() -> void:
-	var expired: Array = []
-	for buff in _active_buffs:
-		buff.turns_remaining -= 1
-		if buff.turns_remaining <= 0:
-			expired.append(buff)
-	for buff in expired:
-		_active_buffs.erase(buff)
-		buff_expired.emit(buff.stat)
+	var value: float = super.get_effective_stat(stat)
+	for equip_data in _inventory.get_all_equipped():
+		if equip_data.stat_modifiers.has(stat):
+			value += equip_data.stat_modifiers[stat]
+	if not _evaluating_conditionals:
+		_evaluating_conditionals = true
+		for equip_data in _inventory.get_all_equipped():
+			for cm_res in equip_data.conditional_modifiers:
+				var cm := cm_res as ConditionalModifier
+				if cm == null or cm.stat != stat:
+					continue
+				if _cond_eval.evaluate(cm.guard_expression, self) > 0.0:
+					value += _cond_eval.evaluate(cm.amount_expression, self)
+		_evaluating_conditionals = false
+	for blessing in _blessings:
+		if blessing.stat_modifiers.has(stat):
+			value += blessing.stat_modifiers[stat]
+	return value
 
 
 func build_stats_dict() -> Dictionary:

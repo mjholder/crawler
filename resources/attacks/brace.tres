@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="AttackData" format=3]
+[gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://dmyt0yvxnjrft"]
 
-[ext_resource type="Script" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/effects/buff_str_20_3t.tres" id="1_ynduh"]
 
 [resource]
 script = ExtResource("1_script")
 attack_name = "Brace"
 description = "A defensive stance"
 target_mode = 2
-effects = Array[Resource]([])
+effects = Array[Resource]([ExtResource("1_ynduh")])
