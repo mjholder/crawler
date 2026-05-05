@@ -24,6 +24,8 @@ flowchart TD
     WMN["WorldMapNode<br/>subclasses"]
     DC["DialogueConsequences"]
     Enemy["Enemy subclasses<br/>(owned by Event)"]
+    SM["SaveManager<br/>(static)"]
+    RSD["RunSaveData<br/>(Resource)"]
 
     Game -->|owns| Player
     Game -->|owns| DC
@@ -34,8 +36,10 @@ flowchart TD
     GUI -->|contains| WorldMap
     WorldMap -->|contains| WMN
     Event -->|spawns / frees| Enemy
+    Game -->|write / clear| SM
+    SM -->|save / load| RSD
 
-    GUI -. "attack_requested<br/>node_selected<br/>dialogue_complete<br/>..." .-> Game
+    GUI -. "attack_requested<br/>node_selected<br/>continue_requested<br/>..." .-> Game
     Player -. "turn_ended / damaged<br/>died / leveled_up / ..." .-> Game
     Event -. event_complete .-> Game
     Enemy -. "damaged / died / death_finished<br/>turn_ended / attack" .-> Game
@@ -157,6 +161,7 @@ sequenceDiagram
     Event-->>Game: event_complete
     Game->>Game: _apply_rewards(event.rewards)
     Game->>Event: _on_exit / queue_free
+    Game->>Game: SaveManager.write(self)
     end
 ```
 

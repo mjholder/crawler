@@ -19,6 +19,27 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Save / Load system
+
+**Date:** 2026-05-05
+**Daily:** [[daily/2026-05-05]]
+
+**Decision:** Single-slot auto-save to `user://save.tres` (`RunSaveData extends Resource`). Save fires after every event completion (after rewards are applied). Permadeath: save is cleared on death and on victory. Players can start a New Run (with confirmation if a save exists) or Continue from the main menu.
+
+**Alternatives considered:**
+- JSON (`user://save.json`): simpler to inspect but loses static typing and schema drift protection; doesn't fit the Resource-heavy codebase.
+- Regenerating dungeon event configs on load: cheaper but unsafe — `DungeonMapNode.generate_event_configs()` uses `randi()` and is non-deterministic. Scene paths + data dicts are stored in the save instead.
+- Mid-event saves: deferred to a later pass. The save-on-event-complete design makes this out of scope for v1.
+
+**Rationale:** Resource-based save is consistent with how all authored data (`EquipmentData`, `BlessingData`, etc.) is already handled. Serialisation delegates to the entities themselves (`Player.to_save_dict` / `apply_save_dict`, `Inventory.to_save_dict` / `apply_save_dict`) honouring the "Player owns everything about itself" principle from the 2026-05-02 design session.
+
+**Trade-offs / risks:**
+- `StatusInstance.source` (Node ref) cannot be serialised. It is null after load; `StatExprEval` falls back to zeros for source stats. Safe for all authored flat-expression statuses.
+- World map node identity is by NodePath relative to the WorldMap node. If the `.tscn` graph is edited between sessions, stale paths log a warning; the save is not automatically invalidated (silent data loss risk if a node is renamed).
+- Save schema version is `RunSaveData.VERSION = 1`; mismatches discard the file.
+
+---
+
 ## Effect System v2: lifecycle signal bus, statuses, blessings, and equipment procs
 
 **Date:** 2026-05-02

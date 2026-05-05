@@ -11,17 +11,14 @@
             "id": "23e0d0285e5479ef",
             "type": "leaf",
             "state": {
-              "type": "canvas",
+              "type": "markdown",
               "state": {
-                "file": "canvas/Untitled 1.canvas",
-                "viewState": {
-                  "x": 0,
-                  "y": 0,
-                  "zoom": 0
-                }
+                "file": "daily/2026-05-05.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-layout-dashboard",
-              "title": "Untitled 1"
+              "icon": "lucide-file",
+              "title": "2026-05-05"
             }
           }
         ]
@@ -77,8 +74,7 @@
               "title": "Bookmarks"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
@@ -189,20 +185,20 @@
   },
   "active": "23e0d0285e5479ef",
   "lastOpenFiles": [
+    "daily/2026-05-03.md",
+    "architecture.md.tmp.6278.1777977065779",
+    "architecture.md.tmp.6278.1777977059939",
+    "design.md.tmp.6278.1777977045794",
+    "daily/2026-05-05.md",
+    "daily/2026-05-05.md.tmp.6278.1777977031944",
+    "daily/2026-05-02.md",
+    "canvas/Untitled 1.canvas",
     "daily/2026-05-03.md.tmp.6278.1777818374002",
     "daily/2026-05-03.md.tmp.6278.1777818369078",
     "daily/2026-05-03.md.tmp.6278.1777818347467",
     "daily/2026-05-03.md.tmp.6278.1777818343442",
     "architecture.md.tmp.6278.1777818335688",
     "architecture.md.tmp.6278.1777818332331",
-    "daily/2026-05-03.md.tmp.6278.1777818052018",
-    "daily/2026-05-03.md.tmp.6278.1777817732948",
-    "daily/2026-05-03.md.tmp.6278.1777817723701",
-    "daily/2026-05-03.md.tmp.6278.1777817719825",
-    "daily/2026-05-03.md.tmp.6278.1777817715934",
-    "daily/2026-05-03.md",
-    "canvas/Untitled 1.canvas",
-    "daily/2026-05-02.md",
     "design.md",
     "daily/2026-04-20.md",
     "daily/2026-05-01.md",

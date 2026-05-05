@@ -86,6 +86,30 @@ func get_active_statuses() -> Array:
 	return _active_statuses
 
 
+func to_status_save_array() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for instance in _active_statuses:
+		if instance.data == null or instance.data.resource_path.is_empty():
+			continue
+		result.append({"data_path": instance.data.resource_path, "turns_remaining": instance.turns_remaining})
+	return result
+
+
+func apply_status_save_array(arr: Array) -> void:
+	_active_statuses.clear()
+	for entry in arr:
+		var data := load(entry["data_path"]) as StatusData
+		if data == null:
+			push_warning("[Combatant] Could not load StatusData: %s" % entry["data_path"])
+			continue
+		var instance := StatusInstance.new()
+		instance.data = data
+		instance.turns_remaining = entry["turns_remaining"]
+		_active_statuses.append(instance)
+	if not _active_statuses.is_empty():
+		_on_stat_modifiers_changed()
+
+
 func _on_stat_modifiers_changed() -> void:
 	pass
 

@@ -30,6 +30,27 @@ func reset() -> void:
 
 # --- Public API ---
 
+func to_state_dict() -> Dictionary:
+	var result: Dictionary = {}
+	for child in $NodeContainer.get_children():
+		if child is WorldMapNode:
+			result[String(get_path_to(child))] = child.state as int
+	return result
+
+
+func apply_state_dict(d: Dictionary) -> void:
+	for path_str in d:
+		var node := get_node_or_null(NodePath(path_str)) as WorldMapNode
+		if node == null:
+			push_warning("[WorldMap] Saved node path not found: %s — save may be stale" % path_str)
+			continue
+		node.set_state(d[path_str])
+
+
+func get_world_map_node(path_str: String) -> WorldMapNode:
+	return get_node_or_null(NodePath(path_str)) as WorldMapNode
+
+
 func on_dungeon_complete(completed_node: WorldMapNode) -> void:
 	completed_node.set_state(Enums.NodeState.COMPLETED)
 	for path in completed_node.connected_nodes:

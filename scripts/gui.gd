@@ -17,11 +17,14 @@ signal shop_buy_requested(item: EquipmentData)
 signal shop_sell_requested(item: EquipmentData)
 signal shop_leave_requested
 signal consumable_use_requested(index: int)
+signal continue_requested
 
 # --- Node References ---
 @onready var _character_creation: CharacterCreationPanel = $CharacterCreationPanel
 @onready var _level_up_panel: LevelUpPanel = $LevelUpPanel
 @onready var _main_menu: Control = $MainMenu
+@onready var _continue_button: Button = $MainMenu/ContinueButton
+@onready var _new_run_confirm_dialog: ConfirmationDialog = $NewRunConfirmDialog
 @onready var _pause_menu: Control = $PauseMenu
 @onready var _player_hud: Control = $PlayerHUD
 @onready var _player_health_label: Label = $PlayerHUD/PlayerHealthLabel
@@ -59,9 +62,11 @@ const _BTN_GAP := 5
 
 func _ready() -> void:
 	$MainMenu/StartButton.pressed.connect(_on_start_button_pressed)
+	$MainMenu/ContinueButton.pressed.connect(_on_continue_button_pressed)
 	$MainMenu/StartDialogueButton.pressed.connect(_on_start_dialogue_button_pressed)
 	$MainMenu/StartSkillCheckButton.pressed.connect(_on_start_skill_check_button_pressed)
 	$MainMenu/QuitButton.pressed.connect(_on_quit_button_pressed)
+	$NewRunConfirmDialog.confirmed.connect(_on_new_run_confirmed)
 	$PauseMenu/ResumeButton.pressed.connect(handle_esc)
 	$PauseMenu/QuitToMainButton.pressed.connect(_on_quit_to_main_button_pressed)
 	_main_menu.hide()
@@ -138,6 +143,7 @@ func set_consumables_enabled(enabled: bool) -> void:
 # --- Navigation ---
 
 func show_main_menu() -> void:
+	_continue_button.disabled = not SaveManager.has_save()
 	_main_menu.show()
 	_pause_menu.hide()
 	_combat_hud.hide()
@@ -168,6 +174,7 @@ func return_to_main_menu() -> void:
 	_game_over_panel.hide()
 	_victory_panel.hide()
 	_player_hud.hide()
+	_continue_button.disabled = not SaveManager.has_save()
 	_main_menu.show()
 
 
@@ -334,6 +341,10 @@ func log_message(text: String) -> void:
 
 # --- World Map ---
 
+func get_world_map() -> WorldMap:
+	return _world_map
+
+
 func show_world_map() -> void:
 	_world_map.show()
 
@@ -485,6 +496,18 @@ func _on_quit_button_pressed() -> void:
 
 
 func _on_start_button_pressed() -> void:
+	if SaveManager.has_save():
+		_new_run_confirm_dialog.popup_centered()
+	else:
+		show_character_creation()
+
+
+func _on_continue_button_pressed() -> void:
+	continue_requested.emit()
+
+
+func _on_new_run_confirmed() -> void:
+	SaveManager.clear()
 	show_character_creation()
 
 

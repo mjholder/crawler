@@ -91,6 +91,7 @@ func _ready() -> void:
 	_gui.setup_inventory($Player.get_node("Inventory") as Inventory)
 
 	_gui.character_created.connect(_on_character_created)
+	_gui.continue_requested.connect(_on_continue_requested)
 	_gui.level_up_complete.connect(_on_level_up_complete)
 	_gui.start_dialogue_requested.connect(start_dialogue_game)
 	_gui.start_skill_check_requested.connect(start_skill_check_game)
@@ -307,6 +308,45 @@ func _on_character_created(p_name: String, class_data: PlayerClassData) -> void:
 	_enter_world_map()
 
 
+func _on_continue_requested() -> void:
+	var save := SaveManager.read()
+	if save == null:
+		_gui.return_to_main_menu()
+		return
+	player.apply_save_dict(save.player)
+	game_started = true
+	_gui.start_game()
+	_gui.get_world_map().apply_state_dict(save.world_map_node_states)
+	if save.active_world_node_path.is_empty():
+		_enter_world_map()
+	else:
+		var world_node := _gui.get_world_map().get_world_map_node(save.active_world_node_path)
+		if world_node == null:
+			push_error("[GAME] Continue: unknown world node '%s' — save discarded" % save.active_world_node_path)
+			SaveManager.clear()
+			_gui.return_to_main_menu()
+			return
+		var configs: Array[Dictionary] = []
+		for entry in save.pending_event_configs:
+			var scene := load(entry["scene_path"]) as PackedScene
+			if scene == null:
+				push_error("[GAME] Continue: could not load scene '%s' — save discarded" % entry["scene_path"])
+				SaveManager.clear()
+				_gui.return_to_main_menu()
+				return
+			configs.append({"scene": scene, "data": entry["data"]})
+		game_state = Enums.GameState.DUNGEON
+		_active_world_node = world_node
+		_pending_event_configs = configs
+		_event_index = save.event_index
+		player.get_inventory().set_dungeon_locked(true)
+		_gui.set_dungeon_locked(true)
+		if player.pending_stat_points > 0:
+			_gui.show_level_up(player)
+			return
+		_start_next_dungeon_event()
+
+
 # --- Participant Setup ---
 
 func set_player(p: Player) -> void:
@@ -447,6 +487,7 @@ func _exit_game_over() -> void:
 
 
 func _enter_victory() -> void:
+	SaveManager.clear()
 	game_state = Enums.GameState.VICTORY
 	state = Enums.TurnState.VICTORY
 	_pending_event_configs = []
@@ -494,11 +535,16 @@ func _on_event_complete() -> void:
 	event_completed.emit(current_event)
 	_apply_rewards(current_event.rewards)
 	_exit_event()
+	if state == Enums.TurnState.VICTORY:
+		SaveManager.clear()
+		if player.pending_stat_points > 0:
+			_gui.show_level_up(player)
+		else:
+			_enter_victory()
+		return
+	SaveManager.write(self)
 	if player.pending_stat_points > 0:
 		_gui.show_level_up(player)
-		return
-	if state == Enums.TurnState.VICTORY:
-		_enter_victory()
 		return
 	_finish_event()
 
@@ -544,6 +590,7 @@ func _on_dungeon_complete() -> void:
 	var completed_node := _active_world_node
 	_exit_dungeon()
 	_enter_world_map(completed_node)
+	SaveManager.write(self)
 
 
 func _on_player_attacked(damage: float) -> void:
@@ -799,6 +846,7 @@ func _start_exploration_music() -> void:
 
 func _on_player_died() -> void:
 	print("[GAME] Player died — GAME OVER")
+	SaveManager.clear()
 	_exit_event()
 	_enter_game_over()
 

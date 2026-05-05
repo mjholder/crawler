@@ -214,6 +214,77 @@ func get_bag() -> Array[EquipmentData]:
 	return _bag.duplicate()
 
 
+# --- Save / Load ---
+
+func to_save_dict() -> Dictionary:
+	var equipped: Dictionary = {}
+	for slot in _equipped:
+		equipped[slot as int] = _equipped[slot].resource_path
+	var rings: Array[String] = []
+	for ring in _rings:
+		rings.append(ring.resource_path if ring != null else "")
+	var belt: Array[String] = []
+	for item in _consumable_belt:
+		belt.append(item.resource_path if item != null else "")
+	var bag: Array[String] = []
+	for item in _bag:
+		bag.append(item.resource_path)
+	return {
+		"belt_size": _consumable_belt.size(),
+		"max_rings": _rings.size(),
+		"max_bag_size": max_bag_size,
+		"equipped": equipped,
+		"rings": rings,
+		"consumable_belt": belt,
+		"bag": bag,
+	}
+
+
+func apply_save_dict(d: Dictionary) -> void:
+	_equipped.clear()
+	_rings.fill(null)
+	_consumable_belt.fill(null)
+	_bag.clear()
+	var saved_belt: int = d.get("belt_size", _consumable_belt.size())
+	_consumable_belt.resize(saved_belt)
+	_consumable_belt.fill(null)
+	var saved_rings: int = d.get("max_rings", _rings.size())
+	_rings.resize(saved_rings)
+	_rings.fill(null)
+	for slot_int in d["equipped"]:
+		var path: String = d["equipped"][slot_int]
+		if path.is_empty():
+			continue
+		var data := load(path) as EquipmentData
+		if data != null:
+			_equipped[slot_int] = data
+			slot_changed.emit(slot_int, data, null)
+	for i in d["rings"].size():
+		var path: String = d["rings"][i]
+		if path.is_empty() or i >= _rings.size():
+			continue
+		var data := load(path) as EquipmentData
+		if data != null:
+			_rings[i] = data
+			ring_changed.emit(i, data, null)
+	for i in d["consumable_belt"].size():
+		var path: String = d["consumable_belt"][i]
+		if path.is_empty() or i >= _consumable_belt.size():
+			continue
+		var data := load(path) as ConsumableData
+		if data != null:
+			_consumable_belt[i] = data
+			consumable_belt_changed.emit(i, data, null)
+	for path in d["bag"]:
+		if path.is_empty():
+			continue
+		var data := load(path) as EquipmentData
+		if data != null:
+			_bag.append(data)
+	if not _bag.is_empty():
+		bag_changed.emit()
+
+
 # --- Utility ---
 
 func clear() -> void:

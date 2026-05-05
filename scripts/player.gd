@@ -101,9 +101,10 @@ func initialize(p_name: String, class_data: PlayerClassData) -> void:
 	pending_stat_points = 0
 	pending_growth_bonuses = {}
 	gold = 0
-	_inventory.clear()
+	_clear_equipment_nodes()
 	for bd in _blessings.duplicate():
 		remove_blessing(bd)
+	_active_statuses.clear()
 	is_dead = false
 	_recalculate_max_health()
 	health = max_health
@@ -438,6 +439,86 @@ func get_base_stat(stat: Enums.Stat) -> float:
 
 func get_inventory() -> Inventory:
 	return _inventory
+
+
+# --- Save / Load ---
+
+func to_save_dict() -> Dictionary:
+	var blessings: Array[String] = []
+	for bd in _blessings:
+		if bd != null and not bd.resource_path.is_empty():
+			blessings.append(bd.resource_path)
+	return {
+		"name": player_name,
+		"class_data_path": _class_data.resource_path if _class_data != null else "",
+		"strength": strength,
+		"defense": defense,
+		"constitution": constitution,
+		"agility": agility,
+		"spirit": spirit,
+		"luck": luck,
+		"level": level,
+		"experience": experience,
+		"gold": gold,
+		"pending_stat_points": pending_stat_points,
+		"pending_growth_bonuses": pending_growth_bonuses.duplicate(),
+		"max_health": max_health,
+		"health": health,
+		"is_dead": is_dead,
+		"blessings": blessings,
+		"active_statuses": to_status_save_array(),
+		"inventory": _inventory.to_save_dict(),
+	}
+
+
+func apply_save_dict(d: Dictionary) -> void:
+	_class_data = load(d["class_data_path"]) as PlayerClassData
+	player_name = d["name"]
+	strength = d["strength"]
+	defense = d["defense"]
+	constitution = d["constitution"]
+	agility = d["agility"]
+	spirit = d["spirit"]
+	luck = d["luck"]
+	level = d["level"]
+	experience = d["experience"]
+	gold = d["gold"]
+	pending_stat_points = d["pending_stat_points"]
+	pending_growth_bonuses = d["pending_growth_bonuses"].duplicate()
+	is_dead = d["is_dead"]
+	_transition(State.DEAD if is_dead else State.IDLE)
+	for bd in _blessings.duplicate():
+		remove_blessing(bd)
+	_active_statuses.clear()
+	# Tear down existing equipment nodes and clear inventory so re-equip is clean.
+	# Also initialises health = base max_health so _recalculate_max_health's delta
+	# logic never clamps health downward during the per-slot equip calls below.
+	_clear_equipment_nodes()
+	_recalculate_max_health()
+	health = max_health
+	_inventory.apply_save_dict(d["inventory"])
+	for path in d["blessings"]:
+		var bd := load(path) as BlessingData
+		if bd != null:
+			add_blessing(bd)
+	apply_status_save_array(d["active_statuses"])
+	# Final recalc picks up any blessing/status CON modifiers, then pin health.
+	_recalculate_max_health()
+	health = minf(d["health"], max_health)
+	stats_changed.emit(build_stats_dict())
+	gold_changed.emit(gold)
+	experience_changed.emit(experience)
+
+
+func _clear_equipment_nodes() -> void:
+	for slot_key in Enums.Slot.values():
+		var data := _inventory.get_equipped(slot_key)
+		if data != null:
+			_teardown_equipment(slot_key, data)
+	for ring in _inventory.get_rings():
+		if ring != null:
+			_teardown_equipment(null, ring)
+	_inventory.clear()
 
 
 func get_effective_stat(stat: Enums.Stat) -> float:

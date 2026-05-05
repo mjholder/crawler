@@ -114,31 +114,46 @@ offset_left = 100.0
 offset_top = 300.0
 offset_right = 300.0
 offset_bottom = 350.0
-text = "Start"
+text = "New Run"
+
+[node name="ContinueButton" type="Button" parent="GUI/MainMenu" unique_id=300000001]
+layout_mode = 1
+offset_left = 100.0
+offset_top = 360.0
+offset_right = 300.0
+offset_bottom = 410.0
+text = "Continue"
+disabled = true
 
 [node name="StartDialogueButton" type="Button" parent="GUI/MainMenu" unique_id=100000010]
 layout_mode = 1
 offset_left = 100.0
-offset_top = 370.0
+offset_top = 430.0
 offset_right = 300.0
-offset_bottom = 420.0
+offset_bottom = 480.0
 text = "Test Dialogue"
 
 [node name="StartSkillCheckButton" type="Button" parent="GUI/MainMenu" unique_id=200000012]
 layout_mode = 1
 offset_left = 100.0
-offset_top = 440.0
+offset_top = 500.0
 offset_right = 300.0
-offset_bottom = 490.0
+offset_bottom = 550.0
 text = "Test Skill Check"
 
 [node name="QuitButton" type="Button" parent="GUI/MainMenu" unique_id=100000004]
 layout_mode = 1
 offset_left = 100.0
-offset_top = 510.0
+offset_top = 570.0
 offset_right = 300.0
-offset_bottom = 560.0
+offset_bottom = 620.0
 text = "Quit"
+
+[node name="NewRunConfirmDialog" type="ConfirmationDialog" parent="GUI" unique_id=300000002]
+title = "Start New Run?"
+dialog_text = "A run is in progress. Starting a new run will overwrite your current save."
+ok_button_text = "New Run"
+cancel_button_text = "Cancel"
 
 [node name="PlayerHUD" type="Control" parent="GUI" unique_id=908196036]
 visible = false
