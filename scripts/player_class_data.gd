@@ -40,3 +40,17 @@ extends Resource
 
 ## Blessings granted immediately at run start.
 @export var starting_blessings: Array[BlessingData] = []
+
+# --- Spells ---
+## Flat bonus added on top of SPI-derived base max mana.
+## max_mana = (effective_SPI * mana_modifier) + class_mana_bonus
+@export var class_mana_bonus: float = 0.0
+
+## Number of prepared spell slots this class starts with.
+@export var starting_prep_slots: int = 2
+
+## Full spell roster the player knows at run start.
+@export var starting_learned_spells: Array[Resource] = []  # Array[SpellData]
+
+## Subset of learned spells that are prepared (active) at run start.
+@export var starting_prepared_spells: Array[Resource] = []  # Array[SpellData]

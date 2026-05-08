@@ -66,6 +66,7 @@ var _active_world_node: WorldMapNode = null
 
 var _targeting_action: String = ""
 var _targeting_attack: AttackData = null
+var _targeting_spell: SpellData = null
 var _targeting_candidates: Array = []
 var _targeting_index: int = 0
 var _target_indicators: Array = []
@@ -96,7 +97,7 @@ func _ready() -> void:
 	_gui.start_dialogue_requested.connect(start_dialogue_game)
 	_gui.start_skill_check_requested.connect(start_skill_check_game)
 	_gui.quit_to_main_requested.connect(quit_to_main)
-	_gui.attack_requested.connect(_on_attack_requested)
+	_gui.attack_requested.connect(_on_action_requested)
 	_gui.consumable_use_requested.connect(_on_consumable_use_requested)
 	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
 	_gui.skill_check_complete.connect(_on_gui_skill_check_complete)
@@ -157,40 +158,58 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # --- Targeting ---
 
-func _on_attack_requested(action_name: String) -> void:
+func _on_action_requested(action_name: String) -> void:
 	if state != Enums.TurnState.PLAYER_TURN:
 		return
 	if _targeting_action == action_name:
 		_confirm_targeting()
 		return
 	_cancel_targeting()
+	# Try attack first.
 	var weapon_data := player.get_inventory().get_equipped(Enums.Slot.WEAPON)
-	if weapon_data == null or not weapon_data is WeaponData:
-		return
-	_targeting_attack = null
-	for atk_res in (weapon_data as WeaponData).attacks:
-		var atk := atk_res as AttackData
-		if atk != null and atk.attack_name == action_name:
-			_targeting_attack = atk
-			break
+	if weapon_data is WeaponData:
+		for atk_res in (weapon_data as WeaponData).attacks:
+			var atk := atk_res as AttackData
+			if atk != null and atk.attack_name == action_name:
+				_targeting_attack = atk
+				break
+	# Try spell if not an attack.
 	if _targeting_attack == null:
+		for spell in player.get_castable_spells():
+			if spell.spell_name == action_name:
+				var cost := player.compute_spell_cost(spell)
+				if player.mana < cost:
+					_gui.show_status("Not enough mana")
+					return
+				_targeting_spell = spell
+				break
+	if _targeting_attack == null and _targeting_spell == null:
 		return
 	_targeting_action = action_name
-	_targeting_candidates = _build_candidates(_targeting_attack.target_mode)
+	_targeting_candidates = _build_candidates(_active_target_mode())
 	if _targeting_candidates.is_empty():
 		_targeting_action = ""
 		_targeting_attack = null
+		_targeting_spell = null
 		return
 	_targeting_index = 0
 	_show_targeting_visuals()
 	_gui.set_targeting_action(action_name)
 
 
+func _active_target_mode() -> AttackData.TargetMode:
+	if _targeting_attack != null:
+		return _targeting_attack.target_mode
+	if _targeting_spell != null:
+		return _targeting_spell.target_mode
+	return AttackData.TargetMode.SINGLE_ENEMY
+
+
 func _confirm_targeting() -> void:
-	if _targeting_attack == null:
+	if _targeting_attack == null and _targeting_spell == null:
 		return
 	var targets: Array = []
-	match _targeting_attack.target_mode:
+	match _active_target_mode():
 		AttackData.TargetMode.SINGLE_ENEMY:
 			if _targeting_index < _targeting_candidates.size():
 				var candidate = _targeting_candidates[_targeting_index]
@@ -206,15 +225,20 @@ func _confirm_targeting() -> void:
 		_cancel_targeting()
 		return
 	var confirmed_action := _targeting_action
-	var confirmed_attack := _targeting_attack
 	_hide_targeting_visuals()
 	_gui.set_targeting_action("")
 	_targeting_action = ""
-	_targeting_attack = null
 	_targeting_candidates = []
 	_targeting_index = 0
 	_gui.set_player_turn(false)
-	player.set_pending_attack_payload(confirmed_attack, targets)
+	if _targeting_attack != null:
+		var confirmed_attack := _targeting_attack
+		_targeting_attack = null
+		player.set_pending_attack_payload(confirmed_attack, targets)
+	elif _targeting_spell != null:
+		var confirmed_spell := _targeting_spell
+		_targeting_spell = null
+		player.set_pending_spell_payload(confirmed_spell, targets)
 	player.execute_action(confirmed_action)
 
 
@@ -225,6 +249,7 @@ func _cancel_targeting() -> void:
 	_gui.set_targeting_action("")
 	_targeting_action = ""
 	_targeting_attack = null
+	_targeting_spell = null
 	_targeting_candidates = []
 	_targeting_index = 0
 
@@ -243,7 +268,7 @@ func _build_candidates(mode: AttackData.TargetMode) -> Array:
 
 func _show_targeting_visuals() -> void:
 	_hide_targeting_visuals()
-	match _targeting_attack.target_mode:
+	match _active_target_mode():
 		AttackData.TargetMode.SINGLE_ENEMY:
 			_spawn_indicator(_targeting_candidates[_targeting_index])
 		AttackData.TargetMode.ALL_ENEMIES:
@@ -268,7 +293,7 @@ func _spawn_indicator(target: Node) -> void:
 
 
 func _cycle_target(direction: int) -> void:
-	if _targeting_attack == null or _targeting_attack.target_mode != AttackData.TargetMode.SINGLE_ENEMY:
+	if _active_target_mode() != AttackData.TargetMode.SINGLE_ENEMY or _targeting_action == "":
 		return
 	if _targeting_candidates.is_empty():
 		return
@@ -301,7 +326,21 @@ func start_skill_check_game() -> void:
 	_enter_event(event_instance)
 
 
+func _reset_run_state() -> void:
+	if current_event != null:
+		_exit_event()
+	_cancel_targeting()
+	_pending_event_configs = []
+	_event_index = 0
+	_active_world_node = null
+	round_number = 0
+	state = Enums.TurnState.NO_TURN
+	_pre_dialogue_state = Enums.TurnState.NO_TURN
+	_gui.hide_event_hud()
+
+
 func _on_character_created(p_name: String, class_data: PlayerClassData) -> void:
+	_reset_run_state()
 	player.initialize(p_name, class_data)
 	game_started = true
 	_gui.start_game()
@@ -313,6 +352,7 @@ func _on_continue_requested() -> void:
 	if save == null:
 		_gui.return_to_main_menu()
 		return
+	_reset_run_state()
 	player.apply_save_dict(save.player)
 	game_started = true
 	_gui.start_game()
@@ -360,12 +400,18 @@ func set_player(p: Player) -> void:
 	player.experience_changed.connect(_on_player_experience_changed)
 	player.stats_changed.connect(_on_player_stats_changed)
 	player.attack_hit.connect(_on_player_attack_hit)
+	player.cast_hit.connect(_on_player_cast_hit)
 	player.weapon_attacks_changed.connect(_on_player_weapon_attacks_changed)
+	player.prepared_spells_changed.connect(_on_player_prepared_spells_changed)
+	player.mana_spent.connect(_on_player_mana_spent)
+	player.mana_restored.connect(_on_player_mana_restored)
 	player.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
 	player.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
 	player.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
 	_gui.setup_consumable_belt(player.get_node("Inventory") as Inventory)
+	_gui.setup_spell_prep(player)
 	_gui.update_player_health(player.max_health, player.max_health)
+	_gui.update_player_mana(player.mana, player.max_mana)
 	_gui.update_player_stats(player.build_stats_dict())
 
 
@@ -412,10 +458,46 @@ func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
 					print("[PLAYER] %s on %s" % [attack_data.attack_name, (target as Enemy).enemy_name])
 
 
-func _on_player_weapon_attacks_changed(attacks: Array) -> void:
+func _on_player_weapon_attacks_changed(_attacks: Array) -> void:
 	if _targeting_action != "":
 		_cancel_targeting()
-	_gui.rebuild_action_buttons(attacks)
+	_refresh_action_bar()
+
+
+func _on_player_prepared_spells_changed(_spells: Array) -> void:
+	if _targeting_action != "":
+		_cancel_targeting()
+	_refresh_action_bar()
+
+
+func _refresh_action_bar() -> void:
+	var weapon_data := player.get_inventory().get_equipped(Enums.Slot.WEAPON)
+	var attacks: Array = []
+	if weapon_data is WeaponData:
+		attacks = (weapon_data as WeaponData).attacks
+	_gui.rebuild_action_buttons(attacks, player.get_castable_spells(), player.mana)
+
+
+func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
+	for target in targets:
+		if target == null:
+			continue
+		if target is Enemy and (target as Enemy).is_dead:
+			continue
+		for effect_res in spell.effects:
+			var effect := effect_res as Effect
+			if effect != null:
+				effect.apply(player, target)
+				if target is Enemy:
+					print("[PLAYER] %s on %s" % [spell.spell_name, (target as Enemy).enemy_name])
+
+
+func _on_player_mana_spent(_amount: float) -> void:
+	_gui.update_player_mana(player.mana, player.max_mana)
+
+
+func _on_player_mana_restored(_amount: float) -> void:
+	_gui.update_player_mana(player.mana, player.max_mana)
 
 
 # --- State Enter / Exit ---
@@ -571,6 +653,7 @@ func _finish_event() -> void:
 # --- World Map ---
 
 func _on_world_node_selected(node: WorldMapNode) -> void:
+	player.restore_mana_to_full()
 	_exit_world_map()
 	_enter_dungeon(node.generate_event_configs(), 0, node)
 

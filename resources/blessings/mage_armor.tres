@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BlessingData" format=3]
+
+[ext_resource type="Script" path="res://scripts/blessing_data.gd" id="1_bdata"]
+
+[resource]
+script = ExtResource("1_bdata")
+display_name = "Mage Armor"
+description = "A ward of arcane force. Grants +20 DEF for the run."
+stat_modifiers = {
+1: 20.0
+}
+subscriptions = {}

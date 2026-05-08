@@ -16,6 +16,51 @@ No commitment implied — this is a thinking space.
 
 <!-- Add ideas below, newest first -->
 
+**Idea:** Combat Balance — Defense, Dodge, and Armor Tiers
+**Added:** 2026-05-07
+**Notes:**
+Reworking the first-pass flat defense subtraction which nullifies weak enemies entirely and can't be balanced across both ends of the damage scale.
+
+**Defense** moves to percentage-based damage reduction rather than flat subtraction. Formula TBD but something in the range of `damage * (1 - defense_ratio)` — every enemy always deals some damage regardless of the gap in power.
+
+**Dodge** is introduced as a separate evasion layer driven by AGI. Formula something like `agility * 0.003`, capped around 40–50%. Resolved as a roll before damage is applied. Keeps AGI meaningful as a defensive stat without muddying the DEF formula.
+
+**Armor tiers** represent a tradeoff triangle rather than a strict progression. No stat gating — equipment pools are class-aligned at the loot/shop level, not locked by requirements:
+- **Heavy armor** — high DEF modifier, negative AGI modifier, high `spell_cost_multiplier` (e.g. `1.5`). Warriors absorb hits but are slow and poor casters.
+- **Leather armor** — moderate DEF modifier, neutral or small positive AGI modifier, neutral spell cost. Rogues get protection without losing evasiveness.
+- **Robes/clothes** — little to no DEF modifier, low `spell_cost_multiplier` (e.g. `0.8`) or SPI bonus. Mages are fragile but cast efficiently.
+
+**Spell cost multiplier** is a new float field on `EquipmentData` (`spell_cost_multiplier: float = 1.0`). Applied multiplicatively across all equipped pieces at cast time. Feeds into the spell system design.
+
+**Mage defense** — pure mages start with a mage armor spell (a `BuffEffect` on `Enums.Stat.DEFENSE`) rather than relying on gear. Hybrid classes can start with light armor instead.
+
+**UI** — inventory detail panel diffs the candidate item's `stat_modifiers` against the currently equipped item and displays deltas in green/red. Active stat effects (from gear and buffs) are displayed in a dedicated active effects panel so the player can see what's contributing and from where.
+
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Spell Casting System
+**Added:** 2026-05-06
+**Notes:**
+Full magic system built around learned spells, mana, and casting equipment. Brainstormed in full — decisions are fairly settled, this is ready to move toward planning.
+
+**Mana** is a second resource derived from SPIRIT the same way max health derives from CON. Fully restored between world map nodes, no regen during a dungeon node. Players ration mana across all encounters in a run.
+
+**Learned spells** form a persistent roster. From that roster the player prepares a limited active subset before entering a dungeon. **Prep slots** are a flat integer on the player, set by class base (like `starting_consumable_slots` on `PlayerClassData`) and increased by equipment modifiers. Cantrips are just spells with `mana_cost = 0` — no special flag needed.
+
+**Innate weapon spells** are defined directly on a staff or spellbook `WeaponData`, registered into the player action list on equip like normal weapon attacks. They bypass prep slots entirely and append to the prepared list.
+
+A new **OFFHAND slot** is added to `Enums.Slot`. It can hold a shield, a casting focus (orb/tome/catalyst), or be left empty. Two-handed weapons lock the offhand using the existing dungeon lock pattern. Spellcasting is not hard-locked by class — any class can equip a focus and cast. The economy enforces specialization naturally: low SPIRIT means low mana and few slots. A warrior who finds a focus with a good innate cantrip gets real hybrid value with no friction.
+
+**Tomes** are a third item type (`TomeData`) that teach spells. They sit in the bag, have gold value for any class, and trigger a dedicated learn interface on use. Learning is blocked by the dungeon lock — you can't study mid-dungeon. Exception: the **sanctified room**, a rare dungeon event that lifts the inventory lock temporarily (already supported via `allows_inventory = true` on the base `Event` class).
+
+**Loot pools** use explicit class tags on each `EquipmentData` (array of class affinities, plus a universal tag for gear that always appears). Two pools at drop time: primary is class-aligned gear, secondary is off-class gear for selling or surprise hybrid builds. Ratio is a tuning lever, roughly 70/30. Stat-weighted rolling was considered but explicit tags were preferred for authorial control and handcrafted intent.
+
+**Status:** `worth exploring`
+
+---
+
 **Idea:** World lore — the Forgotten Entity and the war
 **Added:** 2026-04-20
 **Notes:** The bad air has a source: a dormant entity, forgotten by name, that was awakened by the scale of death from a regional war fought between major powers. The war killed soldiers and civilians indiscriminately; mass death without religious rites is what fed or triggered the awakening. The entity wasn't summoned — it starved into dormancy long ago, and the war was the meal that woke it. Knowledge of it once existed (priests built shrines for reasons they no longer understood — ritual abstracted the original purpose), but that knowledge was lost or suppressed. The bad air *is* the entity's influence spreading outward. Unconsecrated sites fell first — charnel grounds, plague pits, battlefield graves. Consecrated sites like the catacombs are holding, but the entity is pressing against them; some shrines may already be failing or corrupted on deeper floors. The player arrives mid-escalation: containment is still possible but not guaranteed. Design implications: dungeon difficulty can track proximity to the entity's influence (unconsecrated = already claimed, catacombs = contested frontier); shrine reliability could degrade over run progression as a late-game pressure; charnel ground dungeons could feature risen dead from *both* factions still in opposing armor, with loot from either side. The entity stays unnamed and unexplained for now — "forgotten" is the horror.

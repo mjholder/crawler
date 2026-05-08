@@ -51,6 +51,8 @@ signal continue_requested
 
 var _enemy_bars: Dictionary = {}
 var _player_status_label: Label = null
+var _player_mana_label: Label = null
+var _player_mana_bar: ProgressBar = null
 var _enemy_status_labels: Dictionary = {}
 
 const _BTN_WIDTH := 90
@@ -104,12 +106,33 @@ func _ready() -> void:
 	_player_status_label.offset_right = 400.0
 	_player_status_label.offset_bottom = 210.0
 	_player_hud.add_child(_player_status_label)
+	_player_mana_bar = ProgressBar.new()
+	_player_mana_bar.name = "PlayerManaBar"
+	_player_mana_bar.layout_mode = 1
+	_player_mana_bar.offset_left = 38.0
+	_player_mana_bar.offset_top = 50.0
+	_player_mana_bar.offset_right = 190.0
+	_player_mana_bar.offset_bottom = 68.0
+	_player_mana_bar.modulate = Color(0.3, 0.5, 1.0)
+	_player_hud.add_child(_player_mana_bar)
+	_player_mana_label = Label.new()
+	_player_mana_label.name = "PlayerManaLabel"
+	_player_mana_label.layout_mode = 1
+	_player_mana_label.offset_left = 38.0
+	_player_mana_label.offset_top = 68.0
+	_player_mana_label.offset_right = 190.0
+	_player_mana_label.offset_bottom = 86.0
+	_player_hud.add_child(_player_mana_label)
 
 
 # --- Inventory ---
 
 func setup_inventory(inventory: Inventory) -> void:
 	_inventory_panel.setup(inventory)
+
+
+func setup_spell_prep(player: Player) -> void:
+	_inventory_panel.setup_spell_prep(player)
 
 
 func toggle_inventory(can_equip: bool = true) -> void:
@@ -216,6 +239,19 @@ func update_player_health(current: float, maximum: float) -> void:
 	_player_health_bar.value = current
 
 
+func update_player_mana(current: float, maximum: float) -> void:
+	if _player_mana_label == null or _player_mana_bar == null:
+		return
+	_player_mana_label.text = "MP %d/%d" % [int(current), int(maximum)]
+	_player_mana_bar.max_value = maximum
+	_player_mana_bar.value = current
+
+
+func show_status(message: String) -> void:
+	if _player_status_label != null:
+		_player_status_label.text = message
+
+
 func update_player_gold(new_total: int) -> void:
 	_player_gold_label.text = "Gold: %d" % new_total
 
@@ -292,15 +328,29 @@ func refresh_player_statuses(statuses: Array) -> void:
 	_player_status_label.text = " ".join(parts)
 
 
-func rebuild_action_buttons(attacks: Array) -> void:
+func rebuild_action_buttons(attacks: Array, spells: Array[SpellData] = [], current_mana: float = 0.0) -> void:
 	for child in _action_menu.get_children():
 		child.queue_free()
-	for i in attacks.size():
-		var atk := attacks[i] as AttackData
-		if atk == null:
-			continue
+	var items: Array = []
+	for atk_res in attacks:
+		if atk_res is AttackData:
+			items.append(atk_res)
+	for spell in spells:
+		if spell != null:
+			items.append(spell)
+	for i in items.size():
+		var item = items[i]
 		var btn := Button.new()
-		btn.text = atk.attack_name
+		var action_name: String
+		if item is AttackData:
+			action_name = (item as AttackData).attack_name
+			btn.text = action_name
+		elif item is SpellData:
+			var spell := item as SpellData
+			action_name = spell.spell_name
+			var cost := spell.mana_cost
+			btn.text = "%s (%d)" % [action_name, int(cost)] if cost > 0.0 else action_name
+			btn.disabled = current_mana < cost
 		var offset_right := _BTN_MARGIN_RIGHT - i * (_BTN_WIDTH + _BTN_GAP)
 		var offset_left := offset_right - _BTN_WIDTH
 		btn.set_anchor(SIDE_LEFT, 1.0)
@@ -311,8 +361,8 @@ func rebuild_action_buttons(attacks: Array) -> void:
 		btn.set_offset(SIDE_TOP, _BTN_MARGIN_BOTTOM - _BTN_HEIGHT)
 		btn.set_offset(SIDE_RIGHT, offset_right)
 		btn.set_offset(SIDE_BOTTOM, _BTN_MARGIN_BOTTOM)
-		var action_name := atk.attack_name
-		btn.pressed.connect(func() -> void: attack_requested.emit(action_name))
+		var captured_name := action_name
+		btn.pressed.connect(func() -> void: attack_requested.emit(captured_name))
 		_action_menu.add_child(btn)
 
 

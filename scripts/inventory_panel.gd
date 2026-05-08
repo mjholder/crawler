@@ -22,9 +22,12 @@ const _RING_CONTAINER_NAMES: Array[String] = ["RingEquipment1", "RingEquipment2"
 # --- State ---
 
 var _inventory: Inventory
+var _player: Player = null
 var _slot_buttons: Array[Button] = []
 var _ring_buttons: Array[Button] = []
 var _bag_buttons: Array[Button] = []
+var _prep_buttons: Array[Button] = []
+var _prep_container: VBoxContainer = null
 var _can_equip: bool = true
 var _dungeon_locked: bool = false
 
@@ -57,6 +60,8 @@ func _apply_equip_state() -> void:
 		btn.disabled = not active
 	for btn in _bag_buttons:
 		btn.disabled = not active
+	for btn in _prep_buttons:
+		btn.disabled = _dungeon_locked
 
 
 func setup(inventory: Inventory) -> void:
@@ -170,6 +175,61 @@ func _on_bag_button_pressed(index: int) -> void:
 		_inventory.equip_ring(data)
 	else:
 		_inventory.equip(data.slot, data)
+
+
+# --- Spell Prep ---
+
+func setup_spell_prep(player: Player) -> void:
+	_player = player
+	_player.prep_slots_changed.connect(_on_prep_slots_changed)
+	_player.prepared_spells_changed.connect(func(_s: Array) -> void: _rebuild_prep_ui())
+	_rebuild_prep_ui()
+
+
+func _on_prep_slots_changed(_size: int) -> void:
+	_rebuild_prep_ui()
+
+
+func _rebuild_prep_ui() -> void:
+	if _player == null:
+		return
+	if _prep_container == null:
+		_prep_container = VBoxContainer.new()
+		_prep_container.name = "PrepContainer"
+		var lbl := Label.new()
+		lbl.text = "Prepared Spells"
+		_prep_container.add_child(lbl)
+		$HBoxContainer/PanelContainer/VBoxContainer.add_child(_prep_container)
+	for btn in _prep_buttons:
+		btn.queue_free()
+	_prep_buttons.clear()
+	for i in _player.prep_slots:
+		var prepared := _player.get_prepared_spells()
+		var spell: SpellData = prepared[i] if i < prepared.size() else null
+		var btn := Button.new()
+		btn.text = spell.spell_name if spell != null else "—"
+		btn.disabled = _dungeon_locked
+		btn.pressed.connect(_on_prep_button_pressed.bind(i))
+		_prep_container.add_child(btn)
+		_prep_buttons.append(btn)
+
+
+func _on_prep_button_pressed(index: int) -> void:
+	if _player == null or _dungeon_locked:
+		return
+	var prepared := _player.get_prepared_spells()
+	var current: SpellData = prepared[index] if index < prepared.size() else null
+	var learned := _player.get_learned_spells()
+	var unprepared: Array[SpellData] = []
+	for spell in learned:
+		if not prepared.has(spell):
+			unprepared.append(spell)
+	if current != null:
+		_player.unprepare_spell(index)
+		return
+	if unprepared.is_empty():
+		return
+	_player.prepare_spell(unprepared[0], index)
 
 
 # --- Detail Panel ---

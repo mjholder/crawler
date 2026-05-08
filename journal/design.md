@@ -19,6 +19,45 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Run-state reset pattern
+
+**Date:** 2026-05-08
+**Daily:** [[daily/2026-05-08]]
+
+**Decision:** Per-run teardown lives in two explicit reset methods — `Player.reset_run_state()` and `Game._reset_run_state()` — called at the top of every "begin a run" entry point (`_on_character_created`, `_on_continue_requested`). `initialize()` and `apply_save_dict()` both delegate to `reset_run_state()` rather than maintaining their own teardown blocks.
+
+**Context:** After the spell system landed, starting a new run after a death produced zero spells. Root cause: `_on_player_died` → `_exit_event()` sets `_dungeon_locked = true`; `_enter_game_over()` skips `_exit_dungeon()`, so the lock survives through Main Menu into the next `initialize()`, where `_inventory.equip()` silently returns early. Three other latent leaks were co-present: health label showed negative HP on lethal hits; `prep_slots` wasn't reset so `_prepared_spells` stayed size 0 after a clear; `Game.round_number` and stale enemy HUD bars were never cleaned between runs.
+
+**Alternatives considered:**
+- `_inventory.set_dungeon_locked(false)` at the top of `initialize()` — fixes the immediate symptom in one line but leaves the other leaks, and leaves duplicate teardown in `initialize` vs `apply_save_dict`.
+- Reset on `_enter_game_over()` / `_enter_victory()` — would clear state at the right time but means entering a terminal state has a side-effect of resetting the entity, which is surprising. Better to reset at the *start* of a new run than the *end* of the old one.
+
+**Rationale:** A single-owner contract is easier to audit than teardown scattered across three methods. `reset_run_state()` is also the right seam for future testing — any test that needs a "clean player" calls one method. The refactor *removed* code (duplicate blocks in `initialize` and `apply_save_dict`) rather than adding it.
+
+**Trade-offs / risks:** `reset_run_state()` is now public on `Player`, which means callers outside `initialize` could invoke it mid-run. Acceptable — it's a deliberate API, not an internal detail. No observed risks on the Continue path: `reset_run_state()` unlocks the inventory, then `apply_save_dict` re-equips from save data (which bypasses the lock), then `_on_continue_requested` re-locks when re-entering a dungeon.
+
+---
+
+## Spell casting system — foundation design
+
+**Date:** 2026-05-08
+**Daily:** [[daily/2026-05-08]]
+
+**Decision:** Spells are `SpellData` resources (mirrors `AttackData`), registered as player actions and routed through the existing targeting machinery and `execute_action` path. All casts — including cantrips — end the turn. Mana mirrors health: `max_mana = effective_SPI × mana_modifier + class_mana_bonus`, recalculated at every `_recalculate_max_health` call site. `spell_cost_multiplier: float = 1.0` on `EquipmentData` is applied multiplicatively across all equipped pieces at cast time. A new `OFFHAND` slot (value 6, appended to avoid integer drift on existing `.tres` files) is added but no two-handed lock is wired yet.
+
+**Scope for this pass:** mana resource, `SpellData`, OFFHAND slot, prep slots (mirrors consumable belt pattern), innate weapon spells (registered on weapon equip alongside attacks), `spell_cost_multiplier`, mage armor via `BlessingData.stat_modifiers`. Tomes / learn UI / class affinity loot tags / two-handed offhand lock / spell animations are deferred.
+
+**Alternatives considered:**
+- Cantrips as free actions (separate dispatch, no turn end): rejected — violates the `execute_action`-as-single-turn-end invariant documented in [[design.md]]; adds a branch that has to be maintained across all casting contexts.
+- `spell_cost_multiplier` as a derived stat via `Enums.Stat`: considered, but spell cost is not a character stat — it's a scaling coefficient that belongs on item data and is only relevant at cast time. Keeping it on `EquipmentData` is correct scope.
+- Separate `SpellRegistry` node for the spell roster: rejected — the player already owns an analogous `Inventory` with consumable belt patterns. Keeping spell state on `Player` maintains the scoped-ownership principle.
+
+**Rationale:** Reusing `execute_action` / targeting / `Effect.apply` means spell casting inherits all existing infrastructure (targeting indicators, turn sequencing, effect pipeline, save/load hooks) with minimal new code. The consumable-belt → prep-slot isomorphism means the UI pattern and dungeon-lock enforcement are already proven.
+
+**Trade-offs / risks:** `_actions` is a flat namespace; attack and spell names must be globally unique within a run (enforced by `push_warning` at registration). The prep UI in `InventoryPanel` is dynamic (no scene node) — layout is functional but unpolished; needs scene-level positioning once visuals are designed.
+
+---
+
 ## Save / Load system
 
 **Date:** 2026-05-05

@@ -19,6 +19,7 @@
 [ext_resource type="Script" uid="uid://cwnh362po6p8" path="res://scripts/character_creation_panel.gd" id="19_264po"]
 [ext_resource type="Script" path="res://scripts/player_class_data.gd" id="20_bt5mj"]
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
+[ext_resource type="Resource" path="res://resources/classes/mage.tres" id="20_suyxu"]
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
 [ext_resource type="PackedScene" uid="uid://c6yng6pikfy1w" path="res://scenes/item_button.tscn" id="21_sww3w"]
 [ext_resource type="Resource" uid="uid://gd05xm21dlnr" path="res://resources/classes/warrior.tres" id="22_warrior"]
@@ -122,8 +123,8 @@ offset_left = 100.0
 offset_top = 360.0
 offset_right = 300.0
 offset_bottom = 410.0
-text = "Continue"
 disabled = true
+text = "Continue"
 
 [node name="StartDialogueButton" type="Button" parent="GUI/MainMenu" unique_id=100000010]
 layout_mode = 1
@@ -151,9 +152,8 @@ text = "Quit"
 
 [node name="NewRunConfirmDialog" type="ConfirmationDialog" parent="GUI" unique_id=300000002]
 title = "Start New Run?"
-dialog_text = "A run is in progress. Starting a new run will overwrite your current save."
 ok_button_text = "New Run"
-cancel_button_text = "Cancel"
+dialog_text = "A run is in progress. Starting a new run will overwrite your current save."
 
 [node name="PlayerHUD" type="Control" parent="GUI" unique_id=908196036]
 visible = false
@@ -414,7 +414,7 @@ offset_right = 1254.0
 offset_bottom = 936.0
 mouse_filter = 2
 script = ExtResource("19_264po")
-available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior")])
+available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior"), ExtResource("20_suyxu")])
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/CharacterCreationPanel" unique_id=490170422]
 layout_mode = 1
@@ -616,7 +616,7 @@ offset_bottom = -721.0
 scale = Vector2(3, 3)
 mouse_filter = 2
 
-[node name="InventoryPanel" type="Control" parent="GUI" unique_id=300000001]
+[node name="InventoryPanel" type="Control" parent="GUI" unique_id=676115636]
 visible = false
 layout_mode = 3
 anchors_preset = 0
@@ -719,7 +719,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=300000002]
+[node name="PanelContainer" type="PanelContainer" parent="GUI/InventoryPanel/HBoxContainer" unique_id=242145286]
 custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 

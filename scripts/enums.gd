@@ -37,14 +37,15 @@ enum Stat {
 }
 
 enum Slot {
-	WEAPON, # 0
-	HANDS,  # 1
-	FEET,   # 2
-	LEGS,   # 3
-	TORSO,  # 4
-	HEAD    # 5
+	WEAPON,  # 0
+	HANDS,   # 1
+	FEET,    # 2
+	LEGS,    # 3
+	TORSO,   # 4
+	HEAD,    # 5
+	OFFHAND  # 6
 	# When setting slot in a .tres file, use the integer key.
-	# e.g. slot = 5 is HEAD
+	# e.g. slot = 5 is HEAD, slot = 6 is OFFHAND
 }
 
 # --- World Map ---

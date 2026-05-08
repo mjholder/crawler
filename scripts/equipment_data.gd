@@ -17,3 +17,5 @@ extends Resource
 @export var on_unequip_effects: Array[Resource] = []
 @export var proc_effects: Array[Resource] = []       # Array[ProcDef]
 @export var conditional_modifiers: Array[Resource] = []  # Array[ConditionalModifier]
+@export var spell_cost_multiplier: float = 1.0
+@export var bonus_prep_slots: int = 0

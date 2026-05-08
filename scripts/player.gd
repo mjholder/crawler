@@ -14,6 +14,13 @@ signal experience_changed(new_total: int)
 signal stats_changed(stats: Dictionary)
 signal leveled_up(new_level: int)
 signal consumable_used(data: ConsumableData)
+signal mana_spent(amount: float)
+signal mana_restored(amount: float)
+signal cast_performed(spell: SpellData, targets: Array)
+signal cast_hit(spell: SpellData, targets: Array)
+signal learned_spells_changed(spells: Array)
+signal prepared_spells_changed(spells: Array)
+signal prep_slots_changed(new_size: int)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -24,9 +31,11 @@ signal consumable_used(data: ConsumableData)
 @export var spirit: float = 50.0
 @export var luck: float = 50.0
 
-# --- Health Tuning ---
+# --- Health / Mana Tuning ---
 ## max_health = (effective_CON * health_modifier) + class_health_bonus
 @export var health_modifier: float = 2.0
+## max_mana = (effective_SPI * mana_modifier) + class_mana_bonus
+@export var mana_modifier: float = 2.0
 
 # --- XP Tuning ---
 @export var xp_base: float = 100.0
@@ -38,6 +47,9 @@ enum State { IDLE, DEAD }
 var _state: State = State.IDLE
 var max_health: float = 0.0
 var health: float = 0.0
+var max_mana: float = 0.0
+var mana: float = 0.0
+var prep_slots: int = 0
 var gold: int = 0
 var experience: int = 0
 var level: int = 1
@@ -54,6 +66,11 @@ var _pending_attack_data: AttackData = null
 var _pending_targets: Array = []
 var _in_flight_attack_data: AttackData = null
 var _in_flight_targets: Array = []
+var _learned_spells: Array[SpellData] = []
+var _prepared_spells: Array[SpellData] = []
+var _innate_spell_names: Array[String] = []
+var _pending_spell: SpellData = null
+var _pending_spell_targets: Array = []
 var _game: Game = null
 var _blessings: Array[BlessingData] = []
 var _blessing_subs: Dictionary = {}  # BlessingData -> Subscription
@@ -88,6 +105,7 @@ func _process(_delta: float) -> void:
 # --- Initialization ---
 
 func initialize(p_name: String, class_data: PlayerClassData) -> void:
+	reset_run_state()
 	_class_data = class_data
 	player_name = p_name
 	strength = class_data.strength
@@ -101,15 +119,39 @@ func initialize(p_name: String, class_data: PlayerClassData) -> void:
 	pending_stat_points = 0
 	pending_growth_bonuses = {}
 	gold = 0
+	_recalculate_max_health()
+	_recalculate_max_mana()
+	health = max_health
+	_setup_starting_equipment(class_data)
+	_setup_starting_blessings(class_data)
+	_recalculate_prep_slots()
+	_setup_starting_spells(class_data)
+	restore_mana_to_full()
+
+
+func reset_run_state() -> void:
 	_clear_equipment_nodes()
 	for bd in _blessings.duplicate():
 		remove_blessing(bd)
 	_active_statuses.clear()
+	for spell in _prepared_spells:
+		if spell != null:
+			unregister_action(spell.spell_name)
+	_learned_spells.clear()
+	_prepared_spells.clear()
+	_innate_spell_names.clear()
+	prep_slots = 0
+	_pending_attack_data = null
+	_pending_targets = []
+	_in_flight_attack_data = null
+	_in_flight_targets = []
+	_pending_spell = null
+	_pending_spell_targets = []
+	_turn_pending = false
+	_attack_animation_pending = false
 	is_dead = false
-	_recalculate_max_health()
-	health = max_health
-	_setup_starting_equipment(class_data)
-	_setup_starting_blessings(class_data)
+	_transition(State.IDLE)
+	_inventory.set_dungeon_locked(false)
 
 
 func _setup_starting_equipment(class_data: PlayerClassData) -> void:
@@ -254,6 +296,7 @@ func _apply_growth_rates() -> void:
 		_add_to_base_stat(stat_key as Enums.Stat, amount)
 		pending_growth_bonuses[stat_key] = pending_growth_bonuses.get(stat_key, 0.0) + amount
 	_recalculate_max_health()
+	_recalculate_max_mana()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -267,6 +310,7 @@ func spend_stat_point(stat: Enums.Stat) -> void:
 	_add_to_base_stat(stat, 1.0)
 	pending_stat_points -= 1
 	_recalculate_max_health()
+	_recalculate_max_mana()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -274,6 +318,7 @@ func unspend_stat_point(stat: Enums.Stat) -> void:
 	_add_to_base_stat(stat, -1.0)
 	pending_stat_points += 1
 	_recalculate_max_health()
+	_recalculate_max_mana()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -293,7 +338,7 @@ func take_damage(amount: float) -> void:
 	if is_dead:
 		return
 	var net_amount: float = _apply_defense(amount)
-	health -= net_amount
+	health = maxf(health - net_amount, 0.0)
 	print("  Player HP: %.0f / %.0f" % [health, max_health])
 	damaged.emit(net_amount)
 	_flash_hurt_overlay()
@@ -338,8 +383,176 @@ func _recalculate_max_health() -> void:
 		health = minf(health, max_health)
 
 
+# --- Mana ---
+
+func _recalculate_max_mana() -> void:
+	if _class_data == null:
+		return
+	var old_max := max_mana
+	var effective_spi := get_effective_stat(Enums.Stat.SPIRIT)
+	max_mana = (effective_spi * mana_modifier) + _class_data.class_mana_bonus
+	var delta := max_mana - old_max
+	if delta > 0.0:
+		mana += delta
+	else:
+		mana = minf(mana, max_mana)
+
+
+func restore_mana_to_full() -> void:
+	var delta := max_mana - mana
+	mana = max_mana
+	if delta > 0.0:
+		mana_restored.emit(delta)
+
+
+func spend_mana(amount: float) -> bool:
+	if mana < amount:
+		return false
+	mana -= amount
+	mana_spent.emit(amount)
+	return true
+
+
+func compute_spell_cost(spell: SpellData) -> float:
+	var multiplier := 1.0
+	for equip_data in _inventory.get_all_equipped():
+		multiplier *= equip_data.spell_cost_multiplier
+	return spell.mana_cost * multiplier
+
+
+# --- Spells ---
+
+func _recalculate_prep_slots() -> void:
+	var new_size := _class_data.starting_prep_slots if _class_data != null else 0
+	for equip_data in _inventory.get_all_equipped():
+		new_size += equip_data.bonus_prep_slots
+	if new_size == prep_slots:
+		return
+	if new_size < prep_slots:
+		for i in range(new_size, prep_slots):
+			if i < _prepared_spells.size() and _prepared_spells[i] != null:
+				unregister_action(_prepared_spells[i].spell_name)
+		_prepared_spells.resize(new_size)
+	else:
+		_prepared_spells.resize(new_size)
+		for i in range(prep_slots, new_size):
+			_prepared_spells[i] = null
+	prep_slots = new_size
+	prep_slots_changed.emit(prep_slots)
+	prepared_spells_changed.emit(get_castable_spells())
+
+
+func learn_spell(spell: SpellData) -> void:
+	if _learned_spells.has(spell):
+		return
+	_learned_spells.append(spell)
+	learned_spells_changed.emit(_learned_spells.duplicate())
+
+
+func forget_spell(spell: SpellData) -> void:
+	if not _learned_spells.has(spell):
+		return
+	for i in _prepared_spells.size():
+		if _prepared_spells[i] == spell:
+			unprepare_spell(i)
+	_learned_spells.erase(spell)
+	learned_spells_changed.emit(_learned_spells.duplicate())
+
+
+func prepare_spell(spell: SpellData, index: int) -> void:
+	if _inventory.is_dungeon_locked():
+		return
+	if index < 0 or index >= _prepared_spells.size():
+		return
+	if not _learned_spells.has(spell):
+		return
+	var displaced := _prepared_spells[index]
+	if displaced != null:
+		unregister_action(displaced.spell_name)
+	_prepared_spells[index] = spell
+	register_action(spell.spell_name, _do_cast)
+	prepared_spells_changed.emit(get_castable_spells())
+
+
+func unprepare_spell(index: int) -> void:
+	if index < 0 or index >= _prepared_spells.size():
+		return
+	var spell := _prepared_spells[index]
+	if spell == null:
+		return
+	unregister_action(spell.spell_name)
+	_prepared_spells[index] = null
+	prepared_spells_changed.emit(get_castable_spells())
+
+
+func get_castable_spells() -> Array[SpellData]:
+	var result: Array[SpellData] = []
+	for name in _innate_spell_names:
+		var found := _find_spell_by_name(name)
+		if found != null and not result.has(found):
+			result.append(found)
+	for spell in _prepared_spells:
+		if spell != null and not result.has(spell):
+			result.append(spell)
+	return result
+
+
+func _find_spell_by_name(name: String) -> SpellData:
+	var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
+	if weapon_data is WeaponData:
+		for spell_res in (weapon_data as WeaponData).innate_spells:
+			var spell := spell_res as SpellData
+			if spell != null and spell.spell_name == name:
+				return spell
+	return null
+
+
+func get_learned_spells() -> Array[SpellData]:
+	return _learned_spells.duplicate()
+
+
+func get_prepared_spells() -> Array[SpellData]:
+	return _prepared_spells.duplicate()
+
+
+func _setup_starting_spells(class_data: PlayerClassData) -> void:
+	for spell_res in class_data.starting_learned_spells:
+		var spell := spell_res as SpellData
+		if spell != null:
+			learn_spell(spell)
+	var slot_index := 0
+	for spell_res in class_data.starting_prepared_spells:
+		var spell := spell_res as SpellData
+		if spell != null and slot_index < prep_slots:
+			prepare_spell(spell, slot_index)
+			slot_index += 1
+
+
+func set_pending_spell_payload(spell: SpellData, targets: Array) -> void:
+	_pending_spell = spell
+	_pending_spell_targets = targets
+
+
+func _do_cast() -> void:
+	var spell := _pending_spell
+	var targets := _pending_spell_targets.duplicate()
+	_pending_spell = null
+	_pending_spell_targets = []
+	if spell == null:
+		push_warning("[PLAYER] _do_cast() called with no pending payload")
+		return
+	var cost := compute_spell_cost(spell)
+	if not spend_mana(cost):
+		push_warning("[PLAYER] _do_cast() insufficient mana for: %s" % spell.spell_name)
+		return
+	print("  Player casts: %s" % spell.spell_name)
+	cast_performed.emit(spell, targets)
+	cast_hit.emit(spell, targets)
+
+
 func _on_stat_modifiers_changed() -> void:
 	_recalculate_max_health()
+	_recalculate_max_mana()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -349,6 +562,8 @@ func _on_slot_changed(slot: Enums.Slot, new_data: EquipmentData, old_data: Equip
 	if new_data != null:
 		_setup_equipment(slot, new_data)
 	_recalculate_max_health()
+	_recalculate_max_mana()
+	_recalculate_prep_slots()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -358,6 +573,8 @@ func _on_ring_changed(_index: int, new_data: EquipmentData, old_data: EquipmentD
 	if new_data != null:
 		_setup_equipment(null, new_data)
 	_recalculate_max_health()
+	_recalculate_max_mana()
+	_recalculate_prep_slots()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -388,7 +605,16 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 			if _actions.has(atk.attack_name):
 				push_warning("[PLAYER] Duplicate attack name: %s" % atk.attack_name)
 			register_action(atk.attack_name, _do_attack)
+		for spell_res in wdata.innate_spells:
+			var spell := spell_res as SpellData
+			if spell == null:
+				continue
+			if _actions.has(spell.spell_name):
+				push_warning("[PLAYER] Duplicate action name from innate spell: %s" % spell.spell_name)
+			_innate_spell_names.append(spell.spell_name)
+			register_action(spell.spell_name, _do_cast)
 		weapon_attacks_changed.emit(wdata.attacks)
+		prepared_spells_changed.emit(get_castable_spells())
 
 
 func _teardown_equipment(slot, data: EquipmentData) -> void:
@@ -413,7 +639,11 @@ func _teardown_equipment(slot, data: EquipmentData) -> void:
 			if atk == null:
 				continue
 			unregister_action(atk.attack_name)
+		for name in _innate_spell_names:
+			unregister_action(name)
+		_innate_spell_names.clear()
 		weapon_attacks_changed.emit([])
+		prepared_spells_changed.emit(get_castable_spells())
 
 
 func get_equipped_node(slot: Enums.Slot) -> Equipment:
@@ -464,14 +694,18 @@ func to_save_dict() -> Dictionary:
 		"pending_growth_bonuses": pending_growth_bonuses.duplicate(),
 		"max_health": max_health,
 		"health": health,
+		"mana": mana,
 		"is_dead": is_dead,
 		"blessings": blessings,
+		"learned_spells": _spell_paths(_learned_spells),
+		"prepared_spells": _prepared_spell_paths(),
 		"active_statuses": to_status_save_array(),
 		"inventory": _inventory.to_save_dict(),
 	}
 
 
 func apply_save_dict(d: Dictionary) -> void:
+	reset_run_state()
 	_class_data = load(d["class_data_path"]) as PlayerClassData
 	player_name = d["name"]
 	strength = d["strength"]
@@ -487,14 +721,8 @@ func apply_save_dict(d: Dictionary) -> void:
 	pending_growth_bonuses = d["pending_growth_bonuses"].duplicate()
 	is_dead = d["is_dead"]
 	_transition(State.DEAD if is_dead else State.IDLE)
-	for bd in _blessings.duplicate():
-		remove_blessing(bd)
-	_active_statuses.clear()
-	# Tear down existing equipment nodes and clear inventory so re-equip is clean.
-	# Also initialises health = base max_health so _recalculate_max_health's delta
-	# logic never clamps health downward during the per-slot equip calls below.
-	_clear_equipment_nodes()
 	_recalculate_max_health()
+	_recalculate_max_mana()
 	health = max_health
 	_inventory.apply_save_dict(d["inventory"])
 	for path in d["blessings"]:
@@ -502,12 +730,44 @@ func apply_save_dict(d: Dictionary) -> void:
 		if bd != null:
 			add_blessing(bd)
 	apply_status_save_array(d["active_statuses"])
-	# Final recalc picks up any blessing/status CON modifiers, then pin health.
+	# Final recalc picks up any blessing/status CON modifiers, then pin health and mana.
 	_recalculate_max_health()
+	_recalculate_max_mana()
+	_recalculate_prep_slots()
 	health = minf(d["health"], max_health)
+	for path in d.get("learned_spells", []):
+		var spell := load(path) as SpellData
+		if spell != null:
+			learn_spell(spell)
+	var saved_prepared: Array = d.get("prepared_spells", [])
+	for i in saved_prepared.size():
+		if i >= prep_slots:
+			break
+		var path = saved_prepared[i]
+		if path == null or path == "":
+			continue
+		var spell := load(path) as SpellData
+		if spell != null:
+			prepare_spell(spell, i)
+	mana = minf(d.get("mana", max_mana), max_mana)
 	stats_changed.emit(build_stats_dict())
 	gold_changed.emit(gold)
 	experience_changed.emit(experience)
+
+
+func _spell_paths(spells: Array[SpellData]) -> Array[String]:
+	var paths: Array[String] = []
+	for spell in spells:
+		if spell != null and not spell.resource_path.is_empty():
+			paths.append(spell.resource_path)
+	return paths
+
+
+func _prepared_spell_paths() -> Array:
+	var paths := []
+	for spell in _prepared_spells:
+		paths.append(spell.resource_path if spell != null and not spell.resource_path.is_empty() else null)
+	return paths
 
 
 func _clear_equipment_nodes() -> void:

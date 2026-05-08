@@ -126,7 +126,7 @@ sequenceDiagram
     participant Event as CombatEvent
 
     rect rgb(230, 245, 255)
-    note over User,Weapon: Player turn (with targeting)
+    note over User,Weapon: Player turn — attack (with targeting)
     User->>GUI: click action button
     GUI->>Game: attack_requested(name)
     Game->>Game: enter targeting state
@@ -139,6 +139,22 @@ sequenceDiagram
     Weapon->>Weapon: play "attack" anim
     Game->>Game: apply effects to each target
     Weapon-->>Player: animation_finished
+    Player-->>Game: turn_ended
+    Game->>Game: state = ENEMY_TURN
+    end
+
+    rect rgb(220, 235, 255)
+    note over User,Player: Player turn — spell cast
+    User->>GUI: click spell button
+    GUI->>Game: attack_requested(spell_name)
+    Game->>Game: mana check; enter targeting state
+    User->>GUI: click same button (confirm)
+    GUI->>Game: attack_requested(spell_name)
+    Game->>Player: set_pending_spell_payload(SpellData, targets)
+    Game->>Player: execute_action(spell_name)
+    Player->>Player: spend_mana; emit cast_performed
+    Player-->>Game: cast_hit(spell, targets)
+    Game->>Game: apply spell effects to each target
     Player-->>Game: turn_ended
     Game->>Game: state = ENEMY_TURN
     end
@@ -175,6 +191,8 @@ Phase 5 added equipment passives: `on_equip_effects` / `on_unequip_effects` (fir
 
 Phase 6 added `BlessingData` — run-long permanent boons held on `Player._blessings`. `add_blessing` / `remove_blessing` wire/unwire the blessing's `subscriptions` (signal name → Effect, applied to the player) to the game lifecycle bus via `Subscription`. Stat modifiers are summed into `get_effective_stat`. Blessings are granted via `event.rewards["blessings"]` or `PlayerClassData.starting_blessings`.
 
+Phase 7 added the spell system. `SpellData` (resource, mirrors `AttackData`) carries `spell_name`, `mana_cost`, `target_mode`, and `effects: Array[Resource]`. `EquipmentData` gains `spell_cost_multiplier: float = 1.0` and `bonus_prep_slots: int = 0`. `WeaponData` gains `innate_spells: Array[Resource]` — registered as player actions on equip alongside `attacks`, bypassing prep slots. `Enums.Slot` gains `OFFHAND` (value 6). `Player` gains mana (`max_mana`, `mana` derived from SPI like health from CON), a learned-spell roster, a prep-slot-indexed prepared list, and the `_do_cast` action callable. `PlayerClassData` gains `class_mana_bonus`, `starting_prep_slots`, `starting_learned_spells`, `starting_prepared_spells`. Mana restores fully at world-node entry in `_on_world_node_selected`.
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -189,6 +207,8 @@ classDiagram
         +Array on_unequip_effects
         +Array proc_effects
         +Array conditional_modifiers
+        +float spell_cost_multiplier
+        +int bonus_prep_slots
     }
     class ProcDef {
         <<Resource>>
@@ -205,11 +225,19 @@ classDiagram
     class WeaponData {
         +AudioStream attack_sfx
         +Array~Resource~ attacks
+        +Array~Resource~ innate_spells
     }
     class AttackData {
         <<Resource>>
         +String attack_name
         +TargetMode target_mode
+        +Array~Resource~ effects
+    }
+    class SpellData {
+        <<Resource>>
+        +String spell_name
+        +float mana_cost
+        +AttackData.TargetMode target_mode
         +Array~Resource~ effects
     }
     class Effect {
@@ -244,6 +272,10 @@ classDiagram
         +Array starting_consumables
         +Array starting_blessings
         +Dictionary growth_rates
+        +float class_mana_bonus
+        +int starting_prep_slots
+        +Array starting_learned_spells
+        +Array starting_prepared_spells
     }
     class ShopData {
         <<Resource>>
@@ -290,7 +322,9 @@ classDiagram
     BlessingData o-- Effect : subscriptions
     ShopData o-- EquipmentData : stock
     WeaponData o-- AttackData : attacks
+    WeaponData o-- SpellData : innate_spells
     AttackData o-- Effect : effects
+    SpellData o-- Effect : effects
     ConsumableData o-- Effect : effects
     Effect <|-- DamageEffect
     Effect <|-- HealEffect
@@ -305,6 +339,8 @@ classDiagram
 ## 5. Combatant class hierarchy
 
 `Combatant` is a `Node2D`-extending base class shared by `Player` and `Enemy`. It owns the status system (`_active_statuses`, `apply_status`, `remove_status`, `_tick_statuses`) and a virtual `_get_base_stat`. `get_effective_stat` on `Combatant` computes base + active-status stat_modifiers; `Player` overrides to also sum equipment modifiers. `BuffEffect` and `StatusEffect` both call `target.apply_status()` — valid for both combatants. `Player._on_stat_modifiers_changed()` calls `_recalculate_max_health()` so CON statuses update max HP immediately. See [[design.md]] — Effect System v2 (2026-05-02).
+
+`Player.reset_run_state()` is the single owner of per-run teardown (equipment teardown, blessing/status clear, spell roster clear, inventory dungeon-lock reset). Both `initialize()` and `apply_save_dict()` call it first; both game entry points (`_on_character_created`, `_on_continue_requested`) call `Game._reset_run_state()` before touching the player. See [[design.md]] — Run-state reset pattern (2026-05-08).
 
 ```mermaid
 classDiagram
@@ -330,6 +366,9 @@ classDiagram
         #_get_base_stat(stat) float
     }
     class Player {
+        +initialize(name, class_data)
+        +reset_run_state()
+        +apply_save_dict(d)
         +pass_turn()
         +get_effective_stat(stat) float
         +add_blessing(data)

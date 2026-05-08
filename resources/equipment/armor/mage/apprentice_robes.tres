@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentData" format=3]
+
+[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+
+[resource]
+script = ExtResource("1_equip")
+item_name = "Apprentice Robes"
+description = "Light cloth robes favoured by spellcasters. Reduces spell costs."
+stat_modifiers = {
+4: 5.0
+}
+slot = 4
+price = 30
+spell_cost_multiplier = 0.8
