@@ -56,8 +56,11 @@ var level: int = 1
 var pending_stat_points: int = 0
 var pending_growth_bonuses: Dictionary = {}
 var is_dead: bool = false
+var mana_regen: float = 0.0
+var mana_on_kill: float = 0.0
 var _turn_pending: bool = false
 var _attack_animation_pending: bool = false
+var _cast_animation_pending: bool = false
 var _evaluating_conditionals: bool = false
 var _weapon_visible: bool = false
 var _hurt_overlay: ColorRect = null
@@ -66,6 +69,8 @@ var _pending_attack_data: AttackData = null
 var _pending_targets: Array = []
 var _in_flight_attack_data: AttackData = null
 var _in_flight_targets: Array = []
+var _in_flight_spell: SpellData = null
+var _in_flight_spell_targets: Array = []
 var _learned_spells: Array[SpellData] = []
 var _prepared_spells: Array[SpellData] = []
 var _innate_spell_names: Array[String] = []
@@ -145,10 +150,13 @@ func reset_run_state() -> void:
 	_pending_targets = []
 	_in_flight_attack_data = null
 	_in_flight_targets = []
+	_in_flight_spell = null
+	_in_flight_spell_targets = []
 	_pending_spell = null
 	_pending_spell_targets = []
 	_turn_pending = false
 	_attack_animation_pending = false
+	_cast_animation_pending = false
 	is_dead = false
 	_transition(State.IDLE)
 	_inventory.set_dungeon_locked(false)
@@ -164,6 +172,9 @@ func _setup_starting_equipment(class_data: PlayerClassData) -> void:
 		_inventory.equip_consumable_at(i, class_data.starting_consumables[i])
 	for item in class_data.starting_bag:
 		_inventory.add_to_bag(item)
+	for tome_res in class_data.starting_tomes:
+		if tome_res is TomeData:
+			_inventory.add_tome(tome_res as TomeData)
 
 
 func _setup_starting_blessings(class_data: PlayerClassData) -> void:
@@ -396,6 +407,26 @@ func _recalculate_max_mana() -> void:
 		mana += delta
 	else:
 		mana = minf(mana, max_mana)
+	_recalculate_mana_regen()
+
+
+func _recalculate_mana_regen() -> void:
+	if _class_data == null:
+		return
+	mana_regen = _class_data.mana_regen_per_turn
+	mana_on_kill = _class_data.mana_on_kill
+	for equip_data in _inventory.get_all_equipped():
+		mana_regen += equip_data.bonus_mana_regen
+
+
+func restore_mana(amount: float) -> void:
+	if is_dead:
+		return
+	var actual := minf(amount, max_mana - mana)
+	if actual <= 0.0:
+		return
+	mana += actual
+	mana_restored.emit(actual)
 
 
 func restore_mana_to_full() -> void:
@@ -545,9 +576,15 @@ func _do_cast() -> void:
 	if not spend_mana(cost):
 		push_warning("[PLAYER] _do_cast() insufficient mana for: %s" % spell.spell_name)
 		return
+	var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
+	if weapon_data != null and weapon_data.scene != null and spell.target_mode != AttackData.TargetMode.SELF:
+		_cast_animation_pending = true
+		_in_flight_spell = spell
+		_in_flight_spell_targets = targets
 	print("  Player casts: %s" % spell.spell_name)
 	cast_performed.emit(spell, targets)
-	cast_hit.emit(spell, targets)
+	if not _cast_animation_pending:
+		cast_hit.emit(spell, targets)
 
 
 func _on_stat_modifiers_changed() -> void:
@@ -595,9 +632,15 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 			attack_performed.connect((node as Weapon)._on_player_attacked)
 			(node as Weapon).animation_finished.connect(_on_weapon_animation_finished)
 			(node as Weapon).hit_landed.connect(_on_weapon_hit_landed)
+			cast_performed.connect((node as Weapon)._on_player_cast)
+			(node as Weapon).cast_animation_finished.connect(_on_weapon_cast_animation_finished)
 	if slot == Enums.Slot.WEAPON and data is WeaponData:
 		print("[PLAYER] Equipped weapon: %s" % data.item_name)
 		var wdata := data as WeaponData
+		if wdata.is_two_handed:
+			if _inventory.get_equipped(Enums.Slot.OFFHAND) != null:
+				_inventory.unequip(Enums.Slot.OFFHAND)
+			_inventory.lock_slot(Enums.Slot.OFFHAND)
 		for atk_res in wdata.attacks:
 			var atk := atk_res as AttackData
 			if atk == null:
@@ -630,10 +673,14 @@ func _teardown_equipment(slot, data: EquipmentData) -> void:
 					attack_performed.disconnect((child as Weapon)._on_player_attacked)
 					(child as Weapon).animation_finished.disconnect(_on_weapon_animation_finished)
 					(child as Weapon).hit_landed.disconnect(_on_weapon_hit_landed)
+					cast_performed.disconnect((child as Weapon)._on_player_cast)
+					(child as Weapon).cast_animation_finished.disconnect(_on_weapon_cast_animation_finished)
 				child.queue_free()
 				break
 	if slot == Enums.Slot.WEAPON and data is WeaponData:
 		var wdata := data as WeaponData
+		if wdata.is_two_handed:
+			_inventory.unlock_slot(Enums.Slot.OFFHAND)
 		for atk_res in wdata.attacks:
 			var atk := atk_res as AttackData
 			if atk == null:
@@ -827,7 +874,7 @@ func set_hurt_overlay(overlay: ColorRect) -> void:
 # --- Internal ---
 
 func _is_turn_complete() -> bool:
-	return not _attack_animation_pending and (_state == State.IDLE or _state == State.DEAD)
+	return not _attack_animation_pending and not _cast_animation_pending and (_state == State.IDLE or _state == State.DEAD)
 
 
 func _transition(next: State) -> void:
@@ -836,6 +883,17 @@ func _transition(next: State) -> void:
 
 func _on_weapon_animation_finished() -> void:
 	_attack_animation_pending = false
+
+
+func _on_weapon_cast_animation_finished() -> void:
+	_cast_animation_pending = false
+	if _in_flight_spell == null:
+		return
+	var spell := _in_flight_spell
+	var targets := _in_flight_spell_targets
+	_in_flight_spell = null
+	_in_flight_spell_targets = []
+	cast_hit.emit(spell, targets)
 
 
 func _on_weapon_hit_landed() -> void:

@@ -90,6 +90,7 @@ func _ready() -> void:
 	$Player.position = screen_center
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
 	_gui.setup_inventory($Player.get_node("Inventory") as Inventory)
+	_gui.setup_tomes(player)
 
 	_gui.character_created.connect(_on_character_created)
 	_gui.continue_requested.connect(_on_continue_requested)
@@ -787,7 +788,9 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 		enemy_damaged.emit(enemy, amt))
 	enemy.died.connect(func() -> void:
 		_gui.remove_enemy_health_bar(enemy)
-		enemy_died.emit(enemy))
+		enemy_died.emit(enemy)
+		if player.mana_on_kill > 0.0:
+			player.restore_mana(player.mana_on_kill))
 	enemy.attack.connect(func(damage: float) -> void:
 		enemy_attack_hit.emit(enemy, damage))
 	# Refresh targeting candidates if we're mid-targeting for enemies
@@ -874,6 +877,8 @@ func _resolve_consumable_targets(mode: ConsumableData.TargetMode) -> Array:
 func _start_player_turn() -> void:
 	state = Enums.TurnState.PLAYER_TURN
 	round_number += 1
+	if player.mana_regen > 0.0:
+		player.restore_mana(player.mana_regen)
 	player_turn_started.emit()
 	print("[ROUND %d] === Player Turn ===" % round_number)
 	if player.has_preventing_status():
@@ -967,7 +972,11 @@ func _apply_rewards(r: Dictionary) -> void:
 	for b in blessings:
 		if b is BlessingData:
 			player.add_blessing(b)
-	print("[GAME] Rewards applied: %d XP, %d gold, %d blessings" % [xp, gold, blessings.size()])
+	var tomes: Array = r.get("tomes", [])
+	for t in tomes:
+		if t is TomeData:
+			player.get_inventory().add_tome(t as TomeData)
+	print("[GAME] Rewards applied: %d XP, %d gold, %d blessings, %d tomes" % [xp, gold, blessings.size(), tomes.size()])
 
 
 func _scale_sprite_to_viewport(sprite: AnimatedSprite2D) -> void:

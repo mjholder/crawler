@@ -28,6 +28,8 @@ var _ring_buttons: Array[Button] = []
 var _bag_buttons: Array[Button] = []
 var _prep_buttons: Array[Button] = []
 var _prep_container: VBoxContainer = null
+var _tome_buttons: Array[Button] = []
+var _tome_container: VBoxContainer = null
 var _can_equip: bool = true
 var _dungeon_locked: bool = false
 
@@ -61,6 +63,8 @@ func _apply_equip_state() -> void:
 	for btn in _bag_buttons:
 		btn.disabled = not active
 	for btn in _prep_buttons:
+		btn.disabled = _dungeon_locked
+	for btn in _tome_buttons:
 		btn.disabled = _dungeon_locked
 
 
@@ -230,6 +234,48 @@ func _on_prep_button_pressed(index: int) -> void:
 	if unprepared.is_empty():
 		return
 	_player.prepare_spell(unprepared[0], index)
+
+
+# --- Tome List ---
+
+func setup_tomes(player: Player) -> void:
+	_player = player
+	_inventory.tomes_changed.connect(_rebuild_tome_ui)
+	_rebuild_tome_ui()
+
+
+func _rebuild_tome_ui() -> void:
+	if _player == null:
+		return
+	if _tome_container == null:
+		_tome_container = VBoxContainer.new()
+		_tome_container.name = "TomeContainer"
+		var lbl := Label.new()
+		lbl.text = "Tomes"
+		_tome_container.add_child(lbl)
+		$HBoxContainer/PanelContainer/VBoxContainer.add_child(_tome_container)
+	for btn in _tome_buttons:
+		btn.queue_free()
+	_tome_buttons.clear()
+	var tomes := _inventory.get_tomes()
+	for i in tomes.size():
+		var tome: TomeData = tomes[i]
+		var btn := Button.new()
+		var spell_name := tome.spell.spell_name if tome.spell != null else "???"
+		btn.text = "%s → %s" % [tome.item_name, spell_name]
+		btn.disabled = _dungeon_locked
+		btn.pressed.connect(_on_tome_button_pressed.bind(i))
+		_tome_container.add_child(btn)
+		_tome_buttons.append(btn)
+
+
+func _on_tome_button_pressed(index: int) -> void:
+	if _player == null or _dungeon_locked:
+		return
+	var tome: TomeData = _inventory.remove_tome(index)
+	if tome == null or tome.spell == null:
+		return
+	_player.learn_spell(tome.spell)
 
 
 # --- Detail Panel ---

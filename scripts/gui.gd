@@ -135,6 +135,10 @@ func setup_spell_prep(player: Player) -> void:
 	_inventory_panel.setup_spell_prep(player)
 
 
+func setup_tomes(player: Player) -> void:
+	_inventory_panel.setup_tomes(player)
+
+
 func toggle_inventory(can_equip: bool = true) -> void:
 	_inventory_panel.set_can_equip(can_equip)
 	_inventory_panel.visible = not _inventory_panel.visible

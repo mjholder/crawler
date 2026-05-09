@@ -193,6 +193,8 @@ Phase 6 added `BlessingData` — run-long permanent boons held on `Player._bless
 
 Phase 7 added the spell system. `SpellData` (resource, mirrors `AttackData`) carries `spell_name`, `mana_cost`, `target_mode`, and `effects: Array[Resource]`. `EquipmentData` gains `spell_cost_multiplier: float = 1.0` and `bonus_prep_slots: int = 0`. `WeaponData` gains `innate_spells: Array[Resource]` — registered as player actions on equip alongside `attacks`, bypassing prep slots. `Enums.Slot` gains `OFFHAND` (value 6). `Player` gains mana (`max_mana`, `mana` derived from SPI like health from CON), a learned-spell roster, a prep-slot-indexed prepared list, and the `_do_cast` action callable. `PlayerClassData` gains `class_mana_bonus`, `starting_prep_slots`, `starting_learned_spells`, `starting_prepared_spells`. Mana restores fully at world-node entry in `_on_world_node_selected`.
 
+Phase 8 extended the spell system with five additions. **Two-handed lock**: `WeaponData.is_two_handed` causes `Player._setup_equipment` to call `Inventory.lock_slot(OFFHAND)` on equip and `unlock_slot` on teardown; `Inventory._slot_locks: Dictionary` enforces this in `equip()`. **Spell animations**: `Weapon` gains `cast_animation_finished` signal and `_on_player_cast()` handler (falls back to "attack" anim if no "cast" anim exists); `_do_cast` in `Player` now gates `cast_hit` behind animation like `_do_attack` does for `attack_hit`. **Mana regen**: `EquipmentData.bonus_mana_regen`, `PlayerClassData.mana_regen_per_turn / mana_on_kill` feed into `Player.mana_regen / mana_on_kill` (computed in `_recalculate_mana_regen`, called from `_recalculate_max_mana`); `game.gd` restores mana at the start of each player turn and on each enemy kill. **Tomes**: `TomeData` (new `Resource` — item_name, spell, gold_value) held in `Inventory._tomes`; `InventoryPanel` renders a dynamic Tomes section; clicking a tome button calls `player.learn_spell` (blocked by dungeon lock). **Affinity tags**: `EquipmentData.affinity_tags: Array[StringName]` — data field only; loot pool logic deferred until procedural generation is built.
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -209,6 +211,8 @@ classDiagram
         +Array conditional_modifiers
         +float spell_cost_multiplier
         +int bonus_prep_slots
+        +float bonus_mana_regen
+        +Array~StringName~ affinity_tags
     }
     class ProcDef {
         <<Resource>>
@@ -226,6 +230,14 @@ classDiagram
         +AudioStream attack_sfx
         +Array~Resource~ attacks
         +Array~Resource~ innate_spells
+        +bool is_two_handed
+    }
+    class TomeData {
+        <<Resource>>
+        +String item_name
+        +String description
+        +int gold_value
+        +SpellData spell
     }
     class AttackData {
         <<Resource>>
@@ -271,11 +283,14 @@ classDiagram
         +Array starting_rings
         +Array starting_consumables
         +Array starting_blessings
+        +Array starting_tomes
         +Dictionary growth_rates
         +float class_mana_bonus
         +int starting_prep_slots
         +Array starting_learned_spells
         +Array starting_prepared_spells
+        +float mana_regen_per_turn
+        +float mana_on_kill
     }
     class ShopData {
         <<Resource>>
@@ -296,17 +311,28 @@ classDiagram
     class Weapon {
         +AnimationPlayer anim_player
         +signal animation_finished
+        +signal cast_animation_finished
+        +_on_player_cast(spell, targets)
     }
     class Inventory {
         <<Node>>
         -Dictionary _equipped
+        -Dictionary _slot_locks
         -Array _rings
         -Array _consumable_belt
         -Array~EquipmentData~ _bag
+        -Array~TomeData~ _tomes
         +signal slot_changed
         +signal ring_changed
         +signal bag_changed
         +signal consumable_belt_changed
+        +signal tomes_changed
+        +lock_slot(slot)
+        +unlock_slot(slot)
+        +is_slot_locked(slot) bool
+        +add_tome(data)
+        +remove_tome(index) TomeData
+        +get_tomes() Array
     }
 
     EquipmentData <|-- WeaponData
@@ -317,12 +343,15 @@ classDiagram
     EquipmentData o-- ConditionalModifier : conditional_modifiers
     ProcDef o-- Effect : effect
     Inventory o-- EquipmentData : stores
+    Inventory o-- TomeData : _tomes
     PlayerClassData o-- EquipmentData : starting loadout
     PlayerClassData o-- BlessingData : starting_blessings
+    PlayerClassData o-- TomeData : starting_tomes
     BlessingData o-- Effect : subscriptions
     ShopData o-- EquipmentData : stock
     WeaponData o-- AttackData : attacks
     WeaponData o-- SpellData : innate_spells
+    TomeData o-- SpellData : spell
     AttackData o-- Effect : effects
     SpellData o-- Effect : effects
     ConsumableData o-- Effect : effects

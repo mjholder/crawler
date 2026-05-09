@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://resources/spells/magic_missile.tres" id="6_mm"]
 [ext_resource type="Resource" path="res://resources/spells/mend.tres" id="7_mend"]
 [ext_resource type="Resource" path="res://resources/blessings/mage_armor.tres" id="8_blessing"]
+[ext_resource type="Resource" path="res://resources/tomes/tome_of_mending.tres" id="9_tome"]
 
 [resource]
 script = ExtResource("1_pcd")
@@ -32,3 +33,5 @@ starting_prep_slots = 2
 starting_learned_spells = Array[Resource]([ExtResource("6_mm"), ExtResource("7_mend")])
 starting_prepared_spells = Array[Resource]([ExtResource("6_mm"), ExtResource("7_mend")])
 starting_blessings = Array[ExtResource("3_bdata")]([ExtResource("8_blessing")])
+starting_tomes = Array[Resource]([ExtResource("9_tome")])
+mana_regen_per_turn = 2.0

@@ -19,3 +19,5 @@ extends Resource
 @export var conditional_modifiers: Array[Resource] = []  # Array[ConditionalModifier]
 @export var spell_cost_multiplier: float = 1.0
 @export var bonus_prep_slots: int = 0
+@export var bonus_mana_regen: float = 0.0
+@export var affinity_tags: Array[StringName] = []

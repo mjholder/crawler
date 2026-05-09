@@ -54,3 +54,13 @@ extends Resource
 
 ## Subset of learned spells that are prepared (active) at run start.
 @export var starting_prepared_spells: Array[Resource] = []  # Array[SpellData]
+
+## Tomes placed in the inventory at run start (for testing / class kits).
+@export var starting_tomes: Array[Resource] = []  # Array[TomeData]
+
+# --- Mana Regen ---
+## Mana restored at the start of each player turn.
+@export var mana_regen_per_turn: float = 0.0
+
+## Mana restored each time an enemy is killed.
+@export var mana_on_kill: float = 0.0

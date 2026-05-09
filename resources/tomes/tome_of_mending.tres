@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="TomeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/tome_data.gd" id="1_tome"]
+[ext_resource type="Resource" path="res://resources/spells/mend.tres" id="2_mend"]
+
+[resource]
+script = ExtResource("1_tome")
+item_name = "Tome of Mending"
+description = "A weathered tome containing the secrets of the Mend spell."
+gold_value = 30
+spell = ExtResource("2_mend")
