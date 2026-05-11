@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://0okmhhlg4ecq"]
+
+[ext_resource type="Script" uid="uid://bkgb8ckvvwyft" path="res://scripts/weapon_data.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://drbota0c0gcff" path="res://assets/sprites/weapons/battle_axe/windup.png" id="2_windup"]
+[ext_resource type="Texture2D" uid="uid://dbv4prm15qp3l" path="res://assets/sprites/weapons/battle_axe/swing.png" id="3_swing"]
+[ext_resource type="Texture2D" uid="uid://bx8qgjpp08r0n" path="res://assets/sprites/weapons/battle_axe/idle.png" id="4_idle"]
+[ext_resource type="Texture2D" uid="uid://bj083b7w7egw7" path="res://assets/sprites/weapons/battle_axe/icon.png" id="5_icon"]
+[ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="6_scene"]
+[ext_resource type="Resource" uid="uid://drnd2r6dmmtwr" path="res://resources/attacks/stab.tres" id="7_stab"]
+[ext_resource type="Resource" uid="uid://beqcg18655hs7" path="res://resources/attacks/assassinate.tres" id="8_assassinate"]
+[ext_resource type="Resource" uid="uid://biyivwbw1eki7" path="res://resources/attacks/flail.tres" id="9_flail"]
+[ext_resource type="Script" uid="uid://bhd611piw5n14" path="res://scripts/proc_def.gd" id="10_procd"]
+[ext_resource type="Script" uid="uid://drp2lj1h0sptk" path="res://scripts/damage_effect.gd" id="11_dmg_script"]
+
+[sub_resource type="Resource" id="DamageEffect_self"]
+script = ExtResource("11_dmg_script")
+damage_expression = "max(5, 25 - agility * 0.4)"
+
+[sub_resource type="Resource" id="ProcDef_self_damage"]
+script = ExtResource("10_procd")
+trigger = &"player_attack_hit"
+apply_to_owner = true
+effect = SubResource("DamageEffect_self")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_windup"]
+atlas = ExtResource("2_windup")
+region = Rect2(0, 0, 480, 270)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_main"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_idle")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_swing")
+}],
+"loop": false,
+"name": &"swing",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_windup")
+}],
+"loop": true,
+"name": &"wind_up",
+"speed": 5.0
+}]
+
+[resource]
+script = ExtResource("1_script")
+attacks = Array[Resource]([ExtResource("7_stab"), ExtResource("8_assassinate"), ExtResource("9_flail")])
+item_name = "Vorpal Blade"
+description = "A long thin dagger with a subtle green sheen."
+sprite_frames = SubResource("SpriteFrames_main")
+paper_doll_front = ExtResource("5_icon")
+scene = ExtResource("6_scene")
+price = 120
+proc_effects = Array[Resource]([SubResource("ProcDef_self_damage")])

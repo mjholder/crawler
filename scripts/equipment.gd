@@ -72,11 +72,15 @@ func _make_proc_handler(proc: ProcDef, owner: Node) -> Callable:
 	var chance_expr := proc.chance_expression
 	match proc.trigger:
 		&"player_attack_hit":
+			var to_owner := proc.apply_to_owner
 			return func(_atk: AttackData, targets: Array) -> void:
 				if not _roll_chance(chance_expr, owner):
 					return
-				for t in targets:
-					effect.apply(owner, t)
+				if to_owner:
+					effect.apply(owner, owner)
+				else:
+					for t in targets:
+						effect.apply(owner, t)
 		&"player_damaged", &"player_healed":
 			return func(_amount: float) -> void:
 				if not _roll_chance(chance_expr, owner):

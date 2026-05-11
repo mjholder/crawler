@@ -8,6 +8,10 @@
 [ext_resource type="Resource" path="res://resources/spells/mend.tres" id="7_mend"]
 [ext_resource type="Resource" path="res://resources/blessings/mage_armor.tres" id="8_blessing"]
 [ext_resource type="Resource" path="res://resources/tomes/tome_of_mending.tres" id="9_tome"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/mage_hood.tres" id="10_hood"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/mage_gloves.tres" id="11_gloves"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/arcane_boots.tres" id="12_boots"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/arcane_legwraps.tres" id="13_legwraps"]
 
 [resource]
 script = ExtResource("1_pcd")
@@ -27,7 +31,11 @@ growth_rates = {
 }
 starting_equipped = {
 0: ExtResource("4_staff"),
-4: ExtResource("5_robes")
+1: ExtResource("11_gloves"),
+2: ExtResource("12_boots"),
+3: ExtResource("13_legwraps"),
+4: ExtResource("5_robes"),
+5: ExtResource("10_hood")
 }
 starting_prep_slots = 2
 starting_learned_spells = Array[Resource]([ExtResource("6_mm"), ExtResource("7_mend")])

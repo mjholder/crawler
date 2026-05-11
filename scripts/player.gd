@@ -21,6 +21,7 @@ signal cast_hit(spell: SpellData, targets: Array)
 signal learned_spells_changed(spells: Array)
 signal prepared_spells_changed(spells: Array)
 signal prep_slots_changed(new_size: int)
+signal dodged
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -36,6 +37,11 @@ signal prep_slots_changed(new_size: int)
 @export var health_modifier: float = 2.0
 ## max_mana = (effective_SPI * mana_modifier) + class_mana_bonus
 @export var mana_modifier: float = 2.0
+
+# --- Combat Tuning ---
+const DEFENSE_SCALING: float = 100.0
+const DODGE_AGI_FACTOR: float = 0.003
+const DODGE_CAP: float = 0.40
 
 # --- XP Tuning ---
 @export var xp_base: float = 100.0
@@ -348,6 +354,9 @@ func _add_to_base_stat(stat: Enums.Stat, amount: float) -> void:
 func take_damage(amount: float) -> void:
 	if is_dead:
 		return
+	if _roll_dodge():
+		dodged.emit()
+		return
 	var net_amount: float = _apply_defense(amount)
 	health = maxf(health - net_amount, 0.0)
 	print("  Player HP: %.0f / %.0f" % [health, max_health])
@@ -375,8 +384,16 @@ func _die() -> void:
 	died.emit()
 
 
+func _roll_dodge() -> bool:
+	var eff_agi := get_effective_stat(Enums.Stat.AGILITY)
+	var chance := minf(eff_agi * DODGE_AGI_FACTOR, DODGE_CAP)
+	return randf() < chance
+
+
 func _apply_defense(amount: float) -> float:
-	return maxf(amount - get_effective_stat(Enums.Stat.DEFENSE), 0.0)
+	var eff_def := get_effective_stat(Enums.Stat.DEFENSE)
+	var ratio := eff_def / (eff_def + DEFENSE_SCALING)
+	return maxf(amount * (1.0 - ratio), 1.0)
 
 
 # --- Equipment ---

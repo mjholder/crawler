@@ -89,7 +89,7 @@ Rules:
 2. **Use UIDs from the table verbatim** for known resources.
 3. **RING type**: omit `slot =` line, add `is_ring = true`.
 4. **HANDS slot**: emit both `paper_doll_front` (arms_left) and `paper_doll_back` (arms_right).
-5. **On-equip effects**: use existing .tres reference if available; otherwise inline a sub_resource.
+5. **On-equip effects**: use existing .tres reference if available; otherwise inline a sub_resource. If a `StatusData` is ever used here it must be wrapped in a `StatusEffect` sub_resource — bare `StatusData` references are silently skipped because `StatusData` does not extend `Effect`.
 6. **Conditional modifiers**: always inline as sub_resource.
 7. **Omit empty arrays** — don't emit `on_equip_effects = Array[Resource]([])` if empty.
 8. **Omit mage fields** if all are default (0.0 / 0 / 0.0).

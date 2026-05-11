@@ -406,6 +406,7 @@ func set_player(p: Player) -> void:
 	player.prepared_spells_changed.connect(_on_player_prepared_spells_changed)
 	player.mana_spent.connect(_on_player_mana_spent)
 	player.mana_restored.connect(_on_player_mana_restored)
+	player.dodged.connect(_on_player_dodged)
 	player.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
 	player.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
 	player.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
@@ -414,6 +415,10 @@ func set_player(p: Player) -> void:
 	_gui.update_player_health(player.max_health, player.max_health)
 	_gui.update_player_mana(player.mana, player.max_mana)
 	_gui.update_player_stats(player.build_stats_dict())
+
+
+func _on_player_dodged() -> void:
+	_gui.log_message("You dodged the attack!")
 
 
 func _on_player_damaged(amount: float) -> void:

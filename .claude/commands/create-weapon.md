@@ -19,6 +19,9 @@ Slot:  WEAPON=0  OFFHAND=6
 
 ```
 weapon_data.gd              uid://bkgb8ckvvwyft   path: res://scripts/weapon_data.gd
+attack_data.gd              uid://ccpry8dqx7266   path: res://scripts/attack_data.gd
+status_data.gd              uid://b6e1sgjh81xns   path: res://scripts/status_data.gd
+damage_effect.gd            uid://drp2lj1h0sptk   path: res://scripts/damage_effect.gd
 proc_def.gd                 uid://bhd611piw5n14   path: res://scripts/proc_def.gd
 status_effect.gd            uid://csghuvkgsslk4   path: res://scripts/status_effect.gd
 scenes/weapon.tscn          uid://bkwtkj4t1b4se   path: res://scenes/weapon.tscn
@@ -37,6 +40,8 @@ res://resources/attacks/cleave.tres  — all enemies, STR/2 damage
 res://resources/attacks/brace.tres   — self, applies STR buff
 ```
 
+If the user wants an attack that doesn't exist, **create a new AttackData .tres** first, then reference it in the weapon. See "Creating a new attack" below.
+
 ## Existing proc-able effects
 
 ```
@@ -46,7 +51,11 @@ Statuses: res://resources/effects/statuses/poison.tres (uid://b7kqmoyng5ydc)
           res://resources/effects/statuses/regen.tres
 Buffs:    res://resources/effects/buffs/buff_str_20_3t.tres
           res://resources/effects/buffs/buff_def_20_permanent.tres
+Damage:   res://resources/effects/damage_40_flat.tres
+          res://resources/effects/damage_str_half.tres
 ```
+
+Any effect type (status, buff, damage, heal) can be a proc target. For anything not in the list, see the "Creating new effects" and "Creating a new status" sections below.
 
 ## Questionnaire
 
@@ -61,16 +70,17 @@ What is the weapon's name, and give it a one-line description?
 - Two-handed? [no]
 
 **Group 3 — Combat**
-- Attacks to attach — comma-separated from: slash, cleave, brace, or none [slash, cleave]
+- Attacks to attach — comma-separated from the existing list, or describe new attacks to create [slash, cleave]
+  - For each new attack: name, target (single/all/self), and what it does (damage formula, buff, etc.)
 - Innate spells (res://resources/spells/ file names, or none)? [none]
 
 **Group 4 — Stats**
 Stat modifiers? e.g. "STR+10 AGI-5" or none [STR+10]
 
 **Group 5 — Procs**
-On-hit procs? For each: trigger name, chance (0.0–1.0), effect name. Or none. [none]
+On-hit procs? For each: trigger name, chance (0.0–1.0), effect (existing name or describe new), and target (enemy or wielder). Or none. [none]
 Available triggers: player_attack_hit, player_attack_miss, enemy_attack_hit, enemy_attack_miss
-Example: "player_attack_hit 0.25 poison"
+Example: "player_attack_hit 0.25 poison (enemy)" or "player_attack_hit 1.0 self-damage 20 flat (wielder)"
 
 **Group 6 — Price**
 Price in gold? [80]
@@ -80,6 +90,205 @@ Sprite set: type "battle_axe" to use default sprites, or enter a custom folder p
 Custom path format: res://assets/sprites/weapons/<folder>/
 Folder must contain: idle.png, swing.png, windup.png, icon.png
 [battle_axe]
+
+## Creating new effects
+
+Effect expressions share the same variable set:
+`strength`, `defense`, `constitution`, `agility`, `spirit`, `luck`, `max_health`, `health`
+
+**Inline sub_resource** — use when the effect is unique to this attack (never reused).
+**Standalone .tres file** — use when the effect might appear on multiple attacks or spells. Write it first, then reference as a path-only ext_resource. Save to `resources/effects/<snake_name>.tres`.
+
+Script paths (path-only, no UIDs):
+```
+res://scripts/damage_effect.gd
+res://scripts/heal_effect.gd
+res://scripts/buff_effect.gd
+```
+Stat int: STR=0  DEF=1  CON=2  AGI=3  SPI=4  LCK=5
+
+### Standalone DamageEffect
+
+```
+[gd_resource type="Resource" script_class="DamageEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/damage_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+damage_expression = "strength * 0.75"
+```
+
+### Standalone HealEffect
+
+```
+[gd_resource type="Resource" script_class="HealEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/heal_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+heal_expression = "constitution * 2"
+```
+
+### Standalone BuffEffect
+
+```
+[gd_resource type="Resource" script_class="BuffEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/buff_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+stat = 0
+amount_expression = "20"
+duration = 3
+```
+`duration = -1` for permanent (BuffEffect uses -1, not 0, for permanent).
+
+## Creating a new attack
+
+When a requested attack isn't in the existing list, write a new `AttackData .tres` at `resources/attacks/<snake_name>.tres` **before** the weapon file. Reference it with a path-only ext_resource (no uid).
+
+TargetMode: SINGLE_ENEMY=0, ALL_ENEMIES=1, SELF=2
+
+### AttackData template (inline damage effect, single enemy)
+
+```
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
+
+[sub_resource type="Resource" id="DamageEffect_main"]
+script = ExtResource("2_dmg_script")
+damage_expression = "strength * 0.5"
+
+[resource]
+script = ExtResource("1_script")
+attack_name = "ATTACK NAME"
+description = "DESCRIPTION"
+target_mode = 0
+effects = Array[Resource]([SubResource("DamageEffect_main")])
+```
+
+To use a standalone effect file instead, replace the script ext_resource + sub_resource with a single Resource ext_resource pointing to the .tres path, then use `ExtResource("id")` in the effects array.
+
+Multiple effects are supported — just add more entries to `effects = Array[Resource]([...])`.
+
+### AttackData with a status effect
+
+**Statuses cannot go directly in `effects` — they must be wrapped in a `StatusEffect` sub_resource.** A bare `StatusData` reference is silently skipped because `StatusData` does not extend `Effect`. Pattern (using existing poison as example; omit uid if the status has no known uid):
+
+```
+[ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://drp2lj1h0sptk" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
+[ext_resource type="Resource" uid="uid://b7kqmoyng5ydc" path="res://resources/effects/statuses/poison.tres" id="3_poison"]
+[ext_resource type="Script" uid="uid://csghuvkgsslk4" path="res://scripts/status_effect.gd" id="4_seff"]
+
+[sub_resource type="Resource" id="DamageEffect_main"]
+script = ExtResource("2_dmg_script")
+damage_expression = "strength * 0.5"
+
+[sub_resource type="Resource" id="StatusEffect_poison"]
+script = ExtResource("4_seff")
+status_data = ExtResource("3_poison")
+
+[resource]
+script = ExtResource("1_script")
+attack_name = "ATTACK NAME"
+description = "DESCRIPTION"
+target_mode = 0
+effects = Array[Resource]([SubResource("DamageEffect_main"), SubResource("StatusEffect_poison")])
+```
+
+Apply the same `StatusEffect` wrapping in `SpellData.effects` and `ConsumableData.effects` — any `effects: Array[Resource]` field on a use-action resource.
+
+## Creating a new status
+
+When a proc calls for a status that doesn't exist, write a `StatusData .tres` at `resources/effects/statuses/<snake_name>.tres` **before** the weapon file. Reference it with a path-only ext_resource (no uid).
+
+StatusData fields:
+- `tag` — StringName identifying the status; use `&"name"` syntax
+- `display_name` — shown in UI
+- `duration` — turns active; 0 = permanent
+- `prevents_action` — true for stun-like effects
+- `stat_modifiers` — `{ Stat_int: float }` passive modifier while active
+- `on_apply`, `on_tick`, `on_expire` — each an inline sub_resource (DamageEffect, HealEffect, or BuffEffect)
+- `stack_policy` — REFRESH=0 (reset duration), STACK=1 (multiple instances), MAX_DURATION=2 (keep longest)
+
+### Damage-on-tick (poison / bleed style)
+
+```
+[gd_resource type="Resource" script_class="StatusData" format=3]
+
+[ext_resource type="Script" uid="uid://b6e1sgjh81xns" path="res://scripts/status_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
+
+[sub_resource type="Resource" id="Tick_1"]
+script = ExtResource("2_dmg_script")
+damage_expression = "3"
+
+[resource]
+script = ExtResource("1_script")
+tag = &"burn"
+display_name = "Burn"
+duration = 4
+on_tick = SubResource("Tick_1")
+stack_policy = 0
+```
+
+### Heal-on-tick (regen style)
+
+Replace the damage script + sub_resource with:
+```
+[ext_resource type="Script" path="res://scripts/heal_effect.gd" id="2_heal_script"]
+
+[sub_resource type="Resource" id="Tick_1"]
+script = ExtResource("2_heal_script")
+heal_expression = "5"
+```
+
+### Prevents-action (stun style) — no tick script needed
+
+```
+[resource]
+script = ExtResource("1_script")
+tag = &"stun"
+display_name = "Stun"
+duration = 1
+prevents_action = true
+stack_policy = 0
+```
+
+### Passive stat debuff — no tick script needed
+
+```
+[resource]
+script = ExtResource("1_script")
+tag = &"weakened"
+display_name = "Weakened"
+duration = 3
+stat_modifiers = {
+0: -15.0
+}
+stack_policy = 0
+```
+
+### On-apply or on-expire burst
+
+Add the appropriate sub_resource and assign it to `on_apply` or `on_expire`:
+```
+[sub_resource type="Resource" id="Apply_1"]
+script = ExtResource("2_dmg_script")
+damage_expression = "8"
+
+[resource]
+...
+on_apply = SubResource("Apply_1")
+```
+
+Any combination of `on_apply`, `on_tick`, `on_expire` is valid — add sub_resources for each needed.
 
 ## Output format
 
@@ -185,9 +394,27 @@ proc_effects = Array[Resource]([SubResource("ProcDef_poison_on_hit")])
 
 For effects with no known uid (bleed, stun, regen), omit the uid attribute on their ext_resource line.
 
+### Self-affecting proc (e.g. Vorpal Blade self-damage)
+
+By default, `player_attack_hit` procs apply their effect to each enemy target. To apply to the **wielder** instead — e.g. a weapon that hurts you on every swing — set `apply_to_owner = true` on the ProcDef. The effect fires once per attack, not once per enemy:
+
+```
+[sub_resource type="Resource" id="ProcDef_self_damage"]
+script = ExtResource("9_procd")
+trigger = &"player_attack_hit"
+apply_to_owner = true
+effect = SubResource("DamageEffect_self")
+```
+
+When `apply_to_owner` is omitted (or `false`), the proc targets enemies as normal.
+
 ## Save path
 
-`resources/equipment/weapons/<snake_case_name>.tres`
-For mage/caster weapons: `resources/equipment/weapons/mage/<name>.tres`
+Write files in this order:
+1. New standalone effect .tres files (if any): `resources/effects/<snake_name>.tres`
+2. New status .tres files (if any): `resources/effects/statuses/<snake_name>.tres`
+3. New attack .tres files (if any): `resources/attacks/<snake_name>.tres`
+4. Weapon: `resources/equipment/weapons/<snake_case_name>.tres`
+   For mage/caster weapons: `resources/equipment/weapons/mage/<name>.tres`
 
-After writing the file, confirm the path and ask if the user wants to create another weapon or a different content type.
+After writing all files, confirm each path and ask if the user wants to create another weapon or a different content type.

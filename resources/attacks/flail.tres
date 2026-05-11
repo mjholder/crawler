@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://biyivwbw1eki7"]
+
+[ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://drp2lj1h0sptk" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
+[ext_resource type="Resource" uid="uid://bdusio5hdtmqd" path="res://resources/effects/statuses/minor_poison.tres" id="3_minor_poison"]
+[ext_resource type="Script" uid="uid://csghuvkgsslk4" path="res://scripts/status_effect.gd" id="4_seff"]
+
+[sub_resource type="Resource" id="DamageEffect_flail"]
+script = ExtResource("2_dmg_script")
+damage_expression = "agility * 0.6"
+
+[sub_resource type="Resource" id="StatusEffect_minor_poison"]
+script = ExtResource("4_seff")
+status_data = ExtResource("3_minor_poison")
+
+[resource]
+script = ExtResource("1_script")
+attack_name = "Flail"
+description = "A wild spin that strikes all enemies and disperses minor poison"
+target_mode = 1
+effects = Array[Resource]([SubResource("DamageEffect_flail"), SubResource("StatusEffect_minor_poison")])

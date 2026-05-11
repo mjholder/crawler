@@ -15,7 +15,7 @@ extends Control
 # Names match Enums.Slot definition order: WEAPON, HANDS, FEET, LEGS, TORSO, HEAD
 const _SLOT_CONTAINER_NAMES: Array[String] = [
 	"WeaponEquipment", "HandsEquipment", "FeetEquipment",
-	"LegsEquipment", "TorsoEquipment", "HeadEquipment"
+	"LegsEquipment", "TorsoEquipment", "HeadEquipment", "OffhandEquipment"
 ]
 const _RING_CONTAINER_NAMES: Array[String] = ["RingEquipment1", "RingEquipment2"]
 
@@ -305,7 +305,11 @@ func _show_detail(data: EquipmentData) -> void:
 		_hide_detail()
 		return
 	_detail_name_label.text = data.item_name
-	_detail_stats_label.text = _format_stat_modifiers(data.stat_modifiers)
+	var stats_text := _format_stat_modifiers(data.stat_modifiers)
+	if data.spell_cost_multiplier != 1.0:
+		var pct := int(round((1.0 - data.spell_cost_multiplier) * 100.0))
+		stats_text += "\n-%d%% Spell Cost" % pct
+	_detail_stats_label.text = stats_text
 	_detail_panel.show()
 
 

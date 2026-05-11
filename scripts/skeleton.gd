@@ -25,7 +25,7 @@ func _on_ready() -> void:
 
 
 func _perform_action() -> void:
-	super._perform_action()
+	_begin_attack()
 	_play_sfx(_attack_player)
 	_transition(State.ATTACKING)
 

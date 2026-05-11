@@ -5,11 +5,12 @@
 
 [resource]
 script = ExtResource("1_chest")
-item_name = "Plate Chest"
-description = "A full plate chest piece. Your best defense so far."
+item_name = "Leather Chest"
+description = "Supple leather armour. Less protection than plate, but won't slow you down."
 paper_doll_front = ExtResource("2_chest")
 stat_modifiers = {
-1: 10.0
+1: 5.0,
+3: 4.0
 }
 slot = 4
-price = 60
+price = 35

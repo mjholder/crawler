@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentData" format=3]
+
+[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+
+[resource]
+script = ExtResource("1_equip")
+item_name = "Mage Hood"
+description = "A pointed hood woven with minor enchantments. Clears the mind for casting."
+stat_modifiers = {
+4: 4.0
+}
+slot = 5
+price = 25
+spell_cost_multiplier = 0.95

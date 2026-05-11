@@ -162,7 +162,11 @@ func _show_detail(item: EquipmentData) -> void:
 	var price := _get_display_price(item)
 	_detail_name_label.text = item.item_name
 	_detail_price_label.text = "Price: %dg" % price
-	_detail_stats_label.text = _format_stat_modifiers(item.stat_modifiers)
+	var stats_text := _format_stat_modifiers(item.stat_modifiers)
+	if item.spell_cost_multiplier != 1.0:
+		var pct := int(round((1.0 - item.spell_cost_multiplier) * 100.0))
+		stats_text += "\n-%d%% Spell Cost" % pct
+	_detail_stats_label.text = stats_text
 	_detail_desc_label.text = item.description
 	_detail_panel.show()
 

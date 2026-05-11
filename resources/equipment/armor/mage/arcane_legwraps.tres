@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentData" format=3]
+
+[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+
+[resource]
+script = ExtResource("1_equip")
+item_name = "Arcane Legwraps"
+description = "Linen wraps stitched with spirit-enhancing runes."
+stat_modifiers = {
+4: 4.0
+}
+slot = 3
+price = 25
+spell_cost_multiplier = 0.95

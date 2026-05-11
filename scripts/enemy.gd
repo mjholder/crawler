@@ -51,7 +51,15 @@ func _is_turn_complete() -> bool:
 
 
 func _perform_action() -> void:
+	_begin_attack()
+	_emit_attack()
+
+
+func _begin_attack() -> void:
 	print("[ENEMY] %s attacks for %.0f damage" % [enemy_name, attack_damage])
+
+
+func _emit_attack() -> void:
 	attack.emit(attack_damage)
 
 
@@ -69,8 +77,12 @@ func take_damage(amount: float) -> void:
 		_die()
 
 
+const DEFENSE_SCALING: float = 100.0
+
 func _apply_defense(amount: float) -> float:
-	return maxf(amount - get_effective_stat(Enums.Stat.DEFENSE), 0.0)
+	var eff_def := get_effective_stat(Enums.Stat.DEFENSE)
+	var ratio := eff_def / (eff_def + DEFENSE_SCALING)
+	return maxf(amount * (1.0 - ratio), 0.0)
 
 
 func _get_base_stat(stat: Enums.Stat) -> float:

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentData" format=3]
+
+[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+
+[resource]
+script = ExtResource("1_equip")
+item_name = "Arcane Boots"
+description = "Lightweight enchanted footwear. Keeps you light on your feet."
+stat_modifiers = {
+4: 3.0,
+3: 2.0
+}
+slot = 2
+price = 22

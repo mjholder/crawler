@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StatusData" format=3 uid="uid://dq6353nqs8qf6"]
+
+[ext_resource type="Script" uid="uid://b6e1sgjh81xns" path="res://scripts/status_data.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://drp2lj1h0sptk" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
+
+[sub_resource type="Resource" id="Tick_1"]
+script = ExtResource("2_dmg_script")
+damage_expression = "10"
+
+[resource]
+script = ExtResource("1_script")
+tag = &"strong_poison"
+display_name = "Strong Poison"
+on_tick = SubResource("Tick_1")

@@ -21,6 +21,7 @@
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
 [ext_resource type="Resource" path="res://resources/classes/mage.tres" id="20_suyxu"]
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
+[ext_resource type="Resource" path="res://resources/classes/assassin.tres" id="21_sgl2t"]
 [ext_resource type="PackedScene" uid="uid://c6yng6pikfy1w" path="res://scenes/item_button.tscn" id="21_sww3w"]
 [ext_resource type="Resource" uid="uid://gd05xm21dlnr" path="res://resources/classes/warrior.tres" id="22_warrior"]
 [ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]
@@ -414,7 +415,7 @@ offset_right = 1254.0
 offset_bottom = 936.0
 mouse_filter = 2
 script = ExtResource("19_264po")
-available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior"), ExtResource("20_suyxu")])
+available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior"), ExtResource("20_suyxu"), ExtResource("21_sgl2t")])
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/CharacterCreationPanel" unique_id=490170422]
 layout_mode = 1
@@ -853,6 +854,26 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/WeaponEquipment" unique_id=44219131]
+layout_mode = 2
+text = "Leather Helmet"
+
+[node name="OffhandEquipment" type="HBoxContainer" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots" unique_id=205879635]
+custom_minimum_size = Vector2(380, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SlotLabel" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/OffhandEquipment" unique_id=890092366]
+custom_minimum_size = Vector2(240, 0)
+layout_mode = 2
+text = "WEAPON"
+
+[node name="Label" type="Label" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/OffhandEquipment" unique_id=632149252]
+layout_mode = 2
+text = "-"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EquipmentButton" type="Button" parent="GUI/InventoryPanel/HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots/OffhandEquipment" unique_id=617355608]
 layout_mode = 2
 text = "Leather Helmet"
 

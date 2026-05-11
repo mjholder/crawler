@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentData" format=3]
+
+[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+
+[resource]
+script = ExtResource("1_equip")
+item_name = "Leather Boots"
+description = "Soft-soled leather boots. You move faster with these on."
+stat_modifiers = {
+1: 2.0,
+3: 5.0
+}
+slot = 2
+price = 25
