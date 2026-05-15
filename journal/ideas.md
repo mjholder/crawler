@@ -16,6 +16,64 @@ No commitment implied — this is a thinking space.
 
 <!-- Add ideas below, newest first -->
 
+**Idea:** Combat Feel & Pacing
+**Added:** 2026-05-15
+**Notes:**
+A single combat encounter should last 5–8 player turns. Encounters are designed to be taxing but winnable — the real difficulty is attrition across a full dungeon, not any single fight. Early dungeons are forgiving warm-ups where misplay is required to be in real danger. Later dungeons force the player to weigh fighting vs resting.
+
+Death should feel like education, not punishment. The player should leave a failed run understanding what they didn't know — a new enemy mechanic, an interaction they hadn't seen — and feel like they can prepare better next time. Enemies have consistent, learnable patterns. Visible states (wind-up animations, status icons) telegraph intent without explicitly showing next-turn damage like Slay the Spire. The player learns what those states mean through experience.
+
+Health is a primary resource, not a buffer. Healing is scarce and deliberate. The tension across a dungeon is "do I have enough left for what comes next," not just "can I win this fight."
+
+Each combat turn should require meaningful decisions informed by enemy state. Weapons and spells have intent. Smart play means responding to what the enemy is setting up — bracing before a big hit, swinging when the enemy is in setup, targeting priority threats.
+
+Enemy HP and active buffs/debuffs are visible. Hidden information is not part of the tension — readable enemies that surprise through new mechanics is.
+
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Run Structure & Act Progression
+**Added:** 2026-05-15
+**Notes:**
+A full run targets 1–1.5 hours. Runs should feel meaningfully different — class unlocks, boons, spells, and loot variety ensure that even the same starting loadout doesn't produce the same run twice.
+
+The emotional arc follows three acts:
+
+**Act 1 — Survival.** The player enters with a vague plan seeded by their class and starting boon. Gear is generalist: raw DEF, HP, basic damage. The player is asking "can I stay alive" not "what am I building." Enemy patterns are simple and teachable. The boon is the only real build signal.
+
+**Act 2 — Identity.** The player finds one or two pieces specific to a build direction and starts making cuts — dropping generalist gear for things that fit. Gear has a type: a weapon that combos with a spell, armor that rewards a playstyle. Higher tier gear has passive or active features that multiply power. Enemy complexity ramps here. Synergies start clicking, the game opens up, and smart decisions need to align with the emerging build.
+
+**Act 3 — Expression.** The player knows what they're building. Gear has multiple interacting properties. Play is about fine-tuning and pruning — knowing when *not* to equip something even if raw stats are better. Enemy design can be more exotic because the player has real tools to respond creatively. Smart play matters most here.
+
+Each act is balanced independently against what the player *should* have at that stage. Act 1 enemies are tuned against a generalist loadout. Act 3 enemies assume real synergies exist.
+
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Defense & Dodge Formula
+**Added:** 2026-05-15
+**Notes:**
+Flat defense subtraction (the current first pass) breaks at the extremes — high defense nullifies weak enemies entirely. Roguelikes need legible rules the player can reason about, so fancy scaling formulas are out.
+
+Settled direction: flat percentage damage reduction for DEF, flat percentage dodge chance for AGI. Both are immediately readable. "This armor reduces all incoming damage by 20%" and "my AGI gives me a 15% dodge chance" are numbers a player can act on.
+
+Base stats should remain relatively flat across a run. Power growth comes from gear and boon tiers, not raw stat inflation. Act 1 gear provides general survivability. Act 2 gear introduces multipliers. Act 3 gear has multiple interacting properties. The formula stays constant — the gear tier is what changes.
+
+Armor tiers map to a tradeoff triangle with no hard equip requirements (class-aligned loot pools handle access instead):
+- Heavy armor — high DEF%, AGI penalty, high spell cost multiplier
+- Leather armor — moderate DEF%, neutral AGI, neutral spell cost
+- Robes — low DEF%, low spell cost multiplier or SPI bonus
+
+Spell cost multiplier is a float field on EquipmentData (1.0 = neutral, heavy armor ~1.5, robes ~0.8), applied multiplicatively across equipped pieces at cast time.
+
+Overpowered builds are acceptable as rare RNG-dependent edge cases, not the intended path. The standard path is struggling but succeeding.
+
+**Status:** `worth exploring`
+
+---
+
 **Idea:** Combat Balance — Defense, Dodge, and Armor Tiers
 **Added:** 2026-05-07
 **Notes:**
