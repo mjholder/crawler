@@ -77,12 +77,9 @@ func take_damage(amount: float) -> void:
 		_die()
 
 
-const DEFENSE_SCALING: float = 100.0
-
 func _apply_defense(amount: float) -> float:
 	var eff_def := get_effective_stat(Enums.Stat.DEFENSE)
-	var ratio := eff_def / (eff_def + DEFENSE_SCALING)
-	return maxf(amount * (1.0 - ratio), 0.0)
+	return maxf(amount * (1.0 - minf(eff_def / 100.0, 1.0)), 0.0)
 
 
 func _get_base_stat(stat: Enums.Stat) -> float:

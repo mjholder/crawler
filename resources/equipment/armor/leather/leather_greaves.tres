@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://citkhcka3m0bj"]
 
-[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Texture2D" uid="uid://df41j212x65my" path="res://assets/sprites/paper_doll/legs_leather.png" id="1_xwwd8"]
 
 [resource]
 script = ExtResource("1_equip")
 item_name = "Leather Leggings"
 description = "Reinforced leather leggings. Balanced protection without the weight."
+paper_doll_front = ExtResource("1_xwwd8")
 stat_modifiers = {
 1: 3.0,
 3: 4.0

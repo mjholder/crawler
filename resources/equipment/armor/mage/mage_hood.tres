@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://b3jd13bdck6kk"]
 
-[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Texture2D" uid="uid://c0juqc7wtyfhd" path="res://assets/sprites/paper_doll/helmet_wizard.png" id="1_5yc7q"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_equip"]
 
 [resource]
 script = ExtResource("1_equip")
 item_name = "Mage Hood"
 description = "A pointed hood woven with minor enchantments. Clears the mind for casting."
+paper_doll_front = ExtResource("1_5yc7q")
 stat_modifiers = {
 4: 4.0
 }

@@ -1,14 +1,16 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://ciqwgeumfq63h"]
 
-[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Texture2D" uid="uid://djm0pn5juwtft" path="res://assets/sprites/paper_doll/boots_wizard.png" id="1_eycmg"]
 
 [resource]
 script = ExtResource("1_equip")
 item_name = "Arcane Boots"
 description = "Lightweight enchanted footwear. Keeps you light on your feet."
+paper_doll_front = ExtResource("1_eycmg")
 stat_modifiers = {
-4: 3.0,
-3: 2.0
+3: 2.0,
+4: 3.0
 }
 slot = 2
 price = 22

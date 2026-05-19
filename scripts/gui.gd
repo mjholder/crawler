@@ -4,8 +4,6 @@ extends CanvasLayer
 # --- Signals ---
 signal character_created(player_name: String, class_data: PlayerClassData)
 signal level_up_complete
-signal start_dialogue_requested
-signal start_skill_check_requested
 signal quit_to_main_requested
 signal attack_requested(attack_name: String)
 signal dialogue_complete(terminal_node_id: String)
@@ -65,8 +63,6 @@ const _BTN_GAP := 5
 func _ready() -> void:
 	$MainMenu/StartButton.pressed.connect(_on_start_button_pressed)
 	$MainMenu/ContinueButton.pressed.connect(_on_continue_button_pressed)
-	$MainMenu/StartDialogueButton.pressed.connect(_on_start_dialogue_button_pressed)
-	$MainMenu/StartSkillCheckButton.pressed.connect(_on_start_skill_check_button_pressed)
 	$MainMenu/QuitButton.pressed.connect(_on_quit_button_pressed)
 	$NewRunConfirmDialog.confirmed.connect(_on_new_run_confirmed)
 	$PauseMenu/ResumeButton.pressed.connect(handle_esc)
@@ -563,14 +559,6 @@ func _on_continue_button_pressed() -> void:
 func _on_new_run_confirmed() -> void:
 	SaveManager.clear()
 	show_character_creation()
-
-
-func _on_start_dialogue_button_pressed() -> void:
-	start_dialogue_requested.emit()
-
-
-func _on_start_skill_check_button_pressed() -> void:
-	start_skill_check_requested.emit()
 
 
 func _on_quit_to_main_button_pressed() -> void:

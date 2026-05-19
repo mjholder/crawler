@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://c7thkrp6j5u1w"]
 
-[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Texture2D" uid="uid://ciqs17v567225" path="res://assets/sprites/paper_doll/helmet_leather.png" id="1_3gh78"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_equip"]
 
 [resource]
 script = ExtResource("1_equip")
 item_name = "Leather Hood"
 description = "A fitted leather hood. Light enough to keep your head clear."
+paper_doll_front = ExtResource("1_3gh78")
 stat_modifiers = {
 1: 2.0,
 3: 3.0

@@ -127,22 +127,6 @@ offset_bottom = 410.0
 disabled = true
 text = "Continue"
 
-[node name="StartDialogueButton" type="Button" parent="GUI/MainMenu" unique_id=100000010]
-layout_mode = 1
-offset_left = 100.0
-offset_top = 430.0
-offset_right = 300.0
-offset_bottom = 480.0
-text = "Test Dialogue"
-
-[node name="StartSkillCheckButton" type="Button" parent="GUI/MainMenu" unique_id=200000012]
-layout_mode = 1
-offset_left = 100.0
-offset_top = 500.0
-offset_right = 300.0
-offset_bottom = 550.0
-text = "Test Skill Check"
-
 [node name="QuitButton" type="Button" parent="GUI/MainMenu" unique_id=100000004]
 layout_mode = 1
 offset_left = 100.0

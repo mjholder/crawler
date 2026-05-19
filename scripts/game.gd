@@ -1,17 +1,6 @@
 class_name Game
 extends Node2D
 
-# --- Debug ---
-
-@export var debug_start_combat: bool = false
-@export var debug_combat_event: PackedScene
-@export var debug_enemy_scene: PackedScene
-@export var debug_enemy_count: int = 1
-@export var debug_weapon_scene: PackedScene
-@export var debug_dialogue_json: String = ""
-@export var debug_dialogue_scene: PackedScene
-@export var debug_skill_check_scene: PackedScene
-
 # --- Screen Transform ---
 var screen_size: Vector2
 var screen_center: Vector2
@@ -95,8 +84,6 @@ func _ready() -> void:
 	_gui.character_created.connect(_on_character_created)
 	_gui.continue_requested.connect(_on_continue_requested)
 	_gui.level_up_complete.connect(_on_level_up_complete)
-	_gui.start_dialogue_requested.connect(start_dialogue_game)
-	_gui.start_skill_check_requested.connect(start_skill_check_game)
 	_gui.quit_to_main_requested.connect(quit_to_main)
 	_gui.attack_requested.connect(_on_action_requested)
 	_gui.consumable_use_requested.connect(_on_consumable_use_requested)
@@ -306,26 +293,6 @@ func _cycle_target(direction: int) -> void:
 
 
 # --- GUI Callbacks ---
-
-func start_dialogue_game() -> void:
-	if debug_dialogue_scene == null:
-		return
-	game_started = true
-	game_state = Enums.GameState.DUNGEON
-	_gui.start_game()
-	var event_instance := debug_dialogue_scene.instantiate() as DialogueEvent
-	_enter_event(event_instance)
-
-
-func start_skill_check_game() -> void:
-	if debug_skill_check_scene == null:
-		return
-	game_started = true
-	game_state = Enums.GameState.DUNGEON
-	_gui.start_game()
-	var event_instance := debug_skill_check_scene.instantiate() as SkillCheckEvent
-	_enter_event(event_instance)
-
 
 func _reset_run_state() -> void:
 	if current_event != null:

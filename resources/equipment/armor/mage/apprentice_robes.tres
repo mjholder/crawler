@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://dultt80rujosr"]
 
-[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Texture2D" uid="uid://di55ttkne65ev" path="res://assets/sprites/paper_doll/chest_wizard.png" id="1_m3k57"]
 
 [resource]
 script = ExtResource("1_equip")
 item_name = "Apprentice Robes"
 description = "Light cloth robes favoured by spellcasters. Reduces spell costs."
+paper_doll_front = ExtResource("1_m3k57")
 stat_modifiers = {
 4: 5.0
 }

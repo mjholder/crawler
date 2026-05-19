@@ -70,7 +70,7 @@ Spell cost multiplier is a float field on EquipmentData (1.0 = neutral, heavy ar
 
 Overpowered builds are acceptable as rare RNG-dependent edge cases, not the intended path. The standard path is struggling but succeeding.
 
-**Status:** `worth exploring`
+**Status:** `moved to plan`
 
 ---
 
@@ -94,7 +94,7 @@ Reworking the first-pass flat defense subtraction which nullifies weak enemies e
 
 **UI** — inventory detail panel diffs the candidate item's `stat_modifiers` against the currently equipped item and displays deltas in green/red. Active stat effects (from gear and buffs) are displayed in a dedicated active effects panel so the player can see what's contributing and from where.
 
-**Status:** `worth exploring`
+**Status:** `shelved`
 
 ---
 

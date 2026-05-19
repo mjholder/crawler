@@ -1,11 +1,13 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://l7pu2t5mxqu3"]
 
-[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Texture2D" uid="uid://b62r3pv4nkw42" path="res://assets/sprites/paper_doll/boots_leather.png" id="1_vy2i6"]
 
 [resource]
 script = ExtResource("1_equip")
 item_name = "Leather Boots"
 description = "Soft-soled leather boots. You move faster with these on."
+paper_doll_front = ExtResource("1_vy2i6")
 stat_modifiers = {
 1: 2.0,
 3: 5.0

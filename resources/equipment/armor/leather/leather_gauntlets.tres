@@ -1,11 +1,15 @@
-[gd_resource type="Resource" script_class="EquipmentData" format=3]
+[gd_resource type="Resource" script_class="EquipmentData" format=3 uid="uid://bsrd6s02dbc6a"]
 
-[ext_resource type="Script" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Texture2D" uid="uid://chyg23cnbiyub" path="res://assets/sprites/paper_doll/arms_right_leather.png" id="1_7x0ix"]
+[ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="1_equip"]
+[ext_resource type="Texture2D" uid="uid://b22em0upe8jdv" path="res://assets/sprites/paper_doll/arms_left_leather.png" id="2_v5ppe"]
 
 [resource]
 script = ExtResource("1_equip")
 item_name = "Leather Gloves"
 description = "Thin leather gloves. Don't impede your draw speed."
+paper_doll_front = ExtResource("2_v5ppe")
+paper_doll_back = ExtResource("1_7x0ix")
 stat_modifiers = {
 1: 2.0,
 3: 4.0

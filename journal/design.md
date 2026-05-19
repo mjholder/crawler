@@ -19,6 +19,28 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Flat-percentage defense and dodge formulas
+
+**Date:** 2026-05-19
+**Daily:** [[daily/2026-05-19]]
+
+**Decision:** `DEF` and `AGI` are both direct percentages. `DEF = 50` means 50% damage resistance. `AGI = 15` means 15% dodge chance. No scaling constants.
+
+```
+_apply_defense: damage * (1.0 - clamp(DEF / 100.0, 0, 1))  — floor 1 (player), 0 (enemy)
+_roll_dodge:    randf() < clamp(AGI / 100.0, 0, 1)
+```
+
+**Context:** The prior formula (`DEF / (DEF + 100)`) was a diminishing-returns curve — not legible without a graph. Players couldn't reason about what their DEF stat actually meant. The dodge formula used a separate `DODGE_AGI_FACTOR` constant for the same reason. See [[ideas.md]] — "Defense & Dodge Formula" (2026-05-15).
+
+**Alternatives considered:** Diminishing-returns formula (`DEF / (DEF + SCALING)`) — already implemented and shelved. Offers a natural soft-cap without explicit clamping, but the relationship between stat and outcome is opaque.
+
+**Rationale:** The player should be able to look at their stat sheet and immediately know their effective protection: "50 DEF, I take half damage. 15 AGI, I dodge 15% of attacks." The formula stays constant across the run — tier progression is expressed through gear values, not formula complexity.
+
+**Trade-offs / risks:** Linear scaling means high-DEF builds can reach immunity at DEF 100. Gear values calibrated for the old formula will need retuning — default 50 DEF is now 50% resistance vs ~33% under the old formula.
+
+---
+
 ## Run-state reset pattern
 
 **Date:** 2026-05-08

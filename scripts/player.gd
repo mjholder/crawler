@@ -38,10 +38,6 @@ signal dodged
 ## max_mana = (effective_SPI * mana_modifier) + class_mana_bonus
 @export var mana_modifier: float = 2.0
 
-# --- Combat Tuning ---
-const DEFENSE_SCALING: float = 100.0
-const DODGE_AGI_FACTOR: float = 0.003
-const DODGE_CAP: float = 0.40
 
 # --- XP Tuning ---
 @export var xp_base: float = 100.0
@@ -386,14 +382,12 @@ func _die() -> void:
 
 func _roll_dodge() -> bool:
 	var eff_agi := get_effective_stat(Enums.Stat.AGILITY)
-	var chance := minf(eff_agi * DODGE_AGI_FACTOR, DODGE_CAP)
-	return randf() < chance
+	return randf() < minf(eff_agi / 100.0, 1.0)
 
 
 func _apply_defense(amount: float) -> float:
 	var eff_def := get_effective_stat(Enums.Stat.DEFENSE)
-	var ratio := eff_def / (eff_def + DEFENSE_SCALING)
-	return maxf(amount * (1.0 - ratio), 1.0)
+	return maxf(amount * (1.0 - minf(eff_def / 100.0, 1.0)), 1.0)
 
 
 # --- Equipment ---
