@@ -14,6 +14,53 @@ No commitment implied — this is a thinking space.
 
 ---
 
+**Idea**: External content authoring tool
+**Added**: 2026-05-20
+**Notes**:
+A standalone app for authoring game content as concepts rather than files. The motivating pain isn't any one resource being hard to edit — it's that a single conceptual unit (a weapon, a class, a dialogue tree) is spread across multiple .tres and .json files with no view of the relationships and no validation until runtime.
+Why now: The game's balance is currently rough and needs real iteration — change a number, playtest, change another. Each iteration cycle is gated by multi-file editing through Godot's inspector, and the friction is high enough that balance work isn't happening. The tool's primary job, framed honestly, is unblocking design iteration on a game that's too barebones to evaluate without faster content authoring.
+Long-term vision: If the game ever ships and finds players, this tool is the natural seed of a modding interface — players use the same forms and tables to author their own weapons, classes, dialogue. That vision shapes architecture but not v1 scope. Concretely it means: schema exported from Godot rather than hardcoded, output is plain text in known locations, no assumptions about project layout beyond Godot's. Get those right in v1 and the path to a mod tool is mostly packaging and polish later.
+Pain points:
+
+Adding a weapon requires editing the weapon .tres, creating its attack .tres, creating damage effect resource(s), then dragging it into shops and class starting kits — 3 to 7 file touches with no checklist
+Enum dictionary keys render as integers in the inspector ({ 0: 10.0, 2: 2.0 }), making stat modifiers and growth rates unreadable a week after authoring
+No visibility into "where is this resource used?" — drag-and-drop wiring across classes, shops, etc. is hunt-and-peck
+Dialogue trees as JSON are hostile to the format despite schema validation; they're graphs, not nested objects
+Authoring a new class end-to-end (stats + starting weapon + full armor set + consumables + growth rates) is a multi-screen slog in the inspector
+No way to view content comparatively — balancing weapons by opening them one at a time is fundamentally the wrong shape for the task
+
+Design direction:
+
+Concept-oriented, not file-oriented. Editing a weapon opens its attacks and effects in the same view; saving offers to wire it into shops and classes
+Schema source of truth lives in Godot. A one-off editor script introspects EquipmentData, WeaponData, PlayerClassData, etc. and exports JSON schemas. The external tool reads these — schema drift avoided automatically when game scripts change. Also the foundation for moddability later
+Direct repo writes, no staging. Trade safety for ergonomics; version control is the safety net
+Round-trip safe. Tool reads and writes Godot's .tres text format preserving UID references and not producing noisy git diffs
+Relational view. "This weapon is used in: warrior.tres, debug_shop.tres" — clickable, navigable
+Table views. Spreadsheet-style grid for every content type. This is where balance work actually happens — the inspector cannot do this and it's the single most underrated feature for the motivating use case
+Linter. Validation pass catching what Godot only catches at runtime: damage expressions referencing undefined stat variables, dangling references, enum values out of range
+
+Platform choice:
+
+v1: localhost web app. Vite + React + a small Node sidecar for file I/O. Iteration speed is highest, ecosystem is mature, no packaging tax while the tool is single-user. "Standalone" in the sense that matters (no deployed service, no accounts, no network calls) is preserved
+v∞: Tauri wrap when modding is a real concern. Same frontend code, packaged into a double-clickable app. Decided to defer until the game has actual prospective modders — premature packaging is the trap
+
+Scope phasing:
+
+v1: Forms + tables for weapons, armor, attacks, effects, classes, shops. Solves the balance-iteration problem
+v2: Dialogue tree graph editor. Real node graph UI. Substantially harder, separate scoping after v1 proves the workflow
+Linter alongside v1 incrementally — start with the obvious checks (missing references, unknown stat names in expressions) and grow
+Modding wrap only after the game is in a state where modders are a realistic audience
+
+Risks:
+
+The classic trap: tool-building feels like progress and can outlast its usefulness. Mitigation: define done for v1 as "I have iterated on weapon balance for at least one playtest session using the tool." If the tool isn't unblocking actual design work, stop building it
+Designing v1 for v3. The modding vision is seductive and could derail scope. Treat it as architectural guidance only — three concrete decisions (schema export, plain text output, no layout assumptions) — not as v1 features
+.tres serialization edge cases (typed arrays, sub-resources, UID resolution) need a spike early. Weekend prototype: schema export + write one weapon .tres + verify Godot loads it cleanly
+
+**Status**: worth exploring
+
+---
+
 <!-- Add ideas below, newest first -->
 
 **Idea:** Combat Feel & Pacing
