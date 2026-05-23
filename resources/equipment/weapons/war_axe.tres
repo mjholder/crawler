@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/weapon.tscn" id="1_46d1c"]
+[ext_resource type="Script" path="res://scripts/weapon_data.gd" id="1_gjs71"]
+
+[resource]
+script = ExtResource("1_gjs71")
+item_name = "war_axe"
+description = "ware "
+stat_modifiers = {
+0: 20.0
+}
+scene = ExtResource("1_46d1c")
+price = 100

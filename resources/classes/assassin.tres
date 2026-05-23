@@ -1,15 +1,16 @@
-[gd_resource type="Resource" script_class="PlayerClassData" format=3]
+[gd_resource type="Resource" script_class="PlayerClassData" format=3 uid="uid://d0qsuhxi8ws57"]
 
 [ext_resource type="Script" path="res://scripts/player_class_data.gd" id="1_pcd"]
 [ext_resource type="Script" uid="uid://bfd1xsly2100j" path="res://scripts/equipment_data.gd" id="2_equip_script"]
+[ext_resource type="Script" uid="uid://jvfhxoq8sxt2" path="res://scripts/blessing_data.gd" id="3_alvjl"]
 [ext_resource type="Script" uid="uid://3eu536m6ee4v" path="res://scripts/consumable_data.gd" id="3_cons_script"]
-[ext_resource type="Resource" path="res://resources/equipment/weapons/vorpal_blade.tres" id="4_weapon"]
-[ext_resource type="Resource" uid="uid://bkpd01kvgbm05" path="res://resources/equipment/armor/leather_chest.tres" id="5_chest"]
+[ext_resource type="Resource" uid="uid://0okmhhlg4ecq" path="res://resources/equipment/weapons/vorpal_blade.tres" id="4_weapon"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather_chest.tres" id="5_chest"]
 [ext_resource type="Resource" path="res://resources/equipment/consumables/minor_healing_potion.tres" id="6_potion"]
-[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_helm.tres" id="7_helm"]
-[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_gauntlets.tres" id="8_gauntlets"]
-[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_greaves.tres" id="9_greaves"]
-[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_sabatons.tres" id="10_sabatons"]
+[ext_resource type="Resource" uid="uid://c7thkrp6j5u1w" path="res://resources/equipment/armor/leather/leather_helm.tres" id="7_helm"]
+[ext_resource type="Resource" uid="uid://bsrd6s02dbc6a" path="res://resources/equipment/armor/leather/leather_gauntlets.tres" id="8_gauntlets"]
+[ext_resource type="Resource" uid="uid://citkhcka3m0bj" path="res://resources/equipment/armor/leather/leather_greaves.tres" id="9_greaves"]
+[ext_resource type="Resource" uid="uid://l7pu2t5mxqu3" path="res://resources/equipment/armor/leather/leather_sabatons.tres" id="10_sabatons"]
 
 [resource]
 script = ExtResource("1_pcd")
@@ -34,5 +35,4 @@ starting_equipped = {
 4: ExtResource("5_chest"),
 5: ExtResource("7_helm")
 }
-starting_rings = Array[ExtResource("2_equip_script")]([])
 starting_consumables = Array[ExtResource("3_cons_script")]([ExtResource("6_potion"), ExtResource("6_potion")])

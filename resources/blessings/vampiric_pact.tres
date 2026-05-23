@@ -1,14 +1,10 @@
 [gd_resource type="Resource" script_class="BlessingData" format=3]
 
 [ext_resource type="Script" uid="uid://jvfhxoq8sxt2" path="res://scripts/blessing_data.gd" id="1_bdata"]
-[ext_resource type="Script" uid="uid://bt5lde7yv85qi" path="res://scripts/heal_effect.gd" id="2_heal"]
-
-[sub_resource type="Resource" id="HealEffect_kill"]
-script = ExtResource("2_heal")
-heal_expression = "15"
+[ext_resource type="Resource" path="res://resources/effects/heal_15_flat.tres" id="2_heal15"]
 
 [resource]
 script = ExtResource("1_bdata")
 display_name = "Vampiric Pact"
 description = "Each kill restores a measure of life. Heals 15 HP whenever an enemy dies."
-subscriptions = {&"enemy_died": SubResource("HealEffect_kill")}
+subscriptions = {&"enemy_died": ExtResource("2_heal15")}

@@ -10,18 +10,13 @@
 [ext_resource type="Resource" path="res://resources/attacks/cleave.tres" id="7_cleave"]
 [ext_resource type="Texture2D" uid="uid://bj083b7w7egw7" path="res://assets/sprites/weapons/battle_axe/icon.png" id="8_pdf"]
 [ext_resource type="Script" uid="uid://bhd611piw5n14" path="res://scripts/proc_def.gd" id="9_procd"]
-[ext_resource type="Script" uid="uid://csghuvkgsslk4" path="res://scripts/status_effect.gd" id="10_seff"]
-[ext_resource type="Resource" uid="uid://b7kqmoyng5ydc" path="res://resources/effects/statuses/poison.tres" id="11_poi"]
-
-[sub_resource type="Resource" id="StatusEffect_poison"]
-script = ExtResource("10_seff")
-status_data = ExtResource("11_poi")
+[ext_resource type="Resource" path="res://resources/effects/apply_poison.tres" id="10_apply_poison"]
 
 [sub_resource type="Resource" id="ProcDef_poison_on_hit"]
 script = ExtResource("9_procd")
 trigger = &"player_attack_hit"
 chance_expression = "0.25"
-effect = SubResource("StatusEffect_poison")
+effect = ExtResource("10_apply_poison")
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4y2or"]
 atlas = ExtResource("2_ra6pu")

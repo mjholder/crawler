@@ -1,20 +1,11 @@
 [gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://drnd2r6dmmtwr"]
 
 [ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
-[ext_resource type="Script" uid="uid://drp2lj1h0sptk" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
-[ext_resource type="Resource" uid="uid://b7kqmoyng5ydc" path="res://resources/effects/statuses/poison.tres" id="3_poison"]
-[ext_resource type="Script" uid="uid://csghuvkgsslk4" path="res://scripts/status_effect.gd" id="4_seff"]
-
-[sub_resource type="Resource" id="DamageEffect_stab"]
-script = ExtResource("2_dmg_script")
-damage_expression = "strength * 0.6"
-
-[sub_resource type="Resource" id="StatusEffect_poison"]
-script = ExtResource("4_seff")
-status_data = ExtResource("3_poison")
+[ext_resource type="Resource" path="res://resources/effects/stab_damage.tres" id="2_stab_dmg"]
+[ext_resource type="Resource" path="res://resources/effects/apply_poison.tres" id="3_apply_poison"]
 
 [resource]
 script = ExtResource("1_script")
 attack_name = "Stab"
 description = "A precise thrust that poisons the target"
-effects = Array[Resource]([SubResource("DamageEffect_stab"), SubResource("StatusEffect_poison")])
+effects = Array[Resource]([ExtResource("2_stab_dmg"), ExtResource("3_apply_poison")])

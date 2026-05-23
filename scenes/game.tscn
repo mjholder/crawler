@@ -1,14 +1,9 @@
 [gd_scene format=3 uid="uid://nuxeodotj3dc"]
 
 [ext_resource type="Script" uid="uid://drgdsu6ayfhxl" path="res://scripts/game.gd" id="1_uwrxv"]
-[ext_resource type="PackedScene" uid="uid://bltmvkwkf82bn" path="res://scenes/combat_event.tscn" id="2_iywne"]
 [ext_resource type="Texture2D" uid="uid://dwf078w6efs4m" path="res://assets/sprites/ui/background.jpg" id="2_yqjtg"]
-[ext_resource type="PackedScene" uid="uid://brbnfv00v65s2" path="res://scenes/skeleton.tscn" id="3_p57ef"]
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
-[ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="4_vtaks"]
 [ext_resource type="Script" uid="uid://5dudvo0rnvqu" path="res://scripts/dialogue_consequences.gd" id="5_dinhu"]
-[ext_resource type="PackedScene" uid="uid://nqeiejuuf4s4" path="res://scenes/dialogue_event.tscn" id="5_kvuet"]
-[ext_resource type="PackedScene" uid="uid://skchkevent01" path="res://scenes/skill_check_event.tscn" id="6_ir15t"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
 [ext_resource type="Script" uid="uid://kw77gbksi4x4" path="res://scripts/gui.gd" id="8_gui"]
 [ext_resource type="PackedScene" uid="uid://ciyvvtls2c4cd" path="res://scenes/health_bar.tscn" id="9_hbar"]
@@ -40,14 +35,6 @@ bg_color = Color(0.011764706, 0.011764706, 0.011764706, 0.43137255)
 
 [node name="Game" type="Node2D" unique_id=579372869]
 script = ExtResource("1_uwrxv")
-debug_start_combat = true
-debug_combat_event = ExtResource("2_iywne")
-debug_enemy_scene = ExtResource("3_p57ef")
-debug_enemy_count = 3
-debug_weapon_scene = ExtResource("4_vtaks")
-debug_dialogue_json = "res://resources/dialogue/test_dialogue.json"
-debug_dialogue_scene = ExtResource("5_kvuet")
-debug_skill_check_scene = ExtResource("6_ir15t")
 
 [node name="DialogueCondsequences" type="Node" parent="." unique_id=1082987239]
 script = ExtResource("5_dinhu")

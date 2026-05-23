@@ -10,17 +10,13 @@
 [ext_resource type="Resource" uid="uid://beqcg18655hs7" path="res://resources/attacks/assassinate.tres" id="8_assassinate"]
 [ext_resource type="Resource" uid="uid://biyivwbw1eki7" path="res://resources/attacks/flail.tres" id="9_flail"]
 [ext_resource type="Script" uid="uid://bhd611piw5n14" path="res://scripts/proc_def.gd" id="10_procd"]
-[ext_resource type="Script" uid="uid://drp2lj1h0sptk" path="res://scripts/damage_effect.gd" id="11_dmg_script"]
-
-[sub_resource type="Resource" id="DamageEffect_self"]
-script = ExtResource("11_dmg_script")
-damage_expression = "max(5, 25 - agility * 0.4)"
+[ext_resource type="Resource" path="res://resources/effects/vorpal_self_damage.tres" id="11_self_dmg"]
 
 [sub_resource type="Resource" id="ProcDef_self_damage"]
 script = ExtResource("10_procd")
 trigger = &"player_attack_hit"
 apply_to_owner = true
-effect = SubResource("DamageEffect_self")
+effect = ExtResource("11_self_dmg")
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_windup"]
 atlas = ExtResource("2_windup")

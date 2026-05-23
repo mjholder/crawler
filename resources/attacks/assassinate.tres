@@ -1,20 +1,11 @@
 [gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://beqcg18655hs7"]
 
 [ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
-[ext_resource type="Script" uid="uid://drp2lj1h0sptk" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
-[ext_resource type="Resource" uid="uid://dq6353nqs8qf6" path="res://resources/effects/statuses/strong_poison.tres" id="3_strong_poison"]
-[ext_resource type="Script" uid="uid://csghuvkgsslk4" path="res://scripts/status_effect.gd" id="4_seff"]
-
-[sub_resource type="Resource" id="DamageEffect_assassinate"]
-script = ExtResource("2_dmg_script")
-damage_expression = "strength * 0.25"
-
-[sub_resource type="Resource" id="StatusEffect_strong_poison"]
-script = ExtResource("4_seff")
-status_data = ExtResource("3_strong_poison")
+[ext_resource type="Resource" path="res://resources/effects/assassinate_damage.tres" id="2_dmg"]
+[ext_resource type="Resource" path="res://resources/effects/apply_strong_poison.tres" id="3_apply_strong_poison"]
 
 [resource]
 script = ExtResource("1_script")
 attack_name = "Assassinate"
 description = "A low-damage strike that saturates the target with powerful poison"
-effects = Array[Resource]([SubResource("DamageEffect_assassinate"), SubResource("StatusEffect_strong_poison")])
+effects = Array[Resource]([ExtResource("2_dmg"), ExtResource("3_apply_strong_poison")])

@@ -14,6 +14,22 @@ No commitment implied — this is a thinking space.
 
 ---
 
+**Idea:** Content editor — enemy and event authoring support
+**Added:** 2026-05-21
+**Notes:**
+The tool currently covers equipment, attacks, effects, blessings, and classes. Enemies and events are the other major authoring surface — making a new enemy means setting stats, AI behavior, drops, and wiring it into an event; making a new event means defining waves, rewards, and any special scripting. Both involve enough cross-resource wiring that the inspector is genuinely painful. Adding them to the content editor would let the full encounter design loop (enemy stats → event composition → shop/reward tuning) happen outside Godot.
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Content editor — inline sub-resource creation from dropdown
+**Added:** 2026-05-21
+**Notes:**
+When a field expects a resource ref (e.g. a weapon's `attacks` array, or an attack's `effects` array), the dropdown currently only lets you pick an existing file. The missing flow is: click "new" in that dropdown, choose the concrete type (e.g. `AttackData`, `DamageEffect`), give it a name/path, and it's created and immediately wired in. Pairs naturally with a breadcrumb bar — if you're authoring a weapon and create a new attack inline, you should be able to navigate into that attack's form, then navigate back up to the weapon. Without the breadcrumb, you'd have to find the new file in the sidebar to finish filling it in, which breaks the authoring flow for a weapon that needs two or three new attacks at once.
+**Status:** `worth exploring`
+
+---
+
 **Idea**: External content authoring tool
 **Added**: 2026-05-20
 **Notes**:

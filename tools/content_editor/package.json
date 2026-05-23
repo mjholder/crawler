@@ -1,0 +1,14 @@
+{
+  "name": "content-editor",
+  "private": true,
+  "workspaces": ["sidecar", "frontend"],
+  "scripts": {
+    "dev": "concurrently -n sidecar,frontend -c cyan,magenta \"npm run dev --workspace=sidecar\" \"npm run dev --workspace=frontend\"",
+    "dev:sidecar": "npm run dev --workspace=sidecar",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "schema": "npm run schema --workspace=sidecar"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

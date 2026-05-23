@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="StatusEffect" format=3]
+
+[ext_resource type="Script" uid="uid://csghuvkgsslk4" path="res://scripts/status_effect.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://bdusio5hdtmqd" path="res://resources/effects/statuses/minor_poison.tres" id="2_status"]
+
+[resource]
+script = ExtResource("1_script")
+status_data = ExtResource("2_status")

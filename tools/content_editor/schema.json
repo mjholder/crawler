@@ -1,0 +1,881 @@
+{
+	"classes": {
+		"AttackData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "attack_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"enum_values": {
+						"All Enemies": 1,
+						"Self": 2,
+						"Single Enemy": 0
+					},
+					"name": "target_mode",
+					"type": "enum"
+				},
+				{
+					"element_type": "Effect",
+					"name": "effects",
+					"type": "Array"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "sound",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				}
+			],
+			"script": "res://scripts/attack_data.gd"
+		},
+		"BlessingData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "stat_modifiers",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"key_type": "StringName",
+					"name": "subscriptions",
+					"type": "Dictionary",
+					"value_type": "Effect"
+				}
+			],
+			"script": "res://scripts/blessing_data.gd"
+		},
+		"BuffEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"enum_values": {
+						"Agility": 3,
+						"Constitution": 2,
+						"Defense": 1,
+						"Luck": 5,
+						"Spirit": 4,
+						"Strength": 0
+					},
+					"name": "stat",
+					"type": "enum"
+				},
+				{
+					"name": "amount_expression",
+					"type": "String"
+				},
+				{
+					"name": "duration",
+					"type": "int"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/buff_effect.gd"
+		},
+		"ConditionalModifier": {
+			"extends": "",
+			"properties": [
+				{
+					"enum_values": {
+						"Agility": 3,
+						"Constitution": 2,
+						"Defense": 1,
+						"Luck": 5,
+						"Spirit": 4,
+						"Strength": 0
+					},
+					"name": "stat",
+					"type": "enum"
+				},
+				{
+					"name": "amount_expression",
+					"type": "String"
+				},
+				{
+					"name": "guard_expression",
+					"type": "String"
+				}
+			],
+			"script": "res://scripts/conditional_modifier.gd"
+		},
+		"ConsumableData": {
+			"extends": "EquipmentData",
+			"properties": [
+				{
+					"enum_values": {
+						"All Enemies": 1,
+						"Self": 0
+					},
+					"name": "target_mode",
+					"type": "enum"
+				},
+				{
+					"element_type": "Effect",
+					"name": "effects",
+					"type": "Array"
+				},
+				{
+					"name": "use_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"name": "is_consumable",
+					"type": "bool"
+				},
+				{
+					"name": "item_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "sprite_frames",
+					"resource_type": "SpriteFrames",
+					"type": "Resource"
+				},
+				{
+					"name": "paper_doll_front",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "paper_doll_back",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "equip_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"name": "unequip_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "stat_modifiers",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"name": "scene",
+					"resource_type": "PackedScene",
+					"type": "Resource"
+				},
+				{
+					"enum_values": {
+						"Feet": 2,
+						"Hands": 1,
+						"Head": 5,
+						"Legs": 3,
+						"Offhand": 6,
+						"Torso": 4,
+						"Weapon": 0
+					},
+					"name": "slot",
+					"type": "enum"
+				},
+				{
+					"name": "is_ring",
+					"type": "bool"
+				},
+				{
+					"name": "price",
+					"type": "int"
+				},
+				{
+					"element_type": "Effect",
+					"name": "on_equip_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "Effect",
+					"name": "on_unequip_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ProcDef",
+					"name": "proc_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ConditionalModifier",
+					"name": "conditional_modifiers",
+					"type": "Array"
+				},
+				{
+					"name": "spell_cost_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "bonus_prep_slots",
+					"type": "int"
+				},
+				{
+					"name": "bonus_mana_regen",
+					"type": "float"
+				},
+				{
+					"element_type": "",
+					"name": "affinity_tags",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/consumable_data.gd"
+		},
+		"DamageEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"name": "damage_expression",
+					"type": "String"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/damage_effect.gd"
+		},
+		"Effect": {
+			"extends": "",
+			"properties": [],
+			"script": "res://scripts/effect.gd"
+		},
+		"EquipmentData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "item_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "sprite_frames",
+					"resource_type": "SpriteFrames",
+					"type": "Resource"
+				},
+				{
+					"name": "paper_doll_front",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "paper_doll_back",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "equip_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"name": "unequip_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "stat_modifiers",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"name": "scene",
+					"resource_type": "PackedScene",
+					"type": "Resource"
+				},
+				{
+					"enum_values": {
+						"Feet": 2,
+						"Hands": 1,
+						"Head": 5,
+						"Legs": 3,
+						"Offhand": 6,
+						"Torso": 4,
+						"Weapon": 0
+					},
+					"name": "slot",
+					"type": "enum"
+				},
+				{
+					"name": "is_ring",
+					"type": "bool"
+				},
+				{
+					"name": "price",
+					"type": "int"
+				},
+				{
+					"element_type": "Effect",
+					"name": "on_equip_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "Effect",
+					"name": "on_unequip_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ProcDef",
+					"name": "proc_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ConditionalModifier",
+					"name": "conditional_modifiers",
+					"type": "Array"
+				},
+				{
+					"name": "spell_cost_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "bonus_prep_slots",
+					"type": "int"
+				},
+				{
+					"name": "bonus_mana_regen",
+					"type": "float"
+				},
+				{
+					"element_type": "",
+					"name": "affinity_tags",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/equipment_data.gd"
+		},
+		"HealEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"name": "heal_expression",
+					"type": "String"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/heal_effect.gd"
+		},
+		"PlayerClassData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "class_name_text",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "strength",
+					"type": "float"
+				},
+				{
+					"name": "defense",
+					"type": "float"
+				},
+				{
+					"name": "constitution",
+					"type": "float"
+				},
+				{
+					"name": "agility",
+					"type": "float"
+				},
+				{
+					"name": "spirit",
+					"type": "float"
+				},
+				{
+					"name": "luck",
+					"type": "float"
+				},
+				{
+					"name": "class_health_bonus",
+					"type": "float"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "growth_rates",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"key_type": "Enums.Slot",
+					"name": "starting_equipped",
+					"type": "Dictionary",
+					"value_type": "EquipmentData"
+				},
+				{
+					"element_type": "EquipmentData",
+					"name": "starting_rings",
+					"type": "Array"
+				},
+				{
+					"element_type": "EquipmentData",
+					"name": "starting_bag",
+					"type": "Array"
+				},
+				{
+					"name": "starting_consumable_slots",
+					"type": "int"
+				},
+				{
+					"element_type": "ConsumableData",
+					"name": "starting_consumables",
+					"type": "Array"
+				},
+				{
+					"element_type": "BlessingData",
+					"name": "starting_blessings",
+					"type": "Array"
+				},
+				{
+					"name": "class_mana_bonus",
+					"type": "float"
+				},
+				{
+					"name": "starting_prep_slots",
+					"type": "int"
+				},
+				{
+					"element_type": "SpellData",
+					"name": "starting_learned_spells",
+					"type": "Array"
+				},
+				{
+					"element_type": "SpellData",
+					"name": "starting_prepared_spells",
+					"type": "Array"
+				},
+				{
+					"element_type": "TomeData",
+					"name": "starting_tomes",
+					"type": "Array"
+				},
+				{
+					"name": "mana_regen_per_turn",
+					"type": "float"
+				},
+				{
+					"name": "mana_on_kill",
+					"type": "float"
+				}
+			],
+			"script": "res://scripts/player_class_data.gd"
+		},
+		"ProcDef": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "trigger",
+					"type": "StringName"
+				},
+				{
+					"name": "chance_expression",
+					"type": "String"
+				},
+				{
+					"name": "apply_to_owner",
+					"type": "bool"
+				},
+				{
+					"name": "effect",
+					"resource_type": "Effect",
+					"type": "Resource"
+				}
+			],
+			"script": "res://scripts/proc_def.gd"
+		},
+		"ShopData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "shop_name",
+					"type": "String"
+				},
+				{
+					"element_type": "EquipmentData",
+					"name": "stock",
+					"type": "Array"
+				},
+				{
+					"name": "buy_price_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "sell_price_multiplier",
+					"type": "float"
+				}
+			],
+			"script": "res://scripts/shop_data.gd"
+		},
+		"SpellData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "spell_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "mana_cost",
+					"type": "float"
+				},
+				{
+					"enum_values": {
+						"All Enemies": 1,
+						"Self": 2,
+						"Single Enemy": 0
+					},
+					"name": "target_mode",
+					"type": "enum"
+				},
+				{
+					"element_type": "Effect",
+					"name": "effects",
+					"type": "Array"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "cast_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				}
+			],
+			"script": "res://scripts/spell_data.gd"
+		},
+		"StatusData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "tag",
+					"type": "StringName"
+				},
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "duration",
+					"type": "int"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "stat_modifiers",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"name": "prevents_action",
+					"type": "bool"
+				},
+				{
+					"name": "on_apply",
+					"resource_type": "Effect",
+					"type": "Resource"
+				},
+				{
+					"name": "on_tick",
+					"resource_type": "Effect",
+					"type": "Resource"
+				},
+				{
+					"name": "on_expire",
+					"resource_type": "Effect",
+					"type": "Resource"
+				},
+				{
+					"enum_values": {
+						"Max Duration": 2,
+						"Refresh": 0,
+						"Stack": 1
+					},
+					"name": "stack_policy",
+					"type": "enum"
+				}
+			],
+			"script": "res://scripts/status_data.gd"
+		},
+		"StatusEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"name": "status_data",
+					"resource_type": "StatusData",
+					"type": "Resource"
+				}
+			],
+			"script": "res://scripts/status_effect.gd"
+		},
+		"TomeData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "item_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "gold_value",
+					"type": "int"
+				},
+				{
+					"name": "spell",
+					"resource_type": "SpellData",
+					"type": "Resource"
+				}
+			],
+			"script": "res://scripts/tome_data.gd"
+		},
+		"WeaponData": {
+			"extends": "EquipmentData",
+			"properties": [
+				{
+					"name": "attack_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"element_type": "AttackData",
+					"name": "attacks",
+					"type": "Array"
+				},
+				{
+					"element_type": "SpellData",
+					"name": "innate_spells",
+					"type": "Array"
+				},
+				{
+					"name": "is_two_handed",
+					"type": "bool"
+				},
+				{
+					"name": "item_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "sprite_frames",
+					"resource_type": "SpriteFrames",
+					"type": "Resource"
+				},
+				{
+					"name": "paper_doll_front",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "paper_doll_back",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "equip_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"name": "unequip_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "stat_modifiers",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"name": "scene",
+					"resource_type": "PackedScene",
+					"type": "Resource"
+				},
+				{
+					"enum_values": {
+						"Feet": 2,
+						"Hands": 1,
+						"Head": 5,
+						"Legs": 3,
+						"Offhand": 6,
+						"Torso": 4,
+						"Weapon": 0
+					},
+					"name": "slot",
+					"type": "enum"
+				},
+				{
+					"name": "is_ring",
+					"type": "bool"
+				},
+				{
+					"name": "price",
+					"type": "int"
+				},
+				{
+					"element_type": "Effect",
+					"name": "on_equip_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "Effect",
+					"name": "on_unequip_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ProcDef",
+					"name": "proc_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ConditionalModifier",
+					"name": "conditional_modifiers",
+					"type": "Array"
+				},
+				{
+					"name": "spell_cost_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "bonus_prep_slots",
+					"type": "int"
+				},
+				{
+					"name": "bonus_mana_regen",
+					"type": "float"
+				},
+				{
+					"element_type": "",
+					"name": "affinity_tags",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/weapon_data.gd"
+		}
+	},
+	"enums": {
+		"AttackData.TargetMode": {
+			"ALL_ENEMIES": 1,
+			"SELF": 2,
+			"SINGLE_ENEMY": 0
+		},
+		"ConsumableData.TargetMode": {
+			"ALL_ENEMIES": 1,
+			"SELF": 0
+		},
+		"Enums.GameState": {
+			"CHARACTER_CREATION": 1,
+			"DUNGEON": 3,
+			"GAME_OVER": 4,
+			"MAIN_MENU": 0,
+			"VICTORY": 5,
+			"WORLD_MAP": 2
+		},
+		"Enums.NodeState": {
+			"AVAILABLE": 1,
+			"COMPLETED": 2,
+			"LOCKED": 0
+		},
+		"Enums.NodeType": {
+			"BOSS": 3,
+			"DUNGEON": 0,
+			"REST": 2,
+			"SHOP": 1
+		},
+		"Enums.Slot": {
+			"FEET": 2,
+			"HANDS": 1,
+			"HEAD": 5,
+			"LEGS": 3,
+			"OFFHAND": 6,
+			"TORSO": 4,
+			"WEAPON": 0
+		},
+		"Enums.Stat": {
+			"AGILITY": 3,
+			"CONSTITUTION": 2,
+			"DEFENSE": 1,
+			"LUCK": 5,
+			"SPIRIT": 4,
+			"STRENGTH": 0
+		},
+		"Enums.TurnState": {
+			"DIALOGUE": 5,
+			"ENEMY_CLEARED": 4,
+			"ENEMY_TURN": 2,
+			"GAME_OVER": 3,
+			"NO_TURN": 0,
+			"PLAYER_TURN": 1,
+			"VICTORY": 6
+		},
+		"StatusData.StackPolicy": {
+			"MAX_DURATION": 2,
+			"REFRESH": 0,
+			"STACK": 1
+		}
+	}
+}
