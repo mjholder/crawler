@@ -37,6 +37,12 @@
     "stat_modifiers": { "key_type": "Enums.Stat", "value_type": "float" },
     "subscriptions": { "key_type": "StringName", "value_type": "Effect" }
   },
+  "FloorSlot": {
+    "entries": { "element_type": "WeightedEntry" }
+  },
+  "DungeonFloorData": {
+    "slots": { "element_type": "FloorSlot" }
+  },
   "StatusData": {
     "stat_modifiers": { "key_type": "Enums.Stat", "value_type": "float" },
     "on_apply": { "resource_type": "Effect" },

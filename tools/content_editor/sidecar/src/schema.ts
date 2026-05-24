@@ -4,7 +4,8 @@
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { PROJECT_ROOT, exportSchema } from "./godot.js";
+import { PROJECT_ROOT } from "./config.js";
+import { exportSchema } from "./godot.js";
 
 export interface PropDescriptor {
   name: string;

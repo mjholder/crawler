@@ -1,28 +1,27 @@
 /**
- * Wrapper around Godot headless subprocess invocations.
+ * Resource I/O for .tres files using a native TypeScript parser.
  *
- * All I/O with .tres files flows through here so the rest of the sidecar
- * never needs to know the subprocess details.
+ * readResource / writeResource no longer spawn Godot — they parse and serialise
+ * .tres directly.  exportSchema still calls Godot (rare, manual operation).
  */
 import { spawn } from "node:child_process";
-import { writeFileSync, unlinkSync, existsSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { randomBytes } from "node:crypto";
-
-// Project root is three levels up from sidecar/src/
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-export const PROJECT_ROOT = resolve(__dirname, "../../../..");
+import { parseTres } from "./tres/parser.js";
+import { writeTres } from "./tres/writer.js";
+import {
+  astToEnvelope,
+  applyEnvelope,
+  createFreshAst,
+  syncNewSubResources,
+} from "./tres/bridge.js";
+import { getEntry } from "./resource-index.js";
+import { PROJECT_ROOT } from "./config.js";
+export { PROJECT_ROOT } from "./config.js";
 
 export const GODOT_BIN = process.env.GODOT_EXECUTABLE ?? "godot";
 
-function runGodot(
-  scriptResPath: string,
-  userArgs: string[]
-): Promise<string> {
+function runGodot(scriptResPath: string, userArgs: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const args = [
       "--headless",
@@ -35,7 +34,6 @@ function runGodot(
     ];
 
     const child = spawn(GODOT_BIN, args, { stdio: ["pipe", "pipe", "pipe"] });
-
     let stdout = "";
     let stderr = "";
 
@@ -46,8 +44,6 @@ function runGodot(
       if (code !== 0) {
         reject(new Error(`Godot exited ${code}: ${stderr.trim()}`));
       } else {
-        // Strip the Godot engine banner ("Godot Engine vX.Y..." on stdout)
-        // by finding the first { or [ that starts the JSON payload.
         const jsonStart = stdout.search(/[{[]/);
         const clean = jsonStart >= 0 ? stdout.slice(jsonStart) : stdout;
         resolve(clean.trim());
@@ -55,34 +51,65 @@ function runGodot(
     });
 
     child.on("error", (err) => reject(err));
-
     child.stdin.end();
   });
 }
 
-/** Read a .tres and return its JSON representation. */
-export async function readResource(resPath: string): Promise<unknown> {
-  const raw = await runGodot(
-    "res://tools/content_editor/godot/io_read.gd",
-    [resPath]
-  );
-  return JSON.parse(raw);
+function buildScriptToClass(): Map<string, string> {
+  try {
+    // Import lazily to avoid circular deps — schema imports godot.ts for exportSchema
+    // but we only need the JSON file here.
+    const schemaPath = join(PROJECT_ROOT, "tools/content_editor/schema.json");
+    if (!existsSync(schemaPath)) return new Map();
+    const schema = JSON.parse(readFileSync(schemaPath, "utf8")) as {
+      classes: Record<string, { script: string }>;
+    };
+    const map = new Map<string, string>();
+    for (const [cls, desc] of Object.entries(schema.classes)) {
+      map.set(desc.script, cls);
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
 }
 
-/** Write a JSON representation back to its .tres file. */
+function uidToPathFn(uid: string): string | undefined {
+  return getEntry(uid)?.path;
+}
+
+/** Read a .tres and return its JSON envelope representation. */
+export async function readResource(resPath: string): Promise<unknown> {
+  const absPath = join(PROJECT_ROOT, resPath.replace("res://", ""));
+  const text = readFileSync(absPath, "utf8");
+  const ast = parseTres(text);
+  const scriptToClass = buildScriptToClass();
+  return astToEnvelope(ast, resPath, scriptToClass);
+}
+
+/** Write a JSON envelope back to its .tres file. */
 export async function writeResource(
   resPath: string,
   data: unknown
 ): Promise<void> {
-  // Write to a temp file so we avoid stdin buffer-size limits in Godot.
-  const tmpPath = join(tmpdir(), `ce_write_${randomBytes(6).toString("hex")}.json`);
-  writeFileSync(tmpPath, JSON.stringify(data));
-  try {
-    await runGodot("res://tools/content_editor/godot/io_write.gd", [resPath, tmpPath]);
-  } finally {
-    // Clean up if Godot didn't already delete it
-    if (existsSync(tmpPath)) unlinkSync(tmpPath);
-  }
+  const absPath = join(PROJECT_ROOT, resPath.replace("res://", ""));
+  const envelope = data as Record<string, unknown>;
+
+  let ast = existsSync(absPath)
+    ? parseTres(readFileSync(absPath, "utf8"))
+    : (() => {
+        const meta = envelope._godot_meta as Record<string, unknown>;
+        return createFreshAst(
+          String(meta?.script ?? ""),
+          String(meta?.class ?? "")
+        );
+      })();
+
+  const subById = new Map(ast.subResources.map((s) => [s.id, s]));
+  ast = applyEnvelope(ast, envelope, uidToPathFn);
+  ast = syncNewSubResources(ast, subById);
+
+  writeFileSync(absPath, writeTres(ast), "utf8");
 }
 
 /** Run the schema export script and return the raw JSON string. */

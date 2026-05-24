@@ -69,6 +69,20 @@
 			],
 			"script": "res://scripts/blessing_data.gd"
 		},
+		"BossEventData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "event_path",
+					"type": "String"
+				}
+			],
+			"script": "res://scripts/boss_event_data.gd"
+		},
 		"BuffEffect": {
 			"extends": "Effect",
 			"properties": [
@@ -98,6 +112,20 @@
 				}
 			],
 			"script": "res://scripts/buff_effect.gd"
+		},
+		"CombatEventData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "event_path",
+					"type": "String"
+				}
+			],
+			"script": "res://scripts/combat_event_data.gd"
 		},
 		"ConditionalModifier": {
 			"extends": "",
@@ -269,6 +297,58 @@
 			],
 			"script": "res://scripts/damage_effect.gd"
 		},
+		"DialogueData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "dialogue_path",
+					"type": "String"
+				},
+				{
+					"name": "node_positions_json",
+					"type": "String"
+				}
+			],
+			"script": "res://scripts/dialogue_data.gd"
+		},
+		"DialogueEventData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "event_path",
+					"type": "String"
+				}
+			],
+			"script": "res://scripts/dialogue_event_data.gd"
+		},
+		"DungeonFloorData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"element_type": "",
+					"name": "tags",
+					"type": "Array"
+				},
+				{
+					"element_type": "FloorSlot",
+					"name": "slots",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/dungeon_floor_data.gd"
+		},
 		"Effect": {
 			"extends": "",
 			"properties": [],
@@ -381,6 +461,42 @@
 				}
 			],
 			"script": "res://scripts/equipment_data.gd"
+		},
+		"FloorSlot": {
+			"extends": "",
+			"properties": [
+				{
+					"enum_values": {
+						"Fixed": 0,
+						"Random Type": 1,
+						"Weighted": 2
+					},
+					"name": "type",
+					"type": "enum"
+				},
+				{
+					"name": "event",
+					"resource_type": "Resource",
+					"type": "Resource"
+				},
+				{
+					"enum_values": {
+						"boss": 1,
+						"combat": 0,
+						"dialogue": 2,
+						"rest": 4,
+						"skill_check": 3
+					},
+					"name": "event_type",
+					"type": "enum"
+				},
+				{
+					"element_type": "WeightedEntry",
+					"name": "entries",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/floor_slot.gd"
 		},
 		"HealEffect": {
 			"extends": "Effect",
@@ -528,6 +644,20 @@
 			],
 			"script": "res://scripts/proc_def.gd"
 		},
+		"RestEventData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "event_path",
+					"type": "String"
+				}
+			],
+			"script": "res://scripts/rest_event_data.gd"
+		},
 		"ShopData": {
 			"extends": "",
 			"properties": [
@@ -550,6 +680,20 @@
 				}
 			],
 			"script": "res://scripts/shop_data.gd"
+		},
+		"SkillCheckEventData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "event_path",
+					"type": "String"
+				}
+			],
+			"script": "res://scripts/skill_check_event_data.gd"
 		},
 		"SpellData": {
 			"extends": "",
@@ -815,6 +959,32 @@
 				}
 			],
 			"script": "res://scripts/weapon_data.gd"
+		},
+		"WeightedEntry": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "event",
+					"resource_type": "Resource",
+					"type": "Resource"
+				},
+				{
+					"enum_values": {
+						"boss": 1,
+						"combat": 0,
+						"dialogue": 2,
+						"rest": 4,
+						"skill_check": 3
+					},
+					"name": "event_type",
+					"type": "enum"
+				},
+				{
+					"name": "weight",
+					"type": "int"
+				}
+			],
+			"script": "res://scripts/weighted_entry.gd"
 		}
 	},
 	"enums": {

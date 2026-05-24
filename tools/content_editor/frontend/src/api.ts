@@ -61,4 +61,31 @@ export const api = {
     data: unknown
   ): Promise<Array<{ path: string; message: string }>> =>
     apiFetch("/lint", { method: "POST", body: JSON.stringify(data) }),
+
+  listEvents: (dir: string): Promise<string[]> =>
+    apiFetch(`/events?dir=${encodeURIComponent(dir)}`),
+
+  readEvent: (path: string): Promise<unknown> =>
+    apiFetch(`/event?path=${encodeURIComponent(path)}`),
+
+  writeEvent: (path: string, data: unknown): Promise<{ ok: boolean }> =>
+    apiFetch(`/event?path=${encodeURIComponent(path)}`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  resolvePath: (path: string): Promise<{ cls: string; path: string } | null> =>
+    apiFetch<{ cls: string; path: string }>(`/resolve?path=${encodeURIComponent(path)}`).catch(() => null),
+
+  listDialogues: (): Promise<string[]> =>
+    apiFetch("/dialogues"),
+
+  readDialogue: (path: string): Promise<unknown> =>
+    apiFetch(`/dialogue?path=${encodeURIComponent(path)}`),
+
+  writeDialogue: (path: string, data: unknown): Promise<{ ok: boolean }> =>
+    apiFetch(`/dialogue?path=${encodeURIComponent(path)}`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };

@@ -8,12 +8,14 @@ import { WhereUsed } from "./WhereUsed.js";
 interface Props {
   resPath: string;
   schema: GameSchema;
+  onNavigate?: (path: string) => void;
 }
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
-export function ResourceForm({ resPath, schema }: Props) {
+export function ResourceForm({ resPath, schema, onNavigate }: Props) {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -22,12 +24,13 @@ export function ResourceForm({ resPath, schema }: Props) {
   useEffect(() => {
     setLoading(true);
     setData(null);
+    setLoadError(null);
     setDirty(false);
     setSaveState("idle");
     setLintErrors([]);
     api.readResource(resPath)
       .then((d) => setData(d as Record<string, unknown>))
-      .catch(console.error)
+      .catch((e) => setLoadError(String(e)))
       .finally(() => setLoading(false));
   }, [resPath]);
 
@@ -55,6 +58,7 @@ export function ResourceForm({ resPath, schema }: Props) {
   }, [data, resPath]);
 
   if (loading) return <div style={styles.loading}>Loading…</div>;
+  if (loadError) return <div style={styles.loadError}><strong>Failed to load resource</strong><pre style={styles.loadErrorPre}>{loadError}</pre></div>;
   if (!data) return <div style={styles.loading}>No data</div>;
 
   const meta = data._godot_meta as Record<string, unknown> | undefined;
@@ -117,13 +121,14 @@ export function ResourceForm({ resPath, schema }: Props) {
               value={data[prop.name]}
               onChange={(v) => updateField(prop.name, v)}
               schema={schema}
+              onNavigate={onNavigate}
             />
           </FormRow>
         ))}
       </div>
 
       {/* Where used */}
-      {uid && <WhereUsed uid={uid} />}
+      {uid && <WhereUsed uid={uid} onNavigate={onNavigate} />}
     </div>
   );
 }
@@ -137,6 +142,8 @@ const styles = {
     background: "#111",
   },
   loading: { padding: 24, color: "#555" },
+  loadError: { padding: 24, color: "#f88", fontSize: 13 },
+  loadErrorPre: { marginTop: 8, color: "#c88", fontSize: 11, fontFamily: "monospace", whiteSpace: "pre-wrap" as const, background: "#1a0a0a", padding: 10, borderRadius: 4, border: "1px solid #422" },
   header: {
     padding: "12px 16px",
     borderBottom: "1px solid #333",

@@ -35,6 +35,8 @@ flowchart TD
     Player -.->|spawns child on equip| Equipment
     GUI -->|contains| WorldMap
     WorldMap -->|contains| WMN
+    WorldMap -->|resolves floors at _ready| FEP["FloorEventPool<br/>(runtime helper)"]
+    FEP -->|scans| DFD["DungeonFloorData<br/>resources/dungeon_floors/"]
     Event -->|spawns / frees| Enemy
     Game -->|write / clear| SM
     SM -->|save / load| RSD
@@ -82,9 +84,16 @@ classDiagram
         +signal boss_defeated
         #_advance_phase() override
     }
+    class DialogueData {
+        +String display_name
+        +String dialogue_path
+        +String node_positions_json
+    }
     class DialogueEvent {
+        +DialogueData dialogue_data
         +signal dialogue_requested
     }
+    DialogueData --o DialogueEvent : optional ref
     class SkillCheckEvent {
         +signal skill_check_requested
         +signal dialogue_requested
@@ -105,6 +114,63 @@ classDiagram
     Event <|-- SkillCheckEvent
     Event <|-- RestEvent
     Event <|-- ShopEvent
+
+    class CombatEventData {
+        <<editor Resource>>
+        +String display_name
+        +String event_path
+    }
+    class BossEventData {
+        <<editor Resource>>
+        +String display_name
+        +String event_path
+    }
+    class DialogueEventData {
+        <<editor Resource>>
+        +String display_name
+        +String event_path
+    }
+    class SkillCheckEventData {
+        <<editor Resource>>
+        +String display_name
+        +String event_path
+    }
+    class RestEventData {
+        <<editor Resource>>
+        +String display_name
+        +String event_path
+    }
+
+    CombatEventData ..> CombatEvent : event_path → JSON
+    BossEventData ..> BossEvent : event_path → JSON
+    DialogueEventData ..> DialogueEvent : event_path → JSON
+    SkillCheckEventData ..> SkillCheckEvent : event_path → JSON
+    RestEventData ..> RestEvent : event_path → JSON
+
+    class DungeonFloorData {
+        <<editor Resource>>
+        +String display_name
+        +Array~String~ tags
+        +Array~FloorSlot~ slots
+    }
+    class FloorSlot {
+        <<editor Resource>>
+        +SlotType type
+        +Resource event
+        +int event_type
+        +Array~WeightedEntry~ entries
+    }
+    class WeightedEntry {
+        <<editor Resource>>
+        +Resource event
+        +int event_type
+        +int weight
+    }
+
+    DungeonFloorData o-- FloorSlot : slots
+    FloorSlot o-- WeightedEntry : entries (WEIGHTED type only)
+    FloorSlot ..> CombatEventData : event (FIXED type)
+    FloorSlot ..> BossEventData : event (FIXED type)
 ```
 
 ---

@@ -19,6 +19,44 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Authored dungeon floors with polymorphic slot system
+
+**Date:** 2026-05-23
+**Daily:** [[daily/2026-05-23]]
+**Context:** `DungeonMapNode.generate_event_configs()` previously picked events randomly from per-type JSON directories — no authoring control over floor shape, pacing, or the sequence of event types. The miniboss was also appended inside the depth loop, producing N−1 minibosses per dungeon (latent bug).
+**Alternatives considered:** Three separate floor types (ScriptedFloor, WeightedFloor, HybridFloor) — rejected because you can't mix modes per-slot; would also produce three sidebar entries where one suffices. GDScript subclass hierarchy for slot types — attempted but abandoned because Godot's headless `--script` mode doesn't propagate `class_name` registrations between scripts compiled on-demand, causing cascading "base class not found" errors.
+**Rationale:** Single `FloorSlot` resource with a `type` enum (FIXED / RANDOM_TYPE / WEIGHTED) and all fields on the same class. Each slot in a `DungeonFloorData` array can independently be any of the three modes. Assignment to world-map nodes at run-start via `FloorEventPool` + seeded `RandomNumberGenerator` on `WorldMap`; DungeonMapNode accepts a specific `floor` override OR `floor_tags` for filtered random selection. Resolves to a cached `_resolved_event_configs` array once per world-map load, then `generate_event_configs()` just returns it — no changes to `game.gd`'s sequencing machinery.
+**Trade-offs / risks:** All three slot modes' fields are always visible in the editor (slightly noisy); FIXED-only used fields are wasted space. GDScript headless compilation ordering constrains how resource scripts may reference each other — custom classes used as typed Array elements must be in the same script as the array or use untyped `Array` + annotations.json entry. BossMapNode is untouched — it still loads a single event directly; can be migrated to a 1-slot floor later.
+
+---
+
+## Events exposed in content editor via .tres-wraps-JSON wrappers
+
+**Date:** 2026-05-22
+**Daily:** [[daily/2026-05-22]]
+**Context:** Event JSON files (`resources/events/*/`) were invisible in the content editor. They can't go through the schema-driven ResourceForm because their data structure is in JSON, not `.tres`. Need a path into the sidebar without rewriting the event runtime (which loads by JSON path strings from `DungeonMapNode` and friends).
+**Alternatives considered:**
+- Convert event JSON to pure `.tres` Resource subclasses — type-safe but requires runtime changes everywhere JSON paths are used (`DungeonMapNode.combat_json_dir`, etc.) and more Godot-side boilerplate.
+- Expose events via a separate "Events" tab with direct JSON listing from the sidecar — simpler but doesn't get the schema-driven sidebar, `.tres` watcher, or where-used index.
+**Rationale:** Same pattern already validated by DialogueData v2: a thin `.tres` wrapper holds `display_name` + `event_path`. Runtime stays unchanged (DungeonMapNode reads the JSON path directly). The wrapper integrates with the schema-driven sidebar and opens a custom EventEditor view per type.
+**Trade-offs / risks:** The `.tres` and `.json` files can drift if someone edits the JSON externally — accepted. Display name on the wrapper is purely editor-side metadata, not visible in-game.
+
+---
+
+## Dialogue storage: DialogueData .tres wraps JSON tree
+
+**Date:** 2026-05-22
+**Daily:** [[daily/2026-05-22]]
+**Context:** Building a content editor graph view for dialogues. Dialogues are JSON files; the content editor is schema-driven from `.tres` Resources. Needed a way to list dialogues in the sidebar, persist graph layout (node x/y positions), and integrate with the schema system — without rewriting the entire dialogue runtime.
+**Alternatives considered:**
+1. Convert dialogues fully to Godot Resources (`DialogueData` with `Array[DialogueNode]`). Full schema integration. But Godot Resources aren't great for sparse graphs with string-id cross-references; would need separate files per node or complex inline structures.
+2. Pure JSON editor — a standalone editor route that reads/writes JSON directly, no .tres involvement. Simpler but doesn't integrate with the sidebar type list, `+` creation button, or where-used index.
+3. **Hybrid (chosen):** `DialogueData.tres` holds metadata (`display_name`, `dialogue_path`, `node_positions_json`) and points at the existing JSON. The schema system sees a normal resource class; the content editor detects `DialogueData` and swaps in a custom React Flow graph view instead of the generic form.
+**Rationale:** Hybrid keeps the runtime untouched — `DialoguePanel` still parses JSON directly, and `DialogueEvent` falls back to `data["dialogue"]` if `dialogue_data` is null. Graph layout persists on the .tres without touching the dialogue contract. The custom editor view is the only frontend special-case; all sidebar/creation/listing machinery works for free.
+**Trade-offs / risks:** `DialogueData` is the only content type with a custom editor view (others use the generic `ResourceForm`). A new contributor might not expect this. The mapping is in `App.tsx` and is obvious. Dialogue JSON is also the only content type not round-tripped through `io_read/io_write.gd` — the sidecar reads/writes it directly with `fs.readFileSync/writeFileSync`.
+
+---
+
 ## Flat-percentage defense and dodge formulas
 
 **Date:** 2026-05-19

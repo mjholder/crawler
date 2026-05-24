@@ -4,7 +4,7 @@
  */
 import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
-import { PROJECT_ROOT } from "./godot.js";
+import { PROJECT_ROOT } from "./config.js";
 
 const ASSET_EXTS: Record<string, string[]> = {
   Texture2D:    [".png", ".jpg", ".jpeg", ".svg", ".webp"],

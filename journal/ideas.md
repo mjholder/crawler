@@ -14,6 +14,14 @@ No commitment implied — this is a thinking space.
 
 ---
 
+**Idea:** Authored dungeon floor / event sequencing resource
+**Added:** 2026-05-23
+**Notes:**
+Currently `DungeonMapNode` picks events randomly from a directory. The idea is a `DungeonFloor` (or similar) resource that specifies an ordered or weighted list of events instead — letting designers author the shape of a floor: which events appear, in what order or with what weights, and what the boss is. Would need a new Godot resource class, `.tres` wrappers, and a custom editor view in the content editor (likely a simple ordered list, not a graph). Runtime `DungeonMapNode` would load the floor resource instead of globbing a directory. Deferred from content editor v3 scope.
+**Status:** `worth exploring`
+
+---
+
 **Idea:** Content editor — enemy and event authoring support
 **Added:** 2026-05-21
 **Notes:**

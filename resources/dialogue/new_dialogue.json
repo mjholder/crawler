@@ -1,0 +1,60 @@
+{
+  "name": "new_dialogue",
+  "nodes": {
+	"0": {
+	  "speaker": null,
+	  "text": "Welcome to bonus stage!",
+	  "consequence": null,
+	  "choices": [
+		{
+		  "text": "Run!",
+		  "next": "1"
+		},
+		{
+		  "text": "Dance!",
+		  "next": "2"
+		},
+		{
+		  "text": "Sing",
+		  "next": "3"
+		}
+	  ]
+	},
+	"1": {
+	  "speaker": null,
+	  "text": "OMG you are so FAST!",
+	  "consequence": {
+		"action": "set_flag",
+		"value": "run"
+	  },
+	  "choices": [],
+	  "rewards": {
+		"experience": 200,
+		"gold": 400
+	  }
+	},
+	"2": {
+	  "speaker": null,
+	  "text": "Nice moves!",
+	  "consequence": null,
+	  "choices": [],
+	  "rewards": {
+		"experience": 300,
+		"gold": 300
+	  }
+	},
+	"3": {
+	  "speaker": null,
+	  "text": "Oohhhh!",
+	  "consequence": {
+		"action": "set_flag",
+		"value": "nice_voice"
+	  },
+	  "choices": [],
+	  "rewards": {
+		"experience": 500,
+		"gold": 200
+	  }
+	}
+  }
+}

@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="DialogueData" format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue_data.gd" id="1_ub54y"]
+
+[resource]
+script = ExtResource("1_ub54y")
+dialogue_path = "res://resources/dialogue/new_dialogue.json"
+node_positions_json = "{\"0\":{\"x\":-115.16201156489987,\"y\":-19.602463126949942},\"1\":{\"x\":-223.73096401171392,\"y\":226.4041870204994},\"2\":{\"x\":86.4941470335149,\"y\":266.47990894826336},\"3\":{\"x\":391.2477496677929,\"y\":255.77722024420154}}"

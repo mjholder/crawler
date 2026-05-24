@@ -32,9 +32,10 @@ export interface FieldProps {
   onChange: (newValue: unknown) => void;
   schema: GameSchema;
   depth?: number;
+  onNavigate?: (path: string) => void;
 }
 
-export function FieldRenderer({ prop, value, onChange, schema, depth = 0 }: FieldProps) {
+export function FieldRenderer({ prop, value, onChange, schema, depth = 0, onNavigate }: FieldProps) {
   if (depth > 4) return <span style={{ color: "#888" }}>[deep]</span>;
 
   switch (prop.type) {
@@ -89,6 +90,7 @@ export function FieldRenderer({ prop, value, onChange, schema, depth = 0 }: Fiel
           elementType={prop.element_type ?? ""}
           schema={schema}
           depth={depth}
+          onNavigate={onNavigate}
         />
       );
 
@@ -100,6 +102,7 @@ export function FieldRenderer({ prop, value, onChange, schema, depth = 0 }: Fiel
           resourceType={prop.resource_type ?? ""}
           schema={schema}
           depth={depth}
+          onNavigate={onNavigate}
         />
       );
 
@@ -332,12 +335,14 @@ function ArrayField({
   elementType,
   schema,
   depth,
+  onNavigate,
 }: {
   value: unknown[] | null;
   onChange: (v: unknown[]) => void;
   elementType: string;
   schema: GameSchema;
   depth: number;
+  onNavigate?: (path: string) => void;
 }) {
   const arr = value ?? [];
 
@@ -369,6 +374,7 @@ function ArrayField({
               onChange={(v) => updateAt(i, v)}
               schema={schema}
               depth={depth + 1}
+              onNavigate={onNavigate}
             />
           </div>
           <button style={styles.removeBtn} onClick={() => remove(i)}>×</button>
@@ -389,12 +395,14 @@ function ResourceRefField({
   resourceType,
   schema,
   depth,
+  onNavigate,
 }: {
   value: unknown;
   onChange: (v: unknown) => void;
   resourceType: string;
   schema: GameSchema;
   depth: number;
+  onNavigate?: (path: string) => void;
 }) {
   const [options, setOptions] = useState<string[]>([]);
   const isBuiltin = BUILTIN_ASSET_TYPES.has(resourceType);
@@ -420,6 +428,7 @@ function ResourceRefField({
         schema={schema}
         depth={depth}
         onDetach={() => onChange(null)}
+        onNavigate={onNavigate}
       />
     );
   }
@@ -466,6 +475,15 @@ function ResourceRefField({
           </option>
         ))}
       </select>
+      {currentRef && onNavigate && (
+        <button
+          style={styles.smallBtn}
+          title={`Navigate to ${currentRef}`}
+          onClick={() => onNavigate(currentRef)}
+        >
+          →
+        </button>
+      )}
       {!isBuiltin && (
         <button
           style={styles.smallBtn}
@@ -485,12 +503,14 @@ function InlineResourceEditor({
   schema,
   depth,
   onDetach,
+  onNavigate,
 }: {
   value: unknown;
   onChange: (v: unknown) => void;
   schema: GameSchema;
   depth: number;
   onDetach: () => void;
+  onNavigate?: (path: string) => void;
 }) {
   const data = value as Record<string, unknown>;
   const cls = ((data._godot_meta as Record<string, unknown>)?.class as string) ?? "";
@@ -516,6 +536,7 @@ function InlineResourceEditor({
             onChange={(v) => updateField(p.name, v)}
             schema={schema}
             depth={depth + 1}
+            onNavigate={onNavigate}
           />
         </FormRow>
       ))}

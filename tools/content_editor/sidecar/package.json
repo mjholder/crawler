@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
-    "schema": "tsx src/export-schema.ts"
+    "schema": "tsx src/export-schema.ts",
+    "verify-tres": "tsx scripts/roundtrip.ts"
   },
   "dependencies": {
     "fastify": "^5.2.0",

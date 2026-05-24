@@ -35,7 +35,7 @@ export function getAllProperties(
   ];
 }
 
-// The six v1 content types with their script_class names and default new-file directory
+// Content types shown in the sidebar — each maps to a script_class and default new-file dir.
 export const CONTENT_TYPES = [
   { label: "Weapons",      cls: "WeaponData",      dir: "res://resources/equipment/weapons/" },
   { label: "Armor & Rings",cls: "EquipmentData",   dir: "res://resources/equipment/armor/" },
@@ -43,6 +43,21 @@ export const CONTENT_TYPES = [
   { label: "Effects",      cls: "DamageEffect",     dir: "res://resources/effects/" },
   { label: "Classes",      cls: "PlayerClassData",  dir: "res://resources/classes/" },
   { label: "Shops",        cls: "ShopData",         dir: "res://resources/shops/" },
+  { label: "Dialogues",    cls: "DialogueData",     dir: "res://resources/dialogue/" },
+  { label: "Combat Events",  cls: "CombatEventData",    dir: "res://resources/events/combat/" },
+  { label: "Boss Events",    cls: "BossEventData",      dir: "res://resources/events/boss/" },
+  { label: "Dialogue Events",cls: "DialogueEventData",  dir: "res://resources/events/dialogue/" },
+  { label: "Skill Checks",   cls: "SkillCheckEventData",dir: "res://resources/events/skill_check/" },
+  { label: "Rest Events",    cls: "RestEventData",      dir: "res://resources/events/rest/" },
+  { label: "Dungeon Floors", cls: "DungeonFloorData",  dir: "res://resources/dungeon_floors/" },
 ] as const;
 
 export type ContentTypeCls = (typeof CONTENT_TYPES)[number]["cls"];
+
+export const EVENT_TYPES = new Set([
+  "CombatEventData",
+  "BossEventData",
+  "DialogueEventData",
+  "SkillCheckEventData",
+  "RestEventData",
+]);

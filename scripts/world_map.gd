@@ -10,11 +10,28 @@ signal node_selected(node: WorldMapNode)
 # Set in editor — nodes that become AVAILABLE at game start (first row)
 @export var initial_nodes: Array[NodePath]
 
+# Set to a non-zero value to produce a deterministic floor assignment for this run.
+@export var run_seed: int = 0
+
+var _rng := RandomNumberGenerator.new()
+var _floor_pool: FloorEventPool
+
 
 func _ready() -> void:
+	if run_seed != 0:
+		_rng.seed = run_seed
+	else:
+		_rng.randomize()
+
+	_floor_pool = FloorEventPool.new()
+	_floor_pool.build()
+
 	for child in $NodeContainer.get_children():
 		if child is WorldMapNode:
 			child.node_selected.connect(_on_node_selected)
+		if child is DungeonMapNode:
+			child.resolve_floor(_rng, _floor_pool)
+
 	reset()
 
 

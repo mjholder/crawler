@@ -20,7 +20,18 @@ func execute(action: String, value: Variant) -> void:
 # --- Consequence Methods ---
 
 func give_item(value: Variant) -> void:
-	push_warning("[DialogueConsequences] give_item: inventory not implemented — item: %s" % value)
+	var path := String(value)
+	if path == "" or not ResourceLoader.exists(path):
+		push_warning("[DialogueConsequences] give_item: invalid path '%s'" % path)
+		return
+	var data := load(path) as EquipmentData
+	if data == null:
+		push_warning("[DialogueConsequences] give_item: not EquipmentData at '%s'" % path)
+		return
+	if _game.player._inventory.add_to_bag(data):
+		print("[DialogueConsequences] give_item: %s" % data.display_name)
+	else:
+		push_warning("[DialogueConsequences] give_item: bag full, could not add %s" % data.display_name)
 
 func give_gold(value: Variant) -> void:
 	_game.player.add_gold(int(value))

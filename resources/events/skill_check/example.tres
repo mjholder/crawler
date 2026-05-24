@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="SkillCheckEventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/skill_check_event_data.gd" id="1_sced"]
+
+[resource]
+script = ExtResource("1_sced")
+display_name = "Sneak Past Guard"
+event_path = "res://resources/events/skill_check/example.json"

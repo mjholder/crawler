@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="BossEventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/boss_event_data.gd" id="1_bed"]
+
+[resource]
+script = ExtResource("1_bed")
+display_name = "Debug Boss"
+event_path = "res://resources/events/boss/debug_boss.json"

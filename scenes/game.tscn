@@ -16,7 +16,7 @@
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
 [ext_resource type="Resource" path="res://resources/classes/mage.tres" id="20_suyxu"]
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
-[ext_resource type="Resource" path="res://resources/classes/assassin.tres" id="21_sgl2t"]
+[ext_resource type="Resource" uid="uid://d0qsuhxi8ws57" path="res://resources/classes/assassin.tres" id="21_sgl2t"]
 [ext_resource type="PackedScene" uid="uid://c6yng6pikfy1w" path="res://scenes/item_button.tscn" id="21_sww3w"]
 [ext_resource type="Resource" uid="uid://gd05xm21dlnr" path="res://resources/classes/warrior.tres" id="22_warrior"]
 [ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]

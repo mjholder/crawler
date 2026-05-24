@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="DialogueEventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue_event_data.gd" id="1_ded"]
+
+[resource]
+script = ExtResource("1_ded")
+display_name = "Example Dialogue"
+event_path = "res://resources/events/dialogue/example.json"

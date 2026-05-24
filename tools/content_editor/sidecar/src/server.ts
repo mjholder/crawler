@@ -1,6 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import { readResource, writeResource } from "./godot.js";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { join, extname } from "node:path";
+import { readResource, writeResource, PROJECT_ROOT } from "./godot.js";
 import { getSchema, refreshSchema } from "./schema.js";
 import {
   buildIndex,
@@ -67,9 +69,6 @@ app.post<{ Querystring: { path: string; class: string } }>(
     if (!classDesc) return reply.code(400).send({ error: `Unknown class: ${cls}` });
 
     // Check the file doesn't already exist
-    const { existsSync } = await import("node:fs");
-    const { join } = await import("node:path");
-    const { PROJECT_ROOT } = await import("./godot.js");
     const absPath = join(PROJECT_ROOT, path.replace("res://", ""));
     if (existsSync(absPath)) {
       return reply.code(409).send({ error: "File already exists" });
@@ -138,6 +137,118 @@ app.get<{ Querystring: { uid?: string; path?: string } }>(
     const entry = getEntry(key);
     if (!entry) return reply.code(404).send({ error: "not found" });
     return entry;
+  }
+);
+
+// --- Dialogue JSON endpoints ------------------------------------------------
+
+const DIALOGUE_DIR = join(PROJECT_ROOT, "resources/dialogue");
+
+// GET /dialogues — list all .json files under resources/dialogue/
+app.get("/dialogues", async () => {
+  const files = readdirSync(DIALOGUE_DIR).filter((f) => extname(f) === ".json");
+  return files.map((f) => `res://resources/dialogue/${f}`);
+});
+
+// GET /dialogue?path=res://resources/dialogue/foo.json
+app.get<{ Querystring: { path: string } }>(
+  "/dialogue",
+  async (req, reply) => {
+    const { path } = req.query;
+    if (!path) return reply.code(400).send({ error: "path required" });
+    const absPath = join(PROJECT_ROOT, path.replace("res://", ""));
+    try {
+      const text = readFileSync(absPath, "utf8");
+      return JSON.parse(text);
+    } catch (e) {
+      return reply.code(404).send({ error: String(e) });
+    }
+  }
+);
+
+// POST /dialogue?path=res://resources/dialogue/foo.json  body: dialogue JSON
+app.post<{ Querystring: { path: string }; Body: unknown }>(
+  "/dialogue",
+  { schema: { body: {} } },
+  async (req, reply) => {
+    const { path } = req.query;
+    if (!path) return reply.code(400).send({ error: "path required" });
+    const absPath = join(PROJECT_ROOT, path.replace("res://", ""));
+    try {
+      writeFileSync(absPath, JSON.stringify(req.body, null, 2), "utf8");
+      return { ok: true };
+    } catch (e) {
+      return reply.code(500).send({ error: String(e) });
+    }
+  }
+);
+
+// --- Event JSON endpoints ---------------------------------------------------
+
+const EVENTS_DIR = join(PROJECT_ROOT, "resources/events");
+
+// GET /events?dir=res://resources/events/combat/ — list .json files in a subdir
+app.get<{ Querystring: { dir: string } }>(
+  "/events",
+  async (req, reply) => {
+    const { dir } = req.query;
+    if (!dir) return reply.code(400).send({ error: "dir required" });
+    const relDir = dir.replace("res://", "");
+    const absDir = join(PROJECT_ROOT, relDir);
+    if (!existsSync(absDir)) return reply.code(404).send({ error: "dir not found" });
+    const files = readdirSync(absDir).filter((f) => extname(f) === ".json");
+    return files.map((f) => `res://${relDir}${f}`);
+  }
+);
+
+// GET /event?path=res://resources/events/combat/foo.json
+app.get<{ Querystring: { path: string } }>(
+  "/event",
+  async (req, reply) => {
+    const { path } = req.query;
+    if (!path) return reply.code(400).send({ error: "path required" });
+    const absPath = join(PROJECT_ROOT, path.replace("res://", ""));
+    try {
+      return JSON.parse(readFileSync(absPath, "utf8"));
+    } catch (e) {
+      return reply.code(404).send({ error: String(e) });
+    }
+  }
+);
+
+// POST /event?path=...  body: event JSON
+app.post<{ Querystring: { path: string }; Body: unknown }>(
+  "/event",
+  { schema: { body: {} } },
+  async (req, reply) => {
+    const { path } = req.query;
+    if (!path) return reply.code(400).send({ error: "path required" });
+    const absPath = join(PROJECT_ROOT, path.replace("res://", ""));
+    try {
+      writeFileSync(absPath, JSON.stringify(req.body, null, 2), "utf8");
+      return { ok: true };
+    } catch (e) {
+      return reply.code(500).send({ error: String(e) });
+    }
+  }
+);
+
+// GET /resolve?path=res://... — resolve a .tres path to its script_class
+app.get<{ Querystring: { path: string } }>(
+  "/resolve",
+  async (req, reply) => {
+    const { path } = req.query;
+    if (!path) return reply.code(400).send({ error: "path required" });
+    const absPath = join(PROJECT_ROOT, path.replace("res://", ""));
+    if (!existsSync(absPath)) return reply.code(404).send({ error: "not found" });
+    try {
+      const content = readFileSync(absPath, "utf8").slice(0, 500);
+      const match = content.match(/script_class="([^"]+)"/);
+      if (!match) return reply.code(404).send({ error: "no script_class found" });
+      return { cls: match[1], path };
+    } catch (e) {
+      return reply.code(500).send({ error: String(e) });
+    }
   }
 );
 

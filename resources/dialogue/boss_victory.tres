@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="DialogueData" format=3]
+
+[ext_resource type="Script" path="res://scripts/dialogue_data.gd" id="1_dddata"]
+
+[resource]
+script = ExtResource("1_dddata")
+display_name = "Boss Victory"
+dialogue_path = "res://resources/dialogue/boss_victory.json"
+node_positions_json = ""

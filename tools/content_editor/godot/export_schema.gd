@@ -28,6 +28,15 @@ const RESOURCE_SCRIPTS: Array[String] = [
 	"res://scripts/blessing_data.gd",
 	"res://scripts/spell_data.gd",
 	"res://scripts/tome_data.gd",
+	"res://scripts/dialogue_data.gd",
+	"res://scripts/combat_event_data.gd",
+	"res://scripts/boss_event_data.gd",
+	"res://scripts/dialogue_event_data.gd",
+	"res://scripts/skill_check_event_data.gd",
+	"res://scripts/rest_event_data.gd",
+	"res://scripts/floor_slot.gd",
+	"res://scripts/weighted_entry.gd",
+	"res://scripts/dungeon_floor_data.gd",
 ]
 
 # Scripts whose class-level constants contain enum declarations.

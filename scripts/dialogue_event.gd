@@ -7,14 +7,20 @@ signal dialogue_requested(data: Dictionary)
 
 # --- Data ---
 
+@export var dialogue_data: DialogueData
+
 var _data: Dictionary
 
 # --- Public API ---
 
 func initialize(data: Dictionary) -> void:
-	var dialogue_path: String = data.get("dialogue", "")
+	var dialogue_path: String = ""
+	if dialogue_data != null:
+		dialogue_path = dialogue_data.dialogue_path
+	else:
+		dialogue_path = data.get("dialogue", "")
 	if dialogue_path == "":
-		push_warning("DialogueEvent: data missing 'dialogue' key")
+		push_warning("DialogueEvent: no dialogue path — set dialogue_data or data['dialogue']")
 		return
 	var dialogue_file := FileAccess.open(dialogue_path, FileAccess.READ)
 	if dialogue_file == null:
