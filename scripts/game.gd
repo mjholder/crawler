@@ -667,9 +667,12 @@ func _on_dialogue_requested(data: Dictionary) -> void:
 	start_dialogue(data)
 
 
-func _on_skill_check_requested(stat: Enums.Stat, label: String) -> void:
+func _on_skill_check_requested(stat: Enums.Stat, label: String, threshold_expression: String) -> void:
 	var stat_value: float = player.get_effective_stat(stat)
-	_gui.show_skill_check(Enums.Stat.keys()[stat], label, stat_value)
+	var threshold: float = stat_value
+	if threshold_expression != "":
+		threshold = StatExprEval.new().evaluate(threshold_expression, player)
+	_gui.show_skill_check(Enums.Stat.keys()[stat], label, stat_value, threshold)
 
 
 func _on_gui_skill_check_complete(success: bool) -> void:

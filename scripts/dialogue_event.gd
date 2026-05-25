@@ -14,19 +14,17 @@ var _data: Dictionary
 # --- Public API ---
 
 func initialize(data: Dictionary) -> void:
-	var dialogue_path: String = ""
+	var path: String = ""
 	if dialogue_data != null:
-		dialogue_path = dialogue_data.dialogue_path
+		path = dialogue_data.dialogue_path
 	else:
-		dialogue_path = data.get("dialogue", "")
-	if dialogue_path == "":
+		path = data.get("dialogue", "")
+	if path == "":
 		push_warning("DialogueEvent: no dialogue path — set dialogue_data or data['dialogue']")
 		return
-	var dialogue_file := FileAccess.open(dialogue_path, FileAccess.READ)
-	if dialogue_file == null:
-		push_warning("DialogueEvent: could not open dialogue '%s'" % dialogue_path)
-		return
-	_data = JSON.parse_string(dialogue_file.get_as_text())
+	_data = DialogueLoader.load_dict(path)
+	if _data.is_empty():
+		push_warning("DialogueEvent: could not load dialogue at '%s'" % path)
 
 # --- Enter / Exit ---
 

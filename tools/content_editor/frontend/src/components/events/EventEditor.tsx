@@ -9,7 +9,7 @@ const DEFAULT_JSON: Record<string, unknown> = {
   CombatEventData: { waves: [], rewards: {} },
   BossEventData: { waves: [], dialogue_triggers: {}, rewards: {} },
   DialogueEventData: { name: "", dialogue: "" },
-  SkillCheckEventData: { name: "", label: "", stat: "AGILITY", rewards_on_success: {}, rewards_on_failure: {}, on_success: "", on_failure: "" },
+  SkillCheckEventData: { name: "", label: "", stat: "AGILITY", threshold_expression: "", rewards_on_success: {}, rewards_on_failure: {}, on_success: "", on_failure: "" },
   RestEventData: { heal_expression: "max_health * 0.5" },
 };
 

@@ -427,8 +427,8 @@ func _on_dialogue_complete(terminal_node_id: String) -> void:
 
 # --- Skill Check ---
 
-func show_skill_check(stat_name: String, label: String, stat_value: float) -> void:
-	_skill_check_panel.setup(stat_name, label, stat_value)
+func show_skill_check(stat_name: String, label: String, stat_value: float, threshold: float) -> void:
+	_skill_check_panel.setup(stat_name, label, stat_value, threshold)
 	_skill_check_panel.show()
 
 

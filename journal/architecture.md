@@ -95,9 +95,17 @@ classDiagram
     }
     DialogueData --o DialogueEvent : optional ref
     class SkillCheckEvent {
-        +signal skill_check_requested
+        +String _threshold_expression
+        +signal skill_check_requested(stat, label, threshold_expression)
         +signal dialogue_requested
     }
+    class DialogueLoader {
+        <<static utility>>
+        +load_dict(path) Dictionary
+    }
+    DialogueLoader ..o DialogueEvent : used by
+    DialogueLoader ..o SkillCheckEvent : used by
+    DialogueLoader ..o CombatEvent : used by
     class RestEvent {
         +String heal_expression
         +signal rest_requested

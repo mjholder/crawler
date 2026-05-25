@@ -278,15 +278,29 @@ outcome (success / failure) triggers different dialogue and rewards.
 |---|---|
 | `name` | Internal identifier used by scripted floor sequences. |
 | `label` | The prompt shown to the player in the UI, e.g. `"Sneak past the guard"`. |
-| `stat` | Which stat is rolled: STRENGTH, DEFENSE, CONSTITUTION, AGILITY, SPIRIT, LUCK. |
-| `on_success dialogue` | Path to a dialogue JSON played on success (optional). |
-| `on_failure dialogue` | Path to a dialogue JSON played on failure (optional). |
+| `stat` | Which stat is displayed to the player: STRENGTH, DEFENSE, CONSTITUTION, AGILITY, SPIRIT, LUCK. |
+| `threshold_expression` | GDScript expression for the DC (difficulty class). Defaults to the selected stat's value when left blank. See below. |
+| `on_success dialogue` | Path to a `.tres` DialogueData played on success (optional). |
+| `on_failure dialogue` | Path to a `.tres` DialogueData played on failure (optional). |
 | `rewards_on_success` | XP and gold granted on success. |
 | `rewards_on_failure` | XP and gold granted on failure (can be 0 / empty). |
 
-Note: the DC (difficulty class) is not stored in the JSON — it is resolved by
-the event scene at runtime. This field is planned but not yet exposed in the
-editor.
+**threshold_expression** is evaluated against the player's stats at roll time.
+The roll is `d100 <= threshold` — higher threshold means a wider pass window
+and an easier check. A threshold of 80 passes 80% of the time; a threshold of
+10 passes 10% of the time. Leaving the field empty gives the original behavior:
+DC equals the chosen stat's effective value, so the stat itself is the
+percentage chance of success.
+
+Available variables: `strength`, `defense`, `constitution`, `agility`, `spirit`,
+`luck`, `max_health`, `health`. Standard arithmetic and comparisons work.
+
+| Expression | Effect |
+|---|---|
+| _(empty)_ | DC = chosen stat value (default) |
+| `agility - 10` | Harder than raw AGILITY |
+| `agility + luck` | Easier for lucky/agile characters |
+| `50` | Fixed DC of 50, stat is cosmetic |
 
 **Example:**
 ```json
@@ -294,6 +308,7 @@ editor.
   "name": "sneak_past_guard",
   "label": "Sneak past the guard",
   "stat": "AGILITY",
+  "threshold_expression": "agility - 10",
   "rewards_on_success": { "experience": 15, "gold": 0 },
   "rewards_on_failure": {},
   "on_success": "",

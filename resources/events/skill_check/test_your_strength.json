@@ -1,9 +1,15 @@
 {
-  "name": "",
-  "label": "",
-  "stat": "AGILITY",
-  "rewards_on_success": {},
-  "rewards_on_failure": {},
+  "name": "strength test",
+  "label": "Test your strength!",
+  "stat": "STRENGTH",
+  "rewards_on_success": {
+    "experience": 200,
+    "gold": 1000
+  },
+  "rewards_on_failure": {
+    "experience": 100
+  },
   "on_success": "",
-  "on_failure": ""
+  "on_failure": "",
+  "threshold_expression": "(strength + luck / 10) - 20"
 }

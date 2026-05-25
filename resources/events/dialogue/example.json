@@ -1,4 +1,4 @@
 {
 	"name": "debug_dialogue",
-	"dialogue": "res://resources/dialogue/new_dialogue.json"
+	"dialogue": "res://resources/dialogue/new_dialogue.tres"
 }

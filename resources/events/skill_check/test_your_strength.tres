@@ -5,3 +5,4 @@
 [resource]
 script = ExtResource("1_script")
 event_path = "res://resources/events/skill_check/test_your_strength.json"
+display_name = ""

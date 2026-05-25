@@ -9,9 +9,9 @@
 		{ "enemies": [{ "scene": "res://scenes/skeleton_lord.tscn", "count": 1 }] }
 	],
 	"dialogue_triggers": {
-		"on_start": "res://resources/dialogue/boss_intro.json",
-		"on_mid": "res://resources/dialogue/boss_mid.json",
-		"on_victory": "res://resources/dialogue/boss_victory.json"
+		"on_start": "res://resources/dialogue/boss_intro.tres",
+		"on_mid": "res://resources/dialogue/boss_mid.tres",
+		"on_victory": "res://resources/dialogue/boss_victory.tres"
 	},
 	"rewards": {
 		"experience": 150,

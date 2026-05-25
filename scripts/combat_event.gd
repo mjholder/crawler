@@ -1,7 +1,7 @@
 class_name CombatEvent
 extends Event
 
-const DEFAULT_VICTORY_DIALOGUE := "res://resources/dialogue/post_combat_default.json"
+const DEFAULT_VICTORY_DIALOGUE := "res://resources/dialogue/post_combat_default.tres"
 
 # --- Signals ---
 
@@ -167,12 +167,11 @@ func _on_resolution() -> void:
 		_fire_trigger("on_victory")
 		# game.gd calls on_dialogue_complete() when dialogue is done
 		return
-	var file := FileAccess.open(DEFAULT_VICTORY_DIALOGUE, FileAccess.READ)
-	if file == null:
+	var data: Dictionary = DialogueLoader.load_dict(DEFAULT_VICTORY_DIALOGUE)
+	if data.is_empty():
 		push_warning("CombatEvent: default victory dialogue missing at '%s'" % DEFAULT_VICTORY_DIALOGUE)
 		_set_phase(Phase.COMPLETE)
 		return
-	var data: Dictionary = JSON.parse_string(file.get_as_text())
 	dialogue_trigger_fired.emit("on_victory_default", data)
 
 
@@ -189,11 +188,10 @@ func _fire_trigger(trigger_name: String) -> void:
 	if not _dialogue_triggers.has(trigger_name):
 		return
 	var path: String = _dialogue_triggers[trigger_name]
-	var file := FileAccess.open(path, FileAccess.READ)
-	if file == null:
-		push_warning("CombatEvent: trigger '%s' could not open '%s'" % [trigger_name, path])
+	var data: Dictionary = DialogueLoader.load_dict(path)
+	if data.is_empty():
+		push_warning("CombatEvent: trigger '%s' could not load '%s'" % [trigger_name, path])
 		return
-	var data: Dictionary = JSON.parse_string(file.get_as_text())
 	dialogue_trigger_fired.emit(trigger_name, data)
 
 

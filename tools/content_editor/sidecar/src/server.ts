@@ -144,9 +144,9 @@ app.get<{ Querystring: { uid?: string; path?: string } }>(
 
 const DIALOGUE_DIR = join(PROJECT_ROOT, "resources/dialogue");
 
-// GET /dialogues — list all .json files under resources/dialogue/
+// GET /dialogues — list all .tres files under resources/dialogue/
 app.get("/dialogues", async () => {
-  const files = readdirSync(DIALOGUE_DIR).filter((f) => extname(f) === ".json");
+  const files = readdirSync(DIALOGUE_DIR).filter((f) => extname(f) === ".tres");
   return files.map((f) => `res://resources/dialogue/${f}`);
 });
 

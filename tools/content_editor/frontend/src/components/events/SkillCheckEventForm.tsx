@@ -15,6 +15,7 @@ export function SkillCheckEventForm({ json, onChange, dialoguePaths, onNavigate 
   const label = (json.label as string) ?? "";
   const name = (json.name as string) ?? "";
   const stat = (json.stat as string) ?? "AGILITY";
+  const thresholdExpression = (json.threshold_expression as string) ?? "";
   const onSuccess = (json.on_success as string) ?? "";
   const onFailure = (json.on_failure as string) ?? "";
   const rewardsSuccess = (json.rewards_on_success as Rewards) ?? {};
@@ -42,6 +43,20 @@ export function SkillCheckEventForm({ json, onChange, dialoguePaths, onNavigate 
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
+      </Row>
+      <Row label="threshold_expression">
+        <div>
+          <textarea
+            style={styles.textarea}
+            rows={2}
+            value={thresholdExpression}
+            onChange={(e) => setField("threshold_expression", e.target.value)}
+            placeholder="(defaults to stat value — e.g. agility - 10)"
+          />
+          <div style={styles.hint}>
+            Variables: <code>strength</code> <code>defense</code> <code>constitution</code> <code>agility</code> <code>spirit</code> <code>luck</code> <code>max_health</code> <code>health</code>
+          </div>
+        </div>
       </Row>
 
       <SectionHeader>On success</SectionHeader>
@@ -132,4 +147,19 @@ const styles = {
     fontSize: 13,
     outline: "none",
   },
+  textarea: {
+    display: "block" as const,
+    width: "100%",
+    background: "#222",
+    border: "1px solid #444",
+    color: "#eee",
+    borderRadius: 3,
+    padding: "4px 6px",
+    fontSize: 13,
+    fontFamily: "monospace",
+    resize: "vertical" as const,
+    outline: "none",
+    boxSizing: "border-box" as const,
+  },
+  hint: { fontSize: 11, color: "#555", marginTop: 4 },
 } as const;

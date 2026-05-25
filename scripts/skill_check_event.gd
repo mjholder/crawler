@@ -3,13 +3,14 @@ extends Event
 
 # --- Signals ---
 
-signal skill_check_requested(stat: Enums.Stat, label: String)
+signal skill_check_requested(stat: Enums.Stat, label: String, threshold_expression: String)
 signal dialogue_requested(data: Dictionary)
 
 # --- Data ---
 
 var _stat: Enums.Stat
 var _label: String
+var _threshold_expression: String
 var _on_success_path: String
 var _on_failure_path: String
 var _rewards_on_success: Dictionary
@@ -20,6 +21,7 @@ var _success: bool
 
 func initialize(data: Dictionary) -> void:
 	_label = data.get("label", "")
+	_threshold_expression = data.get("threshold_expression", "")
 	_on_success_path = data.get("on_success", "")
 	_on_failure_path = data.get("on_failure", "")
 	_rewards_on_success = data.get("rewards_on_success", {})
@@ -50,7 +52,7 @@ func _on_setup() -> void:
 
 
 func _on_running() -> void:
-	skill_check_requested.emit(_stat, _label)
+	skill_check_requested.emit(_stat, _label, _threshold_expression)
 
 
 func _on_resolution() -> void:
@@ -59,12 +61,11 @@ func _on_resolution() -> void:
 	if path == "":
 		_set_phase(Phase.COMPLETE)
 		return
-	var dialogue_file := FileAccess.open(path, FileAccess.READ)
-	if dialogue_file == null:
-		push_warning("SkillCheckEvent: could not open dialogue '%s'" % path)
+	var dialogue_data: Dictionary = DialogueLoader.load_dict(path)
+	if dialogue_data.is_empty():
+		push_warning("SkillCheckEvent: could not load dialogue at '%s'" % path)
 		_set_phase(Phase.COMPLETE)
 		return
-	var dialogue_data: Dictionary = JSON.parse_string(dialogue_file.get_as_text())
 	dialogue_requested.emit(dialogue_data)
 
 

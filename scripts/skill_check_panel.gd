@@ -17,6 +17,7 @@ signal skill_check_complete(success: bool)
 # --- State ---
 
 var _stat_value: float
+var _threshold: float
 var _success: bool
 
 
@@ -27,11 +28,12 @@ func _ready() -> void:
 	_continue_button.pressed.connect(_on_continue_pressed)
 
 
-func setup(stat_name: String, label: String, stat_value: float) -> void:
+func setup(stat_name: String, label: String, stat_value: float, threshold: float) -> void:
 	_stat_name_label.text = stat_name
 	_stat_value_label.text = str(int(stat_value))
 	_prompt_label.text = label
 	_stat_value = stat_value
+	_threshold = threshold
 	_roll_result_label.hide()
 	_continue_button.hide()
 	_roll_button.disabled = false
@@ -41,7 +43,7 @@ func setup(stat_name: String, label: String, stat_value: float) -> void:
 
 func _on_roll_button_pressed() -> void:
 	var roll: int = randi_range(1, 100)
-	_success = roll <= int(_stat_value)
+	_success = roll <= int(_threshold)
 	var result_text: String = "SUCCESS" if _success else "FAILURE"
 	_roll_result_label.text = "Rolled: %d — %s" % [roll, result_text]
 	_roll_result_label.show()
