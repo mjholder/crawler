@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import type { GameSchema } from "./types/schema.js";
-import { EVENT_TYPES } from "./types/schema.js";
+import { EVENT_TYPES, BUILDER_VIEWS } from "./types/schema.js";
 import { api } from "./api.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { ResourceForm } from "./components/ResourceForm.js";
 import { ResourceTable } from "./components/ResourceTable.js";
 import { DialogueEditor } from "./components/DialogueEditor.js";
 import { EventEditor } from "./components/events/EventEditor.js";
+import { FloorSlotBuilder } from "./components/FloorSlotBuilder.js";
 import { HelpDrawer } from "./components/HelpDrawer.js";
 import { anchorForView } from "./help/anchorMap.js";
 
@@ -43,6 +44,11 @@ export function App() {
     setSelectedPath("");
     setNavStack([]);
   }
+
+  const openHelp = useCallback((anchor: string) => {
+    setHelpAnchor(anchor);
+    setHelpOpen(true);
+  }, []);
 
   // Navigate to any res:// path — resolves its class first
   const navigateToPath = useCallback(async (path: string) => {
@@ -90,7 +96,10 @@ export function App() {
     return <div style={styles.loading}>Loading schema…</div>;
   }
 
-  const isCustomView = selectedType === "DialogueData" || (selectedType !== null && EVENT_TYPES.has(selectedType));
+  const isBuilderView = selectedType !== null && BUILDER_VIEWS.has(selectedType);
+  const isCustomView = selectedType === "DialogueData"
+    || (selectedType !== null && EVENT_TYPES.has(selectedType))
+    || isBuilderView;
 
   return (
     <div style={styles.root}>
@@ -99,6 +108,7 @@ export function App() {
         onSelectType={handleSelectType}
         selectedPath={selectedPath}
         onSelectPath={handleSelectPath}
+        onOpenGuide={openHelp}
       />
 
       <div style={styles.main}>
@@ -187,6 +197,14 @@ export function App() {
 
         {selectedType && EVENT_TYPES.has(selectedType) && !selectedPath && (
           <div style={styles.empty}>Select an event from the sidebar.</div>
+        )}
+
+        {isBuilderView && selectedType === "FloorSlotBuilder" && (
+          <FloorSlotBuilder
+            schema={schema}
+            onHelp={openHelp}
+            onNavigate={navigateToPath}
+          />
         )}
       </div>
 

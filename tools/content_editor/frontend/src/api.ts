@@ -34,6 +34,9 @@ export const api = {
   listType: (cls: string): Promise<string[]> =>
     apiFetch(`/types/${encodeURIComponent(cls)}`),
 
+  listResourcesInDir: (dir: string): Promise<string[]> =>
+    apiFetch(`/resources-in-dir?dir=${encodeURIComponent(dir)}`),
+
   readResource: (path: string): Promise<unknown> =>
     apiFetch(`/resource?path=${encodeURIComponent(path)}`),
 

@@ -28,6 +28,7 @@ const EVENT_ANCHOR: Record<string, string> = {
   SkillCheckEventData: "skill-check-events",
   RestEventData: "rest-events",
   DialogueEventData: "dialogue-events",
+  FloorSlotBuilder: "floorslot",
 };
 
 export function anchorForView(

@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
-import { join, extname } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { join, extname, relative } from "node:path";
 import { readResource, writeResource, PROJECT_ROOT } from "./godot.js";
 import { getSchema, refreshSchema } from "./schema.js";
 import {
@@ -40,6 +40,29 @@ app.get<{ Params: { cls: string } }>(
   "/types/:cls",
   async (req) => {
     return listByClassWithSubclasses(req.params.cls, getSchema());
+  }
+);
+
+// GET /resources-in-dir?dir=res://resources/events/ — list all .tres files under a directory
+app.get<{ Querystring: { dir: string } }>(
+  "/resources-in-dir",
+  async (req, reply) => {
+    const { dir } = req.query;
+    if (!dir) return reply.code(400).send({ error: "dir required" });
+    const relDir = dir.replace("res://", "");
+    const absDir = join(PROJECT_ROOT, relDir);
+    if (!existsSync(absDir)) return reply.code(404).send({ error: "dir not found" });
+    const results: string[] = [];
+    function walk(d: string): void {
+      for (const entry of readdirSync(d)) {
+        const abs = join(d, entry);
+        if (statSync(abs).isDirectory()) walk(abs);
+        else if (entry.endsWith(".tres"))
+          results.push("res://" + relative(PROJECT_ROOT, abs).replace(/\\/g, "/"));
+      }
+    }
+    walk(absDir);
+    return results;
   }
 );
 

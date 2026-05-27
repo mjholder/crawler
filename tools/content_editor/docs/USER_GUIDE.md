@@ -759,18 +759,44 @@ resolving each `FloorSlot` in the `slots` array in order.
 
 ### FloorSlot
 
-One event position in a `DungeonFloorData`. Resolves to a specific event at
-runtime using one of three modes.
+One event position in a `DungeonFloorData`. `FloorSlot` is a tagged union:
+the `type` field controls which variant is active, and the editor
+**only shows the fields relevant to the selected type** — the others are hidden.
 
-| Field | In-game meaning | Widget | Notes |
-|---|---|---|---|
-| `type` | How this slot selects its event. | Enum dropdown | `FIXED (0)`, `RANDOM_TYPE (1)`, `WEIGHTED (2)` |
-| `event` | *(FIXED only)* The specific event wrapper to use. | Resource picker | `combat/example.tres` |
-| `event_type` | *(RANDOM_TYPE only)* Pick a random event of this type from all events in `resources/events/<type>/`. | Enum dropdown | `combat (0)`, `boss (1)`, `dialogue (2)`, `skill_check (3)`, `rest (4)` |
-| `entries` | *(WEIGHTED only)* Array of `WeightedEntry` objects. One is chosen by weighted random. | Array (inline WeightedEntry) | |
+Use the **Floor Slots** sidebar tab for a focused builder that shows a
+floor-picker and lets you add, edit, and reorder slots without opening the
+full `DungeonFloorData` form. The `?` icon next to the `type` field opens
+this help section.
+
+#### FIXED (type = 0)
+
+Runs one specific event every time.
+
+| Field | Widget | Notes |
+|---|---|---|
+| `type` | Enum dropdown | Set to `Fixed (0)` |
+| `event` | Resource picker | The event `.tres` to run (e.g. `boss/dragon.tres`) |
+
+#### RANDOM_TYPE (type = 1)
+
+Picks a random event of the given category from the stock pool each run.
+
+| Field | Widget | Notes |
+|---|---|---|
+| `type` | Enum dropdown | Set to `Random Type (1)` |
+| `event_type` | Enum dropdown | `combat (0)`, `boss (1)`, `dialogue (2)`, `skill_check (3)`, `rest (4)` |
+
+#### WEIGHTED (type = 2)
+
+Picks from an explicit list proportionally by weight.
+
+| Field | Widget | Notes |
+|---|---|---|
+| `type` | Enum dropdown | Set to `Weighted (2)` |
+| `entries` | Array (inline WeightedEntry) | See WeightedEntry below |
 
 **Examples:**
-- Fixed combat: `type = FIXED`, `event = combat/example.tres`
+- Fixed boss: `type = FIXED`, `event = boss/dragon.tres`
 - Any random rest: `type = RANDOM_TYPE`, `event_type = rest (4)`
 - Weighted: `type = WEIGHTED`, entries = `[combat × 3, dialogue × 1, rest × 2]`
 
@@ -778,13 +804,26 @@ runtime using one of three modes.
 
 ### WeightedEntry
 
-One option in a `FloorSlot` of type WEIGHTED.
+One option in a `FloorSlot` of type WEIGHTED. Each entry is itself a small
+union: it either names a **specific event** or a **random category** — not
+both. The game resolves whichever branch is active:
 
-| Field | In-game meaning | Widget | Notes |
-|---|---|---|---|
-| `event` | A specific event wrapper. If set, this entry always resolves to this event. | Resource picker | Leave null to use `event_type` instead. |
-| `event_type` | Pick a random event of this type. Only used when `event` is null. | Enum dropdown | Same options as `FloorSlot.event_type`. |
-| `weight` | Relative probability. A weight of 3 is 3× as likely as weight 1. Minimum effective weight is 1. | Integer | `3` |
+```
+entry.event != null  →  always run that specific event
+entry.event == null  →  pick a random event of entry.event_type from the pool
+```
+
+The editor hides the unused field automatically:
+
+- **Set `event`** (link or inline a `.tres`) → `event_type` disappears.
+  Clear `event` (set the picker back to `(none)`) → `event_type` reappears.
+- **Leave `event` empty** → only `event_type` is shown; choose the category.
+
+| Field | Widget | Notes |
+|---|---|---|
+| `event` | Resource picker | Specific event `.tres`. Clear to use `event_type` instead. |
+| `event_type` | Enum dropdown | Only shown when `event` is null. Same values as `FloorSlot.event_type`. |
+| `weight` | Integer | Relative probability — `3` is 3× as likely as `1`. Minimum effective weight is 1. |
 
 ---
 

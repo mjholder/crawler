@@ -1,0 +1,37 @@
+export type FieldPredicate = (propName: string, data: Record<string, unknown>) => boolean;
+
+// Per-class field visibility predicates.  When a class is listed here, only
+// props that pass the predicate are shown in InlineResourceEditor.  Other
+// classes render all props unconditionally (predicate absent = show all).
+export const FIELD_VISIBILITY: Record<string, FieldPredicate> = {
+  FloorSlot: (propName, data) => {
+    // FloorSlot is a tagged union — only the fields relevant to the current
+    // type value should be visible.  Default to FIXED (0) to match GDScript.
+    const type = typeof data.type === "number" ? data.type : 0;
+    switch (propName) {
+      case "type":       return true;
+      case "event":      return type === 0; // FIXED
+      case "event_type": return type === 1; // RANDOM_TYPE
+      case "entries":    return type === 2; // WEIGHTED
+      default:           return true;
+    }
+  },
+
+  WeightedEntry: (propName, data) => {
+    // WeightedEntry resolves via `event` if non-null, else via `event_type`.
+    // Hide whichever branch isn't active so both don't show simultaneously.
+    if (propName === "event_type") return data.event == null;
+    return true;
+  },
+};
+
+// Override the directory scanned for a Resource-typed field.
+// Key format: "ClassName.propName"  Value: res:// directory path (trailing slash).
+export const FIELD_DIR_OVERRIDES: Record<string, string> = {
+  "FloorSlot.event": "res://resources/events/",
+  "WeightedEntry.event": "res://resources/events/",
+};
+
+export function getFieldDirOverride(cls: string, propName: string): string | undefined {
+  return FIELD_DIR_OVERRIDES[`${cls}.${propName}`];
+}

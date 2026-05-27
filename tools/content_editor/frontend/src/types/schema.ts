@@ -36,6 +36,7 @@ export function getAllProperties(
 }
 
 // Content types shown in the sidebar — each maps to a script_class and default new-file dir.
+// Entries with isBuilder:true are custom views (no file list, no + button).
 export const CONTENT_TYPES = [
   { label: "Weapons",      cls: "WeaponData",      dir: "res://resources/equipment/weapons/" },
   { label: "Armor & Rings",cls: "EquipmentData",   dir: "res://resources/equipment/armor/" },
@@ -50,6 +51,7 @@ export const CONTENT_TYPES = [
   { label: "Skill Checks",   cls: "SkillCheckEventData",dir: "res://resources/events/skill_check/" },
   { label: "Rest Events",    cls: "RestEventData",      dir: "res://resources/events/rest/" },
   { label: "Dungeon Floors", cls: "DungeonFloorData",  dir: "res://resources/dungeon_floors/" },
+  { label: "Floor Slots",    cls: "FloorSlotBuilder",  dir: "", isBuilder: true },
 ] as const;
 
 export type ContentTypeCls = (typeof CONTENT_TYPES)[number]["cls"];
@@ -61,3 +63,5 @@ export const EVENT_TYPES = new Set([
   "SkillCheckEventData",
   "RestEventData",
 ]);
+
+export const BUILDER_VIEWS = new Set<string>(["FloorSlotBuilder"]);

@@ -8,6 +8,7 @@
 import { useState, useEffect } from "react";
 import type { PropDescriptor, GameSchema } from "../types/schema.js";
 import { getAllProperties } from "../types/schema.js";
+import { FIELD_VISIBILITY, getFieldDirOverride } from "../types/fieldVisibility.js";
 import { api } from "../api.js";
 
 const BUILTIN_ASSET_TYPES = new Set(["Texture2D", "AudioStream", "PackedScene", "SpriteFrames"]);
@@ -33,9 +34,11 @@ export interface FieldProps {
   schema: GameSchema;
   depth?: number;
   onNavigate?: (path: string) => void;
+  onHelp?: (anchor: string) => void;
+  dirOverride?: string;
 }
 
-export function FieldRenderer({ prop, value, onChange, schema, depth = 0, onNavigate }: FieldProps) {
+export function FieldRenderer({ prop, value, onChange, schema, depth = 0, onNavigate, onHelp, dirOverride }: FieldProps) {
   if (depth > 4) return <span style={{ color: "#888" }}>[deep]</span>;
 
   switch (prop.type) {
@@ -91,6 +94,7 @@ export function FieldRenderer({ prop, value, onChange, schema, depth = 0, onNavi
           schema={schema}
           depth={depth}
           onNavigate={onNavigate}
+          onHelp={onHelp}
         />
       );
 
@@ -103,6 +107,8 @@ export function FieldRenderer({ prop, value, onChange, schema, depth = 0, onNavi
           schema={schema}
           depth={depth}
           onNavigate={onNavigate}
+          onHelp={onHelp}
+          dirOverride={dirOverride}
         />
       );
 
@@ -203,9 +209,10 @@ function EnumField({
   schema: GameSchema;
 }) {
   const entries = enumRef ? schema.enums[enumRef] : enumValues ?? {};
+  const firstVal = Object.values(entries ?? {})[0] ?? 0;
   return (
     <select
-      value={value ?? ""}
+      value={value ?? firstVal}
       onChange={(e) => onChange(parseInt(e.target.value, 10))}
       style={fieldStyle}
     >
@@ -336,6 +343,7 @@ function ArrayField({
   schema,
   depth,
   onNavigate,
+  onHelp,
 }: {
   value: unknown[] | null;
   onChange: (v: unknown[]) => void;
@@ -343,6 +351,7 @@ function ArrayField({
   schema: GameSchema;
   depth: number;
   onNavigate?: (path: string) => void;
+  onHelp?: (anchor: string) => void;
 }) {
   const arr = value ?? [];
 
@@ -375,6 +384,7 @@ function ArrayField({
               schema={schema}
               depth={depth + 1}
               onNavigate={onNavigate}
+              onHelp={onHelp}
             />
           </div>
           <button style={styles.removeBtn} onClick={() => remove(i)}>×</button>
@@ -396,6 +406,8 @@ function ResourceRefField({
   schema,
   depth,
   onNavigate,
+  onHelp,
+  dirOverride,
 }: {
   value: unknown;
   onChange: (v: unknown) => void;
@@ -403,6 +415,8 @@ function ResourceRefField({
   schema: GameSchema;
   depth: number;
   onNavigate?: (path: string) => void;
+  onHelp?: (anchor: string) => void;
+  dirOverride?: string;
 }) {
   const [options, setOptions] = useState<string[]>([]);
   const isBuiltin = BUILTIN_ASSET_TYPES.has(resourceType);
@@ -412,12 +426,16 @@ function ResourceRefField({
   const currentRef = isRef ? (value as { __ref: string }).__ref : "";
 
   useEffect(() => {
+    if (dirOverride) {
+      api.listResourcesInDir(dirOverride).then(setOptions).catch(() => setOptions([]));
+      return;
+    }
     if (!resourceType) return;
     const fetch = isBuiltin
       ? api.listAssets(resourceType)
       : api.listType(resourceType);
     fetch.then(setOptions).catch(() => setOptions([]));
-  }, [resourceType, isBuiltin]);
+  }, [resourceType, isBuiltin, dirOverride]);
 
   // If the value is an inline resource, render the inline editor immediately
   if (isInline) {
@@ -429,6 +447,7 @@ function ResourceRefField({
         depth={depth}
         onDetach={() => onChange(null)}
         onNavigate={onNavigate}
+        onHelp={onHelp}
       />
     );
   }
@@ -504,6 +523,7 @@ function InlineResourceEditor({
   depth,
   onDetach,
   onNavigate,
+  onHelp,
 }: {
   value: unknown;
   onChange: (v: unknown) => void;
@@ -511,10 +531,13 @@ function InlineResourceEditor({
   depth: number;
   onDetach: () => void;
   onNavigate?: (path: string) => void;
+  onHelp?: (anchor: string) => void;
 }) {
   const data = value as Record<string, unknown>;
   const cls = ((data._godot_meta as Record<string, unknown>)?.class as string) ?? "";
-  const props = getAllProperties(cls, schema);
+  const allProps = getAllProperties(cls, schema);
+  const predicate = FIELD_VISIBILITY[cls];
+  const props = predicate ? allProps.filter((p) => predicate(p.name, data)) : allProps;
 
   function updateField(name: string, val: unknown) {
     onChange({ ...data, [name]: val });
@@ -529,7 +552,12 @@ function InlineResourceEditor({
         </button>
       </div>
       {props.map((p) => (
-        <FormRow key={p.name} label={p.name}>
+        <FormRow
+          key={p.name}
+          label={p.name}
+          helpAnchor={cls === "FloorSlot" && p.name === "type" ? "floorslot" : undefined}
+          onHelp={onHelp}
+        >
           <FieldRenderer
             prop={p}
             value={data[p.name]}
@@ -537,6 +565,8 @@ function InlineResourceEditor({
             schema={schema}
             depth={depth + 1}
             onNavigate={onNavigate}
+            onHelp={onHelp}
+            dirOverride={getFieldDirOverride(cls, p.name)}
           />
         </FormRow>
       ))}
@@ -580,10 +610,31 @@ function JsonField({
   );
 }
 
-export function FormRow({ label, children }: { label: string; children: React.ReactNode }) {
+export function FormRow({
+  label,
+  children,
+  helpAnchor,
+  onHelp,
+}: {
+  label: string;
+  children: React.ReactNode;
+  helpAnchor?: string;
+  onHelp?: (anchor: string) => void;
+}) {
   return (
     <div style={styles.row}>
-      <label style={styles.label}>{label}</label>
+      <label style={styles.label}>
+        {label}
+        {helpAnchor && onHelp && (
+          <button
+            style={styles.helpHintBtn}
+            onClick={() => onHelp(helpAnchor)}
+            title="Open help"
+          >
+            ?
+          </button>
+        )}
+      </label>
       <div style={styles.fieldWrap}>{children}</div>
     </div>
   );
@@ -639,6 +690,18 @@ const styles = {
     width: 20,
     textAlign: "right" as const,
     flexShrink: 0,
+  },
+  helpHintBtn: {
+    marginLeft: 4,
+    padding: "0 3px",
+    background: "none",
+    border: "none",
+    color: "#7af",
+    cursor: "pointer",
+    fontSize: 10,
+    fontWeight: 600,
+    verticalAlign: "middle",
+    lineHeight: 1,
   },
   removeBtn: {
     background: "none",
