@@ -43,6 +43,8 @@ export const CONTENT_TYPES = [
   { label: "Attacks",      cls: "AttackData",       dir: "res://resources/attacks/" },
   { label: "Effects",      cls: "DamageEffect",     dir: "res://resources/effects/" },
   { label: "Classes",      cls: "PlayerClassData",  dir: "res://resources/classes/" },
+  { label: "Backgrounds",  cls: "BackgroundData",   dir: "res://resources/backgrounds/" },
+  { label: "Patron Saints",cls: "PatronSaintData",  dir: "res://resources/patron_saints/" },
   { label: "Shops",        cls: "ShopData",         dir: "res://resources/shops/" },
   { label: "Dialogues",    cls: "DialogueData",     dir: "res://resources/dialogue/" },
   { label: "Combat Events",  cls: "CombatEventData",    dir: "res://resources/events/combat/" },

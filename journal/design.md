@@ -19,6 +19,18 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Three-layer character identity: Class + Background + Patron Saint
+
+**Date:** 2026-06-07
+**Daily:** [[daily/2026-06-07]]
+**Context:** Character creation only picked a class. `journal/ideas.md` (2026-05-30) proposed a three-part build identity — Class (*what you can do*), Background (*who you were*), Patron Saint (*what watches over you*) — to deepen build variety and theme. Needed data shapes, player integration, content-editor authoring, and a hand-built creation UI.
+**Alternatives considered:**
+- *Patron saint as `lineage_id` only* (journal's original) — no wrapper; reconstruct a saint by grouping loose `BlessingData` by string id. Rejected: the selection UI and content editor would have to group by string, and there's no home for the saint's own name/description distinct from tier 1.
+- *Background passive as pure explicit fields* — can't express conditional/proc passives. *Background passive as pure `subscriptions`* — economy multipliers (gold reward, shop price) don't fit the signal bus; they're read at specific call sites.
+- *3-column single-screen creation UI* — shows all picks at once for synergy reasoning, but the user chose a wizard for a simpler per-step flow.
+**Rationale:** `PatronSaintData` is a wrapper resource (`display_name`/`description`/`icon` + `tiers: Array[BlessingData]` of length 3) **and** `BlessingData` gains a `lineage_id: StringName`. The wrapper is one pickable/editable unit and makes ascension trivial (`saint.tiers[n]`); `lineage_id` lets the runtime identify the active saint tier and future-proofs branching evolutions. `BackgroundData` is a hybrid: `stat_modifiers` (signed — drawbacks allowed) + an optional `passive: BlessingData` (reuses the verified `add_blessing`/`get_effective_stat` path) for behavioral effects, plus explicit `starting_gold` and `gold_reward_multiplier`/`shop_buy_multiplier`/`shop_sell_multiplier` floats read by `game.gd._apply_rewards` and `shop_event.gd`. `Player.initialize()` gained optional `background`/`patron` params (default `null` → back-compatible); `_setup_background`/`_setup_patron` mirror `_setup_starting_blessings`. The creation UI is a hand-built 4-step wizard (Class → Background → Saint → Confirm) that resizes with the viewport. Both new resources are pure schema-driven in the content editor (no React code).
+**Trade-offs / risks:** A saint's `lineage_id` and each tier's `lineage_id` must be kept in sync (the create-saint skill does this). Background has two stat-shift surfaces (its own `stat_modifiers` + its passive's). Saint *tiers* live in `resources/patron_saints/tiers/` and background passives in `resources/backgrounds/passives/`, kept out of the general blessing pool so unique saint shapes can't leak into random rewards. **Shrine ascension is deferred to Phase 2** — it needs a new event type and an "act" concept the codebase lacks; Phase 1 ships saints at tier 1 (fully playable) with `_patron_tier_index` and `ascend_patron()` already in place. The sample Saint of Ambush expresses its tiers via `stat_modifiers` + a tier-3 heal-on-kill subscription; the "first attack deals Nx damage" proc described in ideas.md needs a new effect type (future work).
+
 ## Authored dungeon floors with polymorphic slot system
 
 **Date:** 2026-05-23

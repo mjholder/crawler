@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="BlessingData" format=3]
+
+[ext_resource type="Script" uid="uid://jvfhxoq8sxt2" path="res://scripts/blessing_data.gd" id="1_bdata"]
+
+[resource]
+script = ExtResource("1_bdata")
+display_name = "Saint of Ambush — Adept"
+description = "The ambush deepens: +20 STR, +10 AGI. But the saint's hunger leaves you exposed — its tithe is -8 DEF."
+stat_modifiers = {
+0: 20.0,
+1: -8.0,
+3: 10.0
+}
+lineage_id = &"ambush"

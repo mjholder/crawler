@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BackgroundData" format=3]
+
+[ext_resource type="Script" path="res://scripts/background_data.gd" id="1_bgdata"]
+
+[resource]
+script = ExtResource("1_bgdata")
+display_name = "Failed Business Owner"
+description = "Your ledger bled red until the doors closed for good. You kept a head for coin and a knack for a bargain — little else to show for it."
+stat_modifiers = {
+0: -4.0,
+5: 8.0
+}
+starting_gold = 150
+gold_reward_multiplier = 1.25
+shop_buy_multiplier = 0.85
+shop_sell_multiplier = 1.2

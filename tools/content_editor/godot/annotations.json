@@ -37,6 +37,13 @@
     "stat_modifiers": { "key_type": "Enums.Stat", "value_type": "float" },
     "subscriptions": { "key_type": "StringName", "value_type": "Effect" }
   },
+  "BackgroundData": {
+    "stat_modifiers": { "key_type": "Enums.Stat", "value_type": "float" },
+    "passive": { "resource_type": "BlessingData" }
+  },
+  "PatronSaintData": {
+    "tiers": { "element_type": "BlessingData" }
+  },
   "FloorSlot": {
     "entries": { "element_type": "WeightedEntry" }
   },

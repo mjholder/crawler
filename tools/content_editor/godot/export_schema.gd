@@ -26,6 +26,8 @@ const RESOURCE_SCRIPTS: Array[String] = [
 	"res://scripts/conditional_modifier.gd",
 	"res://scripts/status_data.gd",
 	"res://scripts/blessing_data.gd",
+	"res://scripts/background_data.gd",
+	"res://scripts/patron_saint_data.gd",
 	"res://scripts/spell_data.gd",
 	"res://scripts/tome_data.gd",
 	"res://scripts/dialogue_data.gd",

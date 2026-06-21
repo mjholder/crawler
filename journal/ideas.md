@@ -73,7 +73,7 @@ Synergies are meaningful but not required — a Mage / Cloistered Scholar / Sain
 - *Branching saint evolutions* — Act 2 offers 2–3 paths within the same saint. Lineage system already supports this; just adds authoring + design work.
 - *Non-combat saints* — Saint of the Locked Door, Saint of Liars, etc. — saints whose signature triggers fire on skill checks or dialogue rather than combat. Would broaden the appeal of the choice for build types that aren't combat-focused.
 
-**Status:** worth exploring
+**Status:** `moved to plan` — Phase 1 implemented 2026-06-07 (data layer, player integration, content editor, hand-built wizard UI, sample content). See [[design.md]] and [[daily/2026-06-07]]. Shrine ascension (tier 2/3) is the open Phase 2.
 
 ---
 

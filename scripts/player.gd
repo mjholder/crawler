@@ -82,6 +82,14 @@ var _game: Game = null
 var _blessings: Array[BlessingData] = []
 var _blessing_subs: Dictionary = {}  # BlessingData -> Subscription
 
+# --- Character Creation Layers (background + patron saint) ---
+var gold_reward_multiplier: float = 1.0  # background bonus, read by game.gd._apply_rewards
+var shop_buy_multiplier: float = 1.0     # background bonus, stacks onto ShopData
+var shop_sell_multiplier: float = 1.0    # background bonus, stacks onto ShopData
+var _background: BackgroundData = null
+var _patron: PatronSaintData = null
+var _patron_tier_index: int = -1         # which saint tier is active; -1 = none
+
 # --- Node References ---
 @onready var _hurt_player: AudioStreamPlayer2D = $SFX/HurtPlayer
 @onready var _death_player: AudioStreamPlayer2D = $SFX/DeathPlayer
@@ -111,7 +119,7 @@ func _process(_delta: float) -> void:
 
 # --- Initialization ---
 
-func initialize(p_name: String, class_data: PlayerClassData) -> void:
+func initialize(p_name: String, class_data: PlayerClassData, background: BackgroundData = null, patron: PatronSaintData = null) -> void:
 	reset_run_state()
 	_class_data = class_data
 	player_name = p_name
@@ -126,11 +134,13 @@ func initialize(p_name: String, class_data: PlayerClassData) -> void:
 	pending_stat_points = 0
 	pending_growth_bonuses = {}
 	gold = 0
+	_setup_starting_equipment(class_data)
+	_setup_starting_blessings(class_data)
+	_setup_background(background)
+	_setup_patron(patron)
 	_recalculate_max_health()
 	_recalculate_max_mana()
 	health = max_health
-	_setup_starting_equipment(class_data)
-	_setup_starting_blessings(class_data)
 	_recalculate_prep_slots()
 	_setup_starting_spells(class_data)
 	restore_mana_to_full()
@@ -160,6 +170,12 @@ func reset_run_state() -> void:
 	_attack_animation_pending = false
 	_cast_animation_pending = false
 	is_dead = false
+	gold_reward_multiplier = 1.0
+	shop_buy_multiplier = 1.0
+	shop_sell_multiplier = 1.0
+	_background = null
+	_patron = null
+	_patron_tier_index = -1
 	_transition(State.IDLE)
 	_inventory.set_dungeon_locked(false)
 
@@ -182,6 +198,44 @@ func _setup_starting_equipment(class_data: PlayerClassData) -> void:
 func _setup_starting_blessings(class_data: PlayerClassData) -> void:
 	for data in class_data.starting_blessings:
 		add_blessing(data)
+
+
+func _setup_background(background: BackgroundData) -> void:
+	if background == null:
+		return
+	_background = background
+	gold_reward_multiplier = background.gold_reward_multiplier
+	shop_buy_multiplier = background.shop_buy_multiplier
+	shop_sell_multiplier = background.shop_sell_multiplier
+	add_gold(background.starting_gold)
+	if background.passive != null:
+		add_blessing(background.passive)
+
+
+func _setup_patron(patron: PatronSaintData) -> void:
+	if patron == null or patron.tiers.is_empty():
+		return
+	_patron = patron
+	_patron_tier_index = 0
+	var tier := patron.tiers[0]
+	if tier != null:
+		add_blessing(tier)
+
+
+## Advances the active patron saint to its next tier (Phase 2 shrine ascension).
+## Removes the current tier blessing and applies the next; no-op past the last tier.
+func ascend_patron() -> void:
+	if _patron == null or _patron_tier_index < 0 or _patron_tier_index >= _patron.tiers.size() - 1:
+		return
+	var current := _patron.tiers[_patron_tier_index]
+	if current != null:
+		remove_blessing(current)
+	_patron_tier_index += 1
+	var next := _patron.tiers[_patron_tier_index]
+	if next != null:
+		add_blessing(next)
+	_recalculate_max_health()
+	_recalculate_max_mana()
 
 
 # --- Blessings ---
@@ -754,6 +808,12 @@ func to_save_dict() -> Dictionary:
 		"health": health,
 		"mana": mana,
 		"is_dead": is_dead,
+		"background_path": _background.resource_path if _background != null else "",
+		"patron_path": _patron.resource_path if _patron != null else "",
+		"patron_tier_index": _patron_tier_index,
+		"gold_reward_multiplier": gold_reward_multiplier,
+		"shop_buy_multiplier": shop_buy_multiplier,
+		"shop_sell_multiplier": shop_sell_multiplier,
 		"blessings": blessings,
 		"learned_spells": _spell_paths(_learned_spells),
 		"prepared_spells": _prepared_spell_paths(),
@@ -778,6 +838,16 @@ func apply_save_dict(d: Dictionary) -> void:
 	pending_stat_points = d["pending_stat_points"]
 	pending_growth_bonuses = d["pending_growth_bonuses"].duplicate()
 	is_dead = d["is_dead"]
+	# The background passive and active saint tier are restored via the blessings
+	# array below; here we only re-bind the layer references and economy multipliers.
+	var bg_path: String = d.get("background_path", "")
+	_background = load(bg_path) as BackgroundData if not bg_path.is_empty() else null
+	var patron_path: String = d.get("patron_path", "")
+	_patron = load(patron_path) as PatronSaintData if not patron_path.is_empty() else null
+	_patron_tier_index = d.get("patron_tier_index", -1)
+	gold_reward_multiplier = d.get("gold_reward_multiplier", 1.0)
+	shop_buy_multiplier = d.get("shop_buy_multiplier", 1.0)
+	shop_sell_multiplier = d.get("shop_sell_multiplier", 1.0)
 	_transition(State.DEAD if is_dead else State.IDLE)
 	_recalculate_max_health()
 	_recalculate_max_mana()
@@ -857,6 +927,8 @@ func get_effective_stat(stat: Enums.Stat) -> float:
 	for blessing in _blessings:
 		if blessing.stat_modifiers.has(stat):
 			value += blessing.stat_modifiers[stat]
+	if _background != null and _background.stat_modifiers.has(stat):
+		value += _background.stat_modifiers[stat]
 	return value
 
 

@@ -13,3 +13,8 @@ extends Resource
 # Effects are applied as effect.apply(player, player) — blessings always target
 # the owner, never enemies. Use equipment proc_effects for hostile-target procs.
 @export var subscriptions: Dictionary = {}
+
+# Ties a blessing to a PatronSaintData lineage. Empty for ordinary blessings.
+# Saint tiers share their saint's lineage_id so the runtime can identify and
+# swap the active saint tier during shrine ascension.
+@export var lineage_id: StringName = &""

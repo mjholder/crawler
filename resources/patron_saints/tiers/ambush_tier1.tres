@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BlessingData" format=3]
+
+[ext_resource type="Script" uid="uid://jvfhxoq8sxt2" path="res://scripts/blessing_data.gd" id="1_bdata"]
+
+[resource]
+script = ExtResource("1_bdata")
+display_name = "Saint of Ambush — Initiate"
+description = "Strike first, strike hard. You open every fight with the upper hand: +12 STR, +6 AGI."
+stat_modifiers = {
+0: 12.0,
+3: 6.0
+}
+lineage_id = &"ambush"

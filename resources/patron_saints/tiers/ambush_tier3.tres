@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BlessingData" format=3]
+
+[ext_resource type="Script" uid="uid://jvfhxoq8sxt2" path="res://scripts/blessing_data.gd" id="1_bdata"]
+[ext_resource type="Resource" path="res://resources/effects/heal_15_flat.tres" id="2_heal15"]
+
+[resource]
+script = ExtResource("1_bdata")
+display_name = "Saint of Ambush — Avatar"
+description = "A predator's covenant: +30 STR, +16 AGI, and each kill restores 15 HP. The tithe bites deeper still — -12 DEF."
+stat_modifiers = {
+0: 30.0,
+1: -12.0,
+3: 16.0
+}
+subscriptions = {
+&"enemy_died": ExtResource("2_heal15")
+}
+lineage_id = &"ambush"

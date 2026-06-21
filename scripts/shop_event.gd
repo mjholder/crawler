@@ -22,8 +22,9 @@ func initialize(data: Dictionary) -> void:
 		return
 	_shop_name = shop.shop_name
 	_stock = shop.stock.duplicate()
-	_buy_mult = shop.buy_price_multiplier
-	_sell_mult = shop.sell_price_multiplier
+	# Background economy bonuses (injected by game.gd) stack onto the shop's own rates.
+	_buy_mult = shop.buy_price_multiplier * data.get("buy_mult_player", 1.0)
+	_sell_mult = shop.sell_price_multiplier * data.get("sell_mult_player", 1.0)
 
 
 func on_buy(item: EquipmentData) -> void:

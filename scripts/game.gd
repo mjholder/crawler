@@ -307,9 +307,9 @@ func _reset_run_state() -> void:
 	_gui.hide_event_hud()
 
 
-func _on_character_created(p_name: String, class_data: PlayerClassData) -> void:
+func _on_character_created(p_name: String, class_data: PlayerClassData, background: BackgroundData = null, patron: PatronSaintData = null) -> void:
 	_reset_run_state()
-	player.initialize(p_name, class_data)
+	player.initialize(p_name, class_data, background, patron)
 	game_started = true
 	_gui.start_game()
 	_enter_world_map()
@@ -638,7 +638,12 @@ func _start_next_dungeon_event() -> void:
 	var config: Dictionary = _pending_event_configs[_event_index]
 	_event_index += 1
 	var event := (config["scene"] as PackedScene).instantiate() as Event
-	event.initialize(config["data"])
+	var data: Dictionary = config["data"]
+	if event is ShopEvent:
+		data = data.duplicate()
+		data["buy_mult_player"] = player.shop_buy_multiplier
+		data["sell_mult_player"] = player.shop_sell_multiplier
+	event.initialize(data)
 	_enter_event(event)
 
 
@@ -938,7 +943,7 @@ func quit_to_main() -> void:
 
 func _apply_rewards(r: Dictionary) -> void:
 	var xp: int = r.get("experience", 0)
-	var gold: int = r.get("gold", 0)
+	var gold: int = roundi(r.get("gold", 0) * player.gold_reward_multiplier)
 	if xp > 0:
 		player.add_experience(xp)
 	if gold > 0:

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="PatronSaintData" format=3]
+
+[ext_resource type="Script" path="res://scripts/patron_saint_data.gd" id="1_psdata"]
+[ext_resource type="Script" uid="uid://jvfhxoq8sxt2" path="res://scripts/blessing_data.gd" id="2_bdata"]
+[ext_resource type="Resource" path="res://resources/patron_saints/tiers/ambush_tier1.tres" id="3_t1"]
+[ext_resource type="Resource" path="res://resources/patron_saints/tiers/ambush_tier2.tres" id="4_t2"]
+[ext_resource type="Resource" path="res://resources/patron_saints/tiers/ambush_tier3.tres" id="5_t3"]
+
+[resource]
+script = ExtResource("1_psdata")
+display_name = "Saint of Ambush"
+description = "A patron of the first blow. Their blessing sharpens across the run, and their tithe sharpens with it."
+lineage_id = &"ambush"
+tiers = Array[ExtResource("2_bdata")]([ExtResource("3_t1"), ExtResource("4_t2"), ExtResource("5_t3")])

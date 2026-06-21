@@ -269,6 +269,8 @@ Phase 7 added the spell system. `SpellData` (resource, mirrors `AttackData`) car
 
 Phase 8 extended the spell system with five additions. **Two-handed lock**: `WeaponData.is_two_handed` causes `Player._setup_equipment` to call `Inventory.lock_slot(OFFHAND)` on equip and `unlock_slot` on teardown; `Inventory._slot_locks: Dictionary` enforces this in `equip()`. **Spell animations**: `Weapon` gains `cast_animation_finished` signal and `_on_player_cast()` handler (falls back to "attack" anim if no "cast" anim exists); `_do_cast` in `Player` now gates `cast_hit` behind animation like `_do_attack` does for `attack_hit`. **Mana regen**: `EquipmentData.bonus_mana_regen`, `PlayerClassData.mana_regen_per_turn / mana_on_kill` feed into `Player.mana_regen / mana_on_kill` (computed in `_recalculate_mana_regen`, called from `_recalculate_max_mana`); `game.gd` restores mana at the start of each player turn and on each enemy kill. **Tomes**: `TomeData` (new `Resource` — item_name, spell, gold_value) held in `Inventory._tomes`; `InventoryPanel` renders a dynamic Tomes section; clicking a tome button calls `player.learn_spell` (blocked by dungeon lock). **Affinity tags**: `EquipmentData.affinity_tags: Array[StringName]` — data field only; loot pool logic deferred until procedural generation is built.
 
+Phase 9 added the **three-layer character identity**: alongside `PlayerClassData`, creation now picks a `BackgroundData` (*who you were*) and a `PatronSaintData` (*what watches over you*). `BackgroundData` carries a signed `stat_modifiers` shift, `starting_gold`, economy floats (`gold_reward_multiplier` read in `game.gd._apply_rewards`; `shop_buy_multiplier`/`shop_sell_multiplier` injected into the shop event's `data` dict and stacked onto `ShopData`'s own multipliers in `ShopEvent.initialize`), and an optional `passive: BlessingData`. `PatronSaintData` wraps three `BlessingData` `tiers` (one per act) sharing a `lineage_id` (new field on `BlessingData`). `Player` gained `gold_reward_multiplier`/`shop_buy_multiplier`/`shop_sell_multiplier` fields, `_background`/`_patron`/`_patron_tier_index` state, `_setup_background`/`_setup_patron` (mirroring `_setup_starting_blessings`), an `ascend_patron()` tier-swap (Phase 2 shrine hook), a `_background.stat_modifiers` term in `get_effective_stat`, and save/load fields. `Player.initialize()` / `GUI.character_created` / `CharacterCreationPanel.character_confirmed` all gained optional `background`/`patron` params (default `null`, back-compatible). The creation UI (`character_creation_panel.gd` + the `CharacterCreationPanel` subtree in `game.tscn`) is a hand-built 4-step wizard (Class → Background → Patron Saint → Confirm) anchored full-rect so it resizes with the viewport. Both resources are pure schema-driven in the content editor. **Shrine ascension (tier 2/3) is deferred to Phase 2.** Saint flow: `CharacterCreationPanel.character_confirmed → GUI.character_created → game._on_character_created → player.initialize(name, class, background, patron)`.
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -350,6 +352,23 @@ classDiagram
         +String display_name
         +Dictionary stat_modifiers
         +Dictionary subscriptions
+        +StringName lineage_id
+    }
+    class BackgroundData {
+        <<Resource>>
+        +String display_name
+        +Dictionary stat_modifiers
+        +int starting_gold
+        +float gold_reward_multiplier
+        +float shop_buy_multiplier
+        +float shop_sell_multiplier
+        +BlessingData passive
+    }
+    class PatronSaintData {
+        <<Resource>>
+        +String display_name
+        +StringName lineage_id
+        +Array~BlessingData~ tiers
     }
     class PlayerClassData {
         <<Resource>>
@@ -422,6 +441,8 @@ classDiagram
     PlayerClassData o-- BlessingData : starting_blessings
     PlayerClassData o-- TomeData : starting_tomes
     BlessingData o-- Effect : subscriptions
+    BackgroundData o-- BlessingData : passive
+    PatronSaintData o-- BlessingData : tiers
     ShopData o-- EquipmentData : stock
     WeaponData o-- AttackData : attacks
     WeaponData o-- SpellData : innate_spells

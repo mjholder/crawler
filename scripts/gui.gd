@@ -2,7 +2,7 @@ class_name GUI
 extends CanvasLayer
 
 # --- Signals ---
-signal character_created(player_name: String, class_data: PlayerClassData)
+signal character_created(player_name: String, class_data: PlayerClassData, background: BackgroundData, patron: PatronSaintData)
 signal level_up_complete
 signal quit_to_main_requested
 signal attack_requested(attack_name: String)
@@ -466,9 +466,9 @@ func show_character_creation() -> void:
 	_character_creation.show()
 
 
-func _on_character_confirmed(p_name: String, class_data: PlayerClassData) -> void:
+func _on_character_confirmed(p_name: String, class_data: PlayerClassData, background: BackgroundData = null, patron: PatronSaintData = null) -> void:
 	_character_creation.hide()
-	character_created.emit(p_name, class_data)
+	character_created.emit(p_name, class_data, background, patron)
 
 
 # --- Level-Up Panel ---

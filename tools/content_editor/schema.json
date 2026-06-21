@@ -38,6 +38,52 @@
 			],
 			"script": "res://scripts/attack_data.gd"
 		},
+		"BackgroundData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "stat_modifiers",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"name": "starting_gold",
+					"type": "int"
+				},
+				{
+					"name": "gold_reward_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "shop_buy_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "shop_sell_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "passive",
+					"resource_type": "BlessingData",
+					"type": "Resource"
+				}
+			],
+			"script": "res://scripts/background_data.gd"
+		},
 		"BlessingData": {
 			"extends": "",
 			"properties": [
@@ -65,6 +111,10 @@
 					"name": "subscriptions",
 					"type": "Dictionary",
 					"value_type": "Effect"
+				},
+				{
+					"name": "lineage_id",
+					"type": "StringName"
 				}
 			],
 			"script": "res://scripts/blessing_data.gd"
@@ -511,6 +561,34 @@
 				}
 			],
 			"script": "res://scripts/heal_effect.gd"
+		},
+		"PatronSaintData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "lineage_id",
+					"type": "StringName"
+				},
+				{
+					"element_type": "BlessingData",
+					"name": "tiers",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/patron_saint_data.gd"
 		},
 		"PlayerClassData": {
 			"extends": "",

@@ -824,46 +824,96 @@ func _add_to_base_stat(stat: Enums.Stat, amount: float) -> void:
 
 ---
 
+## BackgroundData Resource
+
+`scripts/background_data.gd` — the *who you were* character-creation layer (alongside class and patron
+saint). Theme: civilians forced to adventure. Fields:
+
+| Field | Type | Role |
+|---|---|---|
+| `display_name` / `description` / `icon` | String / String / Texture2D | presentation |
+| `stat_modifiers` | Dictionary (Enums.Stat int → float) | flat run-long stat shift, **signed** (negative = gothic drawback) |
+| `starting_gold` | int | gold the character begins the run with |
+| `gold_reward_multiplier` | float | scales event gold rewards; read in `game.gd._apply_rewards` |
+| `shop_buy_multiplier` | float | stacks onto `ShopData.buy_price_multiplier` (<1 = cheaper) |
+| `shop_sell_multiplier` | float | stacks onto `ShopData.sell_price_multiplier` (>1 = better) |
+| `passive` | BlessingData | optional unique passive; granted via `add_blessing` at run start |
+
+The stat shift is summed in `Player.get_effective_stat` (its own modifier layer); the optional `passive`
+reuses the full `BlessingData` machinery (its own `stat_modifiers` + lifecycle `subscriptions`). The
+economy floats are plain values read at specific call sites, not signal-bus effects. Stored in
+`resources/backgrounds/` (passive blessings in `resources/backgrounds/passives/`).
+
+## PatronSaintData Resource
+
+`scripts/patron_saint_data.gd` — the *what watches over you* layer. A divine contract that evolves
+across the run's three acts.
+
+| Field | Type | Role |
+|---|---|---|
+| `display_name` / `description` / `icon` | | presentation |
+| `lineage_id` | StringName | shared id tying the saint's tiers together |
+| `tiers` | Array[BlessingData] | the three act tiers (index 0 = Act 1 … 2 = Act 3) |
+
+A saint is a thin wrapper: each tier is an ordinary `BlessingData` carrying the same `lineage_id` (a new
+field on `BlessingData`). Tier 0 is granted at character creation via `Player._setup_patron`. Tiers 2
+and 3 are applied by `Player.ascend_patron()` — it `remove_blessing`s the current tier and
+`add_blessing`s the next, reusing the verified tier-swap path — driven by the **Phase 2 shrine
+ascension event** (not yet built). `_patron` and `_patron_tier_index` persist across save/load so the
+next tier is known. Triggers should be conditional/dramatic (reuse `subscriptions`), and the tithe
+scales with tier (larger negative `stat_modifiers`). Stored in `resources/patron_saints/` (tiers in
+`resources/patron_saints/tiers/`, kept out of the general blessing pool so unique saint shapes never
+leak into random rewards).
+
+## Player Integration
+
+`Player.initialize(p_name, class_data, background := null, patron := null)` — the two new params default
+to `null` (back-compatible). After the existing class setup it calls `_setup_background(background)`
+(sets the three economy multipliers, adds `starting_gold`, grants the `passive`) and
+`_setup_patron(patron)` (adds `tiers[0]`, sets `_patron_tier_index = 0`). The health/mana recalc was
+moved to *after* these calls so a background/saint CON shift counts toward starting max HP.
+`reset_run_state` clears the layers and resets the multipliers to `1.0`. `to_save_dict` /
+`apply_save_dict` persist `background_path`, `patron_path`, `patron_tier_index`, and the three
+multipliers (the active tier blessing + background passive round-trip via the existing `blessings`
+array).
+
 ## Character Creation Flow
 
-### Sequence
+### Sequence (4-step wizard)
 
 ```
 MainMenu
   └── [Start Button pressed]
-       └── Character Creation Screen shown
-            ├── Name input (LineEdit)
-            ├── Class picker (list of PlayerClassData)
-            └── [Continue pressed]
-                 └── game.gd receives (name, class_data)
-                      ├── player.initialize(name, class_data)
-                      └── start_game() → show world map
+       └── CharacterCreationPanel shown (hand-built wizard, resizes with viewport)
+            ├── Step 1: Name (LineEdit) + Class picker (PlayerClassData)
+            ├── Step 2: Background picker (BackgroundData)
+            ├── Step 3: Patron Saint picker (PatronSaintData)
+            ├── Step 4: Confirm (summary) — Next button reads "Begin"
+            │     (Back/Next gate: each step requires its selection before advancing)
+            └── [Begin pressed]
+                 └── character_confirmed(name, class, background, patron)
+                      └── GUI.character_created → game._on_character_created
+                           ├── player.initialize(name, class, background, patron)
+                           └── start_game() → show world map
 ```
 
-### gui.gd Changes
+The panel auto-loads pickable resources from `res://resources/classes/`, `…/backgrounds/`, and
+`…/patron_saints/` when its exported arrays are empty. Each step shows an info panel (class stats,
+background effects, saint tier preview) in a `ScrollContainer` so tall content never overflows.
+
+### Signal chain (all extended with optional `background`/`patron`)
 
 ```gdscript
-signal character_created(player_name: String, class_data: PlayerClassData)
-
-@onready var _character_creation: Control = $CharacterCreation
-```
-
-`_on_start_button_pressed()` shows the character creation screen instead of emitting `start_requested`. The creation screen emits `character_created` when confirmed. `start_requested` signal is removed.
-
-### game.gd Changes
-
-```gdscript
-# In _ready():
-_gui.character_created.connect(_on_character_created)
-# Remove: _gui.start_requested.connect(start_game)
-# Remove: _setup_starting_equipment()
-
-func _on_character_created(p_name: String, class_data: PlayerClassData) -> void:
-    player.initialize(p_name, class_data)
-    _gui.start_game()
-    _gui.show_world_map()
-    _gui.update_player_health(player.health, player.max_health)
-    _gui.update_player_stats(player.build_stats_dict())
+# character_creation_panel.gd
+signal character_confirmed(player_name, class_data, background, patron)
+# gui.gd
+signal character_created(player_name, class_data, background, patron)
+func _on_character_confirmed(p_name, class_data, background := null, patron := null):
+    character_created.emit(p_name, class_data, background, patron)
+# game.gd
+func _on_character_created(p_name, class_data, background := null, patron := null):
+    player.initialize(p_name, class_data, background, patron)
+    ...
 ```
 
 ---

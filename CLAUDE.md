@@ -33,6 +33,10 @@ journal/   # Developer docs (design decisions, ideas, daily logs)
 | `scripts/equipment_data.gd` | `EquipmentData` resource (base) and `WeaponData` |
 | `scripts/equipment.gd` | `Equipment` base node — visuals, modifiers, hooks |
 | `scripts/weapon.gd` | `Weapon extends Equipment` — attack animation and SFX |
+| `scripts/blessing_data.gd` | `BlessingData` resource — stat mods, lifecycle `subscriptions`, `lineage_id` (saint tier marker) |
+| `scripts/background_data.gd` | `BackgroundData` resource — character-creation "who you were" layer (stat shift, gold, economy mods, optional passive) |
+| `scripts/patron_saint_data.gd` | `PatronSaintData` resource — character-creation "what watches over you" layer; wraps 3 `BlessingData` tiers |
+| `scripts/character_creation_panel.gd` | Hand-built wizard UI: Class → Background → Patron Saint → Confirm |
 | `journal/design.md` | Architectural decisions with rationale — read before changing structure |
 | `journal/architecture.md` | Mermaid architecture map — high-level graph, event hierarchy, signal flow, equipment model |
 | `journal/ideas.md` | Future systems backlog |
