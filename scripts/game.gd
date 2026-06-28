@@ -796,11 +796,12 @@ func _on_town_requested() -> void:
 func _on_gui_town_temple_requested() -> void:
 	if not current_event is EndActEvent:
 		return
-	var cost := (current_event as EndActEvent).ascension_cost()
+	var event := current_event as EndActEvent
+	var cost := event.ascension_cost()
 	var saint: PatronSaintData = player.get_patron()
 	var saint_name: String = saint.display_name if saint != null else ""
 	_gui.hide_town_panel()
-	if not player.can_ascend_patron():
+	if event.has_ascended() or not player.can_ascend_patron():
 		_gui.show_shrine_panel(saint_name, false, "", "", {}, cost, player.gold)
 		return
 	var next: BlessingData = player.get_next_tier()
@@ -810,9 +811,10 @@ func _on_gui_town_temple_requested() -> void:
 func _on_gui_shrine_ascend_requested() -> void:
 	_gui.hide_shrine_panel()
 	if current_event is EndActEvent:
-		var cost := (current_event as EndActEvent).ascension_cost()
-		if player.can_ascend_patron() and player.spend_gold(cost):
+		var event := current_event as EndActEvent
+		if not event.has_ascended() and player.can_ascend_patron() and player.spend_gold(event.ascension_cost()):
 			player.ascend_patron()
+			event.mark_ascended()
 			_gui.update_player_gold(player.gold)
 	_gui.show_town_panel()
 

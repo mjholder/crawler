@@ -4,7 +4,6 @@
 [ext_resource type="Script" path="res://scripts/floor_slot.gd" id="2_fs"]
 [ext_resource type="Resource" path="res://resources/events/combat/example.tres" id="3_combat"]
 [ext_resource type="Resource" path="res://resources/events/rest/half_heal.tres" id="4_rest"]
-[ext_resource type="Resource" path="res://resources/events/boss/debug_boss.tres" id="5_boss"]
 
 [sub_resource type="Resource" id="Slot_combat"]
 script = ExtResource("2_fs")
@@ -16,13 +15,8 @@ script = ExtResource("2_fs")
 type = 0
 event = ExtResource("4_rest")
 
-[sub_resource type="Resource" id="Slot_boss"]
-script = ExtResource("2_fs")
-type = 0
-event = ExtResource("5_boss")
-
 [resource]
 script = ExtResource("1_dfd")
 display_name = "Scripted Demo"
 tags = ["demo"]
-slots = [SubResource("Slot_combat"), SubResource("Slot_rest"), SubResource("Slot_boss")]
+slots = [SubResource("Slot_combat"), SubResource("Slot_rest")]

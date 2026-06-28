@@ -12,6 +12,8 @@ signal town_requested
 
 var _game: Node = null
 var _cost: int = 0
+## The temple grants at most one ascension per visit to this node.
+var _has_ascended: bool = false
 
 
 # --- Public API ---
@@ -23,6 +25,17 @@ func initialize(data: Dictionary) -> void:
 ## Gold tithe charged at the temple. Read by game.gd when opening the temple panel.
 func ascension_cost() -> int:
 	return _cost
+
+
+## True once the player has ascended at this node's temple — caps the visit to
+## a single tier so the player can't chain ascensions in one stop.
+func has_ascended() -> bool:
+	return _has_ascended
+
+
+## Called by game.gd after a successful temple ascension.
+func mark_ascended() -> void:
+	_has_ascended = true
 
 
 ## Called by game.gd when the player chooses to leave the town for the next act.

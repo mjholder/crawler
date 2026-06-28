@@ -81,6 +81,12 @@ func pick_of_type(type: String, rng: RandomNumberGenerator) -> Resource:
 
 func event_config_for(wrapper: Resource) -> Dictionary:
 	var type := _type_for_wrapper(wrapper)
+	# Boss fights belong to dedicated BossMapNodes, which load the boss directly and
+	# bypass this pool entirely. Refuse boss wrappers here so a stray floor slot can
+	# never leak a boss into a regular dungeon node's event list.
+	if type == "boss":
+		push_warning("[FloorEventPool] Boss events are restricted to boss nodes — skipping boss slot")
+		return {}
 	var scene: PackedScene = _scenes.get(type)
 	if scene == null:
 		push_warning("[FloorEventPool] No scene for event type '%s'" % type)

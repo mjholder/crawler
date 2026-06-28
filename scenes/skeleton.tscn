@@ -150,7 +150,7 @@ _data = {
 script = ExtResource("1_ssl1b")
 enemy_name = "Skeleton"
 max_health = 100.0
-attack_damage = 90.0
+attack_damage = 50.0
 experience_value = 20
 defense = 12.0
 

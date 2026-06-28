@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" path="res://scripts/dungeon_floor_data.gd" id="1_dfd"]
 [ext_resource type="Script" path="res://scripts/floor_slot.gd" id="2_fs"]
-[ext_resource type="Resource" path="res://resources/events/boss/debug_boss.tres" id="3_boss"]
 
 [sub_resource type="Resource" id="Slot_combat"]
 script = ExtResource("2_fs")
@@ -14,13 +13,8 @@ script = ExtResource("2_fs")
 type = 1
 event_type = 4
 
-[sub_resource type="Resource" id="Slot_boss"]
-script = ExtResource("2_fs")
-type = 0
-event = ExtResource("3_boss")
-
 [resource]
 script = ExtResource("1_dfd")
 display_name = "Standard Short"
 tags = ["short"]
-slots = [SubResource("Slot_combat"), SubResource("Slot_rest"), SubResource("Slot_boss")]
+slots = [SubResource("Slot_combat"), SubResource("Slot_rest")]

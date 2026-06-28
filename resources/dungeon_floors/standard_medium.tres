@@ -3,7 +3,6 @@
 [ext_resource type="Script" path="res://scripts/dungeon_floor_data.gd" id="1_dfd"]
 [ext_resource type="Script" path="res://scripts/floor_slot.gd" id="2_fs"]
 [ext_resource type="Script" path="res://scripts/weighted_entry.gd" id="3_we"]
-[ext_resource type="Resource" path="res://resources/events/boss/debug_boss.tres" id="4_boss"]
 
 [sub_resource type="Resource" id="Entry_combat"]
 script = ExtResource("3_we")
@@ -40,13 +39,8 @@ script = ExtResource("2_fs")
 type = 1
 event_type = 3
 
-[sub_resource type="Resource" id="Slot_boss"]
-script = ExtResource("2_fs")
-type = 0
-event = ExtResource("4_boss")
-
 [resource]
 script = ExtResource("1_dfd")
 display_name = "Standard Medium"
 tags = ["medium", "mixed"]
-slots = [SubResource("Slot_combat0"), SubResource("Slot_combat1"), SubResource("Slot_weighted"), SubResource("Slot_skillcheck"), SubResource("Slot_boss")]
+slots = [SubResource("Slot_combat0"), SubResource("Slot_combat1"), SubResource("Slot_weighted"), SubResource("Slot_skillcheck")]
