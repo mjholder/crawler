@@ -238,6 +238,30 @@ func ascend_patron() -> void:
 	_recalculate_max_mana()
 
 
+## The active patron saint, or null if none was chosen.
+func get_patron() -> PatronSaintData:
+	return _patron
+
+
+## True when an active patron saint has a further tier to ascend into.
+func can_ascend_patron() -> bool:
+	return _patron != null and _patron_tier_index >= 0 and _patron_tier_index < _patron.tiers.size() - 1
+
+
+## The currently active patron tier blessing, or null if none.
+func get_active_tier() -> BlessingData:
+	if _patron == null or _patron_tier_index < 0 or _patron_tier_index >= _patron.tiers.size():
+		return null
+	return _patron.tiers[_patron_tier_index]
+
+
+## The tier the player would ascend into next, or null if already at the last tier.
+func get_next_tier() -> BlessingData:
+	if not can_ascend_patron():
+		return null
+	return _patron.tiers[_patron_tier_index + 1]
+
+
 # --- Blessings ---
 
 func add_blessing(data: BlessingData) -> void:

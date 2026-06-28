@@ -50,6 +50,7 @@ var current_event: Event = null
 var _pending_event_configs: Array[Dictionary] = []
 var _event_index: int = 0
 var _active_world_node: WorldMapNode = null
+var current_act: int = 1
 
 # --- Targeting State ---
 
@@ -95,6 +96,10 @@ func _ready() -> void:
 	_gui.shop_buy_requested.connect(_on_gui_shop_buy_requested)
 	_gui.shop_sell_requested.connect(_on_gui_shop_sell_requested)
 	_gui.shop_leave_requested.connect(_on_gui_shop_leave_requested)
+	_gui.shrine_ascend_requested.connect(_on_gui_shrine_ascend_requested)
+	_gui.shrine_leave_requested.connect(_on_gui_shrine_leave_requested)
+	_gui.town_temple_requested.connect(_on_gui_town_temple_requested)
+	_gui.town_travel_requested.connect(_on_gui_town_travel_requested)
 
 	_enter_main_menu()
 
@@ -301,6 +306,7 @@ func _reset_run_state() -> void:
 	_pending_event_configs = []
 	_event_index = 0
 	_active_world_node = null
+	current_act = 1
 	round_number = 0
 	state = Enums.TurnState.NO_TURN
 	_pre_dialogue_state = Enums.TurnState.NO_TURN
@@ -324,6 +330,15 @@ func _on_continue_requested() -> void:
 	player.apply_save_dict(save.player)
 	game_started = true
 	_gui.start_game()
+	current_act = save.current_act
+	if save.active_act_scene_path != _gui.get_world_map().scene_file_path:
+		var act_scene := load(save.active_act_scene_path) as PackedScene
+		if act_scene == null:
+			push_error("[GAME] Continue: could not load act map '%s' — save discarded" % save.active_act_scene_path)
+			SaveManager.clear()
+			_gui.return_to_main_menu()
+			return
+		_gui.swap_world_map(act_scene)
 	_gui.get_world_map().apply_state_dict(save.world_map_node_states)
 	if save.active_world_node_path.is_empty():
 		_enter_world_map()
@@ -649,8 +664,25 @@ func _start_next_dungeon_event() -> void:
 
 func _on_dungeon_complete() -> void:
 	var completed_node := _active_world_node
+	if completed_node is EndActMapNode:
+		_advance_to_next_act(completed_node as EndActMapNode)
+		return
 	_exit_dungeon()
 	_enter_world_map(completed_node)
+	SaveManager.write(self)
+
+
+## Reached the end-of-act town's "travel onward". Loads the next act's world map, or
+## ends the run in victory when the node has no next act (the final act).
+func _advance_to_next_act(node: EndActMapNode) -> void:
+	_exit_dungeon()
+	if node.next_act_scene == null:
+		_enter_victory()
+		return
+	current_act += 1
+	_gui.swap_world_map(node.next_act_scene)
+	print("[GAME] Advancing to act %d" % current_act)
+	_enter_world_map()
 	SaveManager.write(self)
 
 
@@ -752,6 +784,48 @@ func _on_gui_shop_leave_requested() -> void:
 	_gui.hide_shop()
 	if current_event is ShopEvent:
 		(current_event as ShopEvent).on_leave()
+
+
+# --- End-of-Act Town ---
+
+func _on_town_requested() -> void:
+	_gui.show_town_panel()
+
+
+## Temple service: open the patron-ascension panel, sourced from the player's saint.
+func _on_gui_town_temple_requested() -> void:
+	if not current_event is EndActEvent:
+		return
+	var cost := (current_event as EndActEvent).ascension_cost()
+	var saint: PatronSaintData = player.get_patron()
+	var saint_name: String = saint.display_name if saint != null else ""
+	_gui.hide_town_panel()
+	if not player.can_ascend_patron():
+		_gui.show_shrine_panel(saint_name, false, "", "", {}, cost, player.gold)
+		return
+	var next: BlessingData = player.get_next_tier()
+	_gui.show_shrine_panel(saint_name, true, next.display_name, next.description, next.stat_modifiers, cost, player.gold)
+
+
+func _on_gui_shrine_ascend_requested() -> void:
+	_gui.hide_shrine_panel()
+	if current_event is EndActEvent:
+		var cost := (current_event as EndActEvent).ascension_cost()
+		if player.can_ascend_patron() and player.spend_gold(cost):
+			player.ascend_patron()
+			_gui.update_player_gold(player.gold)
+	_gui.show_town_panel()
+
+
+func _on_gui_shrine_leave_requested() -> void:
+	_gui.hide_shrine_panel()
+	_gui.show_town_panel()
+
+
+func _on_gui_town_travel_requested() -> void:
+	_gui.hide_town_panel()
+	if current_event is EndActEvent:
+		(current_event as EndActEvent).on_travel_onward()
 
 
 func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
@@ -920,10 +994,10 @@ func _on_player_died() -> void:
 
 
 func _on_boss_defeated() -> void:
-	print("[GAME] Boss defeated — VICTORY")
-	state = Enums.TurnState.VICTORY
-	_gui.set_consumables_enabled(false)
-	# Victory panel is shown via _on_event_complete() after the on_victory dialogue.
+	# The act boss is the act's climax, not the end of the run: the boss event completes
+	# like any combat and returns to the map, unlocking the end-of-act town. The run ends
+	# only at an end-act node with no next act (see _advance_to_next_act).
+	print("[GAME] Act boss defeated")
 
 
 func quit_to_main() -> void:

@@ -12,6 +12,8 @@ static func write(game: Game) -> Error:
 	data.version = RunSaveData.VERSION
 	data.saved_at_unix = int(Time.get_unix_time_from_system())
 	data.player = game.player.to_save_dict()
+	data.current_act = game.current_act
+	data.active_act_scene_path = game._gui.get_world_map().scene_file_path
 	data.world_map_node_states = game._gui.get_world_map().to_state_dict()
 	data.game_state = game.game_state
 	data.active_world_node_path = _node_to_path(game._active_world_node, game._gui.get_world_map())

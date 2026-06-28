@@ -14,6 +14,10 @@ signal node_selected(node: WorldMapNode)
 signal shop_buy_requested(item: EquipmentData)
 signal shop_sell_requested(item: EquipmentData)
 signal shop_leave_requested
+signal shrine_ascend_requested
+signal shrine_leave_requested
+signal town_temple_requested
+signal town_travel_requested
 signal consumable_use_requested(index: int)
 signal continue_requested
 
@@ -37,6 +41,8 @@ signal continue_requested
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
 @onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
 @onready var _rest_panel: RestPanel = $RestPanel
+@onready var _shrine_panel: ShrinePanel = $ShrinePanel
+@onready var _town_panel: TownPanel = $TownPanel
 @onready var _world_map: WorldMap = $WorldMap
 @onready var _inventory_panel: InventoryPanel = $InventoryPanel
 @onready var _stats_label: Label = $InventoryPanel/HBoxContainer/StatsContainer/Label
@@ -77,6 +83,12 @@ func _ready() -> void:
 	_rest_panel.hide()
 	_rest_panel.rest_requested.connect(_on_rest_requested)
 	_rest_panel.rest_complete.connect(_on_rest_complete)
+	_shrine_panel.hide()
+	_shrine_panel.ascend_requested.connect(func() -> void: shrine_ascend_requested.emit())
+	_shrine_panel.leave_requested.connect(func() -> void: shrine_leave_requested.emit())
+	_town_panel.hide()
+	_town_panel.temple_requested.connect(func() -> void: town_temple_requested.emit())
+	_town_panel.travel_requested.connect(func() -> void: town_travel_requested.emit())
 	_world_map.hide()
 	_world_map.node_selected.connect(_on_world_map_node_selected)
 	_player_hud.hide()
@@ -190,6 +202,8 @@ func return_to_main_menu() -> void:
 	_dialogue_panel.hide()
 	_skill_check_panel.hide()
 	_rest_panel.hide()
+	_shrine_panel.hide()
+	_town_panel.hide()
 	_shop_panel.hide()
 	_inventory_panel.hide()
 	_consumable_belt.set_management_mode(false)
@@ -395,6 +409,25 @@ func get_world_map() -> WorldMap:
 	return _world_map
 
 
+## Replaces the live world map with a new act's scene. The new instance is named
+## "WorldMap" so saved node paths (relative to the WorldMap root) stay valid, and its
+## own _ready() rebuilds the floor pool, wires child nodes, and resets node states.
+func swap_world_map(scene: PackedScene) -> void:
+	var parent := _world_map.get_parent()
+	var old_index := _world_map.get_index()
+	# Detach synchronously so the "WorldMap" name is free before the new node is added
+	# (otherwise add_child would auto-rename it and saved node paths would break).
+	parent.remove_child(_world_map)
+	_world_map.queue_free()
+	var new_map := scene.instantiate() as WorldMap
+	new_map.name = "WorldMap"
+	new_map.hide()
+	parent.add_child(new_map)
+	parent.move_child(new_map, old_index)
+	_world_map = new_map
+	_world_map.node_selected.connect(_on_world_map_node_selected)
+
+
 func show_world_map() -> void:
 	_world_map.show()
 
@@ -455,6 +488,35 @@ func _on_rest_requested() -> void:
 func _on_rest_complete() -> void:
 	_rest_panel.hide()
 	rest_complete.emit()
+
+
+# --- Shrine Panel ---
+
+func show_shrine_panel(
+	saint_name: String,
+	has_next: bool,
+	next_tier_name: String,
+	next_tier_desc: String,
+	next_stat_mods: Dictionary,
+	cost: int,
+	player_gold: int
+) -> void:
+	_shrine_panel.setup(saint_name, has_next, next_tier_name, next_tier_desc, next_stat_mods, cost, player_gold)
+	_shrine_panel.show()
+
+
+func hide_shrine_panel() -> void:
+	_shrine_panel.hide()
+
+
+# --- Town Panel (end-of-act hub) ---
+
+func show_town_panel() -> void:
+	_town_panel.show()
+
+
+func hide_town_panel() -> void:
+	_town_panel.hide()
 
 
 # --- Character Creation ---

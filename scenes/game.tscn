@@ -10,6 +10,8 @@
 [ext_resource type="Script" uid="uid://b1ry2py3hwthj" path="res://scripts/dialogue_panel.gd" id="12_kvuet"]
 [ext_resource type="Script" uid="uid://dqjg77kuidypf" path="res://scripts/skill_check_panel.gd" id="13_skcp"]
 [ext_resource type="Script" uid="uid://bdit4rf6yc7t7" path="res://scripts/rest_panel.gd" id="14_rstp"]
+[ext_resource type="Script" path="res://scripts/shrine_panel.gd" id="14_shrp"]
+[ext_resource type="Script" path="res://scripts/town_panel.gd" id="14_townp"]
 [ext_resource type="PackedScene" uid="uid://b0sqp1dfwigqy" path="res://scenes/world_map.tscn" id="16_ca42v"]
 [ext_resource type="Script" uid="uid://cwnh362po6p8" path="res://scripts/character_creation_panel.gd" id="19_264po"]
 [ext_resource type="Script" path="res://scripts/player_class_data.gd" id="20_bt5mj"]
@@ -375,6 +377,137 @@ text = "Rest"
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Continue"
+
+[node name="ShrinePanel" type="Control" parent="GUI" unique_id=1569553200]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("14_shrp")
+
+[node name="Background" type="ColorRect" parent="GUI/ShrinePanel" unique_id=254139100]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.14767182, 0.14767179, 0.14767179, 0.6)
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/ShrinePanel" unique_id=754822500]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 240.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/ShrinePanel/PanelContainer" unique_id=1968797800]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="GUI/ShrinePanel/PanelContainer/VBoxContainer" unique_id=329013700]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Shrine"
+
+[node name="DescriptionLabel" type="Label" parent="GUI/ShrinePanel/PanelContainer/VBoxContainer" unique_id=199060800]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
+
+[node name="StatsLabel" type="Label" parent="GUI/ShrinePanel/PanelContainer/VBoxContainer" unique_id=199060801]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="CostLabel" type="Label" parent="GUI/ShrinePanel/PanelContainer/VBoxContainer" unique_id=199060802]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="AscendButton" type="Button" parent="GUI/ShrinePanel/PanelContainer/VBoxContainer" unique_id=1157493200]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Ascend"
+
+[node name="LeaveButton" type="Button" parent="GUI/ShrinePanel/PanelContainer/VBoxContainer" unique_id=629902900]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Leave"
+
+[node name="TownPanel" type="Control" parent="GUI" unique_id=1569553201]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("14_townp")
+
+[node name="Background" type="ColorRect" parent="GUI/TownPanel" unique_id=254139101]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.14767182, 0.14767179, 0.14767179, 0.6)
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/TownPanel" unique_id=754822501]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 240.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/TownPanel/PanelContainer" unique_id=1968797801]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="GUI/TownPanel/PanelContainer/VBoxContainer" unique_id=329013701]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Town"
+
+[node name="DescriptionLabel" type="Label" parent="GUI/TownPanel/PanelContainer/VBoxContainer" unique_id=199060803]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+autowrap_mode = 3
+text = "You reach a town at the edge of the act. Rest, visit the temple, then travel onward."
+
+[node name="Services" type="VBoxContainer" parent="GUI/TownPanel/PanelContainer/VBoxContainer" unique_id=1968797802]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TempleButton" type="Button" parent="GUI/TownPanel/PanelContainer/VBoxContainer/Services" unique_id=1157493201]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Temple"
+
+[node name="TravelButton" type="Button" parent="GUI/TownPanel/PanelContainer/VBoxContainer" unique_id=629902901]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Travel Onward"
 
 [node name="CharacterCreationPanel" type="Control" parent="GUI" unique_id=1828471361]
 visible = false

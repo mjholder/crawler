@@ -3,6 +3,9 @@
 Loose ideas, future directions, and things that aren't ready to be tasks yet.
 No commitment implied — this is a thinking space.
 
+Resolved ideas (shipped or dropped) are moved out to [[ideas-archive.md]] to keep this
+backlog lean. Ideas with a foundation shipped but real work left stay here as `partially done`.
+
 ---
 
 ## Format
@@ -10,7 +13,15 @@ No commitment implied — this is a thinking space.
 **Idea:** [Short title]
 **Added:** YYYY-MM-DD
 **Notes:** [Free-form description, rough thoughts, inspiration sources]
-**Status:** `raw` | `worth exploring` | `shelved` | `moved to plan`
+**Status:** `raw` | `worth exploring` | `partially done` | `shelved` | `moved to plan`
+(`completed` and `abandoned` ideas move to [[ideas-archive.md]].)
+
+---
+
+**Idea:** Attack & weapon clarity (tooltips + equipment descriptions)
+**Added:** 2026-06-21
+**Notes:** There's currently no way to learn what an attack does without already knowing it from the code — picking "Assassinate" off the action list doesn't say what it does or who it targets. Two related UI surfaces: (1) in-combat tooltips on action buttons, showing effect and target type before committing to a turn; (2) a weapon description in the inventory/equip screen listing the attacks it grants, so gear choices are informed by actual combat behavior, not just stat deltas. Both point at the same underlying gap: attacks and weapons need a player-facing description, not just internal effect data.
+**Status:** `worth exploring`
 
 ---
 
@@ -73,15 +84,9 @@ Synergies are meaningful but not required — a Mage / Cloistered Scholar / Sain
 - *Branching saint evolutions* — Act 2 offers 2–3 paths within the same saint. Lineage system already supports this; just adds authoring + design work.
 - *Non-combat saints* — Saint of the Locked Door, Saint of Liars, etc. — saints whose signature triggers fire on skill checks or dialogue rather than combat. Would broaden the appeal of the choice for build types that aren't combat-focused.
 
-**Status:** `moved to plan` — Phase 1 implemented 2026-06-07 (data layer, player integration, content editor, hand-built wizard UI, sample content). See [[design.md]] and [[daily/2026-06-07]]. Shrine ascension (tier 2/3) is the open Phase 2.
-
----
-
-**Idea:** Authored dungeon floor / event sequencing resource
-**Added:** 2026-05-23
-**Notes:**
-Currently `DungeonMapNode` picks events randomly from a directory. The idea is a `DungeonFloor` (or similar) resource that specifies an ordered or weighted list of events instead — letting designers author the shape of a floor: which events appear, in what order or with what weights, and what the boss is. Would need a new Godot resource class, `.tres` wrappers, and a custom editor view in the content editor (likely a simple ordered list, not a graph). Runtime `DungeonMapNode` would load the floor resource instead of globbing a directory. Deferred from content editor v3 scope.
-**Status:** `worth exploring`
+**Status:** `partially done` — see [[design.md]] and [[daily/2026-06-07]].
+**Shipped (Phase 1, 2026-06-07):** `BackgroundData` + `PatronSaintData` (+ `lineage_id` on `BlessingData`), player integration (`_setup_background`/`_setup_patron`, gold-reward/shop multipliers), content-editor authoring, hand-built 4-step wizard UI, sample content. Saints ship at tier 1, fully playable; `ascend_patron()` and `_patron_tier_index` are in place.
+**Remaining (Phase 2):** shrine/altar ascension event type and the "act" concept it needs; the "first attack deals Nx damage" proc needs a new effect type. Parked/v2: branching saint evolutions, non-combat saints.
 
 ---
 
@@ -89,7 +94,9 @@ Currently `DungeonMapNode` picks events randomly from a directory. The idea is a
 **Added:** 2026-05-21
 **Notes:**
 The tool currently covers equipment, attacks, effects, blessings, and classes. Enemies and events are the other major authoring surface — making a new enemy means setting stats, AI behavior, drops, and wiring it into an event; making a new event means defining waves, rewards, and any special scripting. Both involve enough cross-resource wiring that the inspector is genuinely painful. Adding them to the content editor would let the full encounter design loop (enemy stats → event composition → shop/reward tuning) happen outside Godot.
-**Status:** `worth exploring`
+**Status:** `partially done`.
+**Shipped:** event authoring — `EventEditor` with per-type forms (Combat / Dialogue / SkillCheck / Rest) via the `.tres`-wraps-JSON wrapper pattern (see [[design.md]] "Events exposed in content editor", 2026-05-22).
+**Remaining:** enemy authoring — there is no dedicated enemy editor; enemies are only referenced inside `CombatEventForm`. Need a form for stats, AI behavior, and drops.
 
 ---
 
@@ -98,53 +105,6 @@ The tool currently covers equipment, attacks, effects, blessings, and classes. E
 **Notes:**
 When a field expects a resource ref (e.g. a weapon's `attacks` array, or an attack's `effects` array), the dropdown currently only lets you pick an existing file. The missing flow is: click "new" in that dropdown, choose the concrete type (e.g. `AttackData`, `DamageEffect`), give it a name/path, and it's created and immediately wired in. Pairs naturally with a breadcrumb bar — if you're authoring a weapon and create a new attack inline, you should be able to navigate into that attack's form, then navigate back up to the weapon. Without the breadcrumb, you'd have to find the new file in the sidebar to finish filling it in, which breaks the authoring flow for a weapon that needs two or three new attacks at once.
 **Status:** `worth exploring`
-
----
-
-**Idea**: External content authoring tool
-**Added**: 2026-05-20
-**Notes**:
-A standalone app for authoring game content as concepts rather than files. The motivating pain isn't any one resource being hard to edit — it's that a single conceptual unit (a weapon, a class, a dialogue tree) is spread across multiple .tres and .json files with no view of the relationships and no validation until runtime.
-Why now: The game's balance is currently rough and needs real iteration — change a number, playtest, change another. Each iteration cycle is gated by multi-file editing through Godot's inspector, and the friction is high enough that balance work isn't happening. The tool's primary job, framed honestly, is unblocking design iteration on a game that's too barebones to evaluate without faster content authoring.
-Long-term vision: If the game ever ships and finds players, this tool is the natural seed of a modding interface — players use the same forms and tables to author their own weapons, classes, dialogue. That vision shapes architecture but not v1 scope. Concretely it means: schema exported from Godot rather than hardcoded, output is plain text in known locations, no assumptions about project layout beyond Godot's. Get those right in v1 and the path to a mod tool is mostly packaging and polish later.
-Pain points:
-
-Adding a weapon requires editing the weapon .tres, creating its attack .tres, creating damage effect resource(s), then dragging it into shops and class starting kits — 3 to 7 file touches with no checklist
-Enum dictionary keys render as integers in the inspector ({ 0: 10.0, 2: 2.0 }), making stat modifiers and growth rates unreadable a week after authoring
-No visibility into "where is this resource used?" — drag-and-drop wiring across classes, shops, etc. is hunt-and-peck
-Dialogue trees as JSON are hostile to the format despite schema validation; they're graphs, not nested objects
-Authoring a new class end-to-end (stats + starting weapon + full armor set + consumables + growth rates) is a multi-screen slog in the inspector
-No way to view content comparatively — balancing weapons by opening them one at a time is fundamentally the wrong shape for the task
-
-Design direction:
-
-Concept-oriented, not file-oriented. Editing a weapon opens its attacks and effects in the same view; saving offers to wire it into shops and classes
-Schema source of truth lives in Godot. A one-off editor script introspects EquipmentData, WeaponData, PlayerClassData, etc. and exports JSON schemas. The external tool reads these — schema drift avoided automatically when game scripts change. Also the foundation for moddability later
-Direct repo writes, no staging. Trade safety for ergonomics; version control is the safety net
-Round-trip safe. Tool reads and writes Godot's .tres text format preserving UID references and not producing noisy git diffs
-Relational view. "This weapon is used in: warrior.tres, debug_shop.tres" — clickable, navigable
-Table views. Spreadsheet-style grid for every content type. This is where balance work actually happens — the inspector cannot do this and it's the single most underrated feature for the motivating use case
-Linter. Validation pass catching what Godot only catches at runtime: damage expressions referencing undefined stat variables, dangling references, enum values out of range
-
-Platform choice:
-
-v1: localhost web app. Vite + React + a small Node sidecar for file I/O. Iteration speed is highest, ecosystem is mature, no packaging tax while the tool is single-user. "Standalone" in the sense that matters (no deployed service, no accounts, no network calls) is preserved
-v∞: Tauri wrap when modding is a real concern. Same frontend code, packaged into a double-clickable app. Decided to defer until the game has actual prospective modders — premature packaging is the trap
-
-Scope phasing:
-
-v1: Forms + tables for weapons, armor, attacks, effects, classes, shops. Solves the balance-iteration problem
-v2: Dialogue tree graph editor. Real node graph UI. Substantially harder, separate scoping after v1 proves the workflow
-Linter alongside v1 incrementally — start with the obvious checks (missing references, unknown stat names in expressions) and grow
-Modding wrap only after the game is in a state where modders are a realistic audience
-
-Risks:
-
-The classic trap: tool-building feels like progress and can outlast its usefulness. Mitigation: define done for v1 as "I have iterated on weapon balance for at least one playtest session using the tool." If the tool isn't unblocking actual design work, stop building it
-Designing v1 for v3. The modding vision is seductive and could derail scope. Treat it as architectural guidance only — three concrete decisions (schema export, plain text output, no layout assumptions) — not as v1 features
-.tres serialization edge cases (typed arrays, sub-resources, UID resolution) need a spike early. Weekend prototype: schema export + write one weapon .tres + verify Godot loads it cleanly
-
-**Status**: worth exploring
 
 ---
 
@@ -186,52 +146,6 @@ Each act is balanced independently against what the player *should* have at that
 
 ---
 
-**Idea:** Defense & Dodge Formula
-**Added:** 2026-05-15
-**Notes:**
-Flat defense subtraction (the current first pass) breaks at the extremes — high defense nullifies weak enemies entirely. Roguelikes need legible rules the player can reason about, so fancy scaling formulas are out.
-
-Settled direction: flat percentage damage reduction for DEF, flat percentage dodge chance for AGI. Both are immediately readable. "This armor reduces all incoming damage by 20%" and "my AGI gives me a 15% dodge chance" are numbers a player can act on.
-
-Base stats should remain relatively flat across a run. Power growth comes from gear and boon tiers, not raw stat inflation. Act 1 gear provides general survivability. Act 2 gear introduces multipliers. Act 3 gear has multiple interacting properties. The formula stays constant — the gear tier is what changes.
-
-Armor tiers map to a tradeoff triangle with no hard equip requirements (class-aligned loot pools handle access instead):
-- Heavy armor — high DEF%, AGI penalty, high spell cost multiplier
-- Leather armor — moderate DEF%, neutral AGI, neutral spell cost
-- Robes — low DEF%, low spell cost multiplier or SPI bonus
-
-Spell cost multiplier is a float field on EquipmentData (1.0 = neutral, heavy armor ~1.5, robes ~0.8), applied multiplicatively across equipped pieces at cast time.
-
-Overpowered builds are acceptable as rare RNG-dependent edge cases, not the intended path. The standard path is struggling but succeeding.
-
-**Status:** `moved to plan`
-
----
-
-**Idea:** Combat Balance — Defense, Dodge, and Armor Tiers
-**Added:** 2026-05-07
-**Notes:**
-Reworking the first-pass flat defense subtraction which nullifies weak enemies entirely and can't be balanced across both ends of the damage scale.
-
-**Defense** moves to percentage-based damage reduction rather than flat subtraction. Formula TBD but something in the range of `damage * (1 - defense_ratio)` — every enemy always deals some damage regardless of the gap in power.
-
-**Dodge** is introduced as a separate evasion layer driven by AGI. Formula something like `agility * 0.003`, capped around 40–50%. Resolved as a roll before damage is applied. Keeps AGI meaningful as a defensive stat without muddying the DEF formula.
-
-**Armor tiers** represent a tradeoff triangle rather than a strict progression. No stat gating — equipment pools are class-aligned at the loot/shop level, not locked by requirements:
-- **Heavy armor** — high DEF modifier, negative AGI modifier, high `spell_cost_multiplier` (e.g. `1.5`). Warriors absorb hits but are slow and poor casters.
-- **Leather armor** — moderate DEF modifier, neutral or small positive AGI modifier, neutral spell cost. Rogues get protection without losing evasiveness.
-- **Robes/clothes** — little to no DEF modifier, low `spell_cost_multiplier` (e.g. `0.8`) or SPI bonus. Mages are fragile but cast efficiently.
-
-**Spell cost multiplier** is a new float field on `EquipmentData` (`spell_cost_multiplier: float = 1.0`). Applied multiplicatively across all equipped pieces at cast time. Feeds into the spell system design.
-
-**Mage defense** — pure mages start with a mage armor spell (a `BuffEffect` on `Enums.Stat.DEFENSE`) rather than relying on gear. Hybrid classes can start with light armor instead.
-
-**UI** — inventory detail panel diffs the candidate item's `stat_modifiers` against the currently equipped item and displays deltas in green/red. Active stat effects (from gear and buffs) are displayed in a dedicated active effects panel so the player can see what's contributing and from where.
-
-**Status:** `shelved`
-
----
-
 **Idea:** Spell Casting System
 **Added:** 2026-05-06
 **Notes:**
@@ -249,7 +163,9 @@ A new **OFFHAND slot** is added to `Enums.Slot`. It can hold a shield, a casting
 
 **Loot pools** use explicit class tags on each `EquipmentData` (array of class affinities, plus a universal tag for gear that always appears). Two pools at drop time: primary is class-aligned gear, secondary is off-class gear for selling or surprise hybrid builds. Ratio is a tuning lever, roughly 70/30. Stat-weighted rolling was considered but explicit tags were preferred for authorial control and handcrafted intent.
 
-**Status:** `worth exploring`
+**Status:** `partially done` — foundation shipped 2026-05-08, see [[design.md]] "Spell casting system — foundation design" and [[daily/2026-05-08]].
+**Shipped:** mana resource (`max_mana = effective_SPI × mana_modifier + class_mana_bonus`), `SpellData` registered as player actions through `execute_action`/targeting, `OFFHAND` slot, prep slots (mirrors the consumable belt), innate weapon spells, `spell_cost_multiplier` on `EquipmentData`, mage armor via `BlessingData.stat_modifiers`.
+**Remaining:** tomes (`TomeData`) + learn UI, class-affinity loot tags + dual-pool drops, the two-handed offhand lock, spell animations, and prep-UI polish (the `InventoryPanel` prep UI is dynamic/unpolished).
 
 ---
 
@@ -270,7 +186,9 @@ A new **OFFHAND slot** is added to `Enums.Slot`. It can hold a shield, a casting
 **Idea:** Equipment locked in dungeons ("bad air")
 **Added:** 2026-04-20
 **Notes:** Players cannot equip or unequip *equipment* (armor, weapons, rings) while inside a dungeon — those decisions are locked to safe nodes between runs, rest sites, and shops. Lore: the bad air means concentrating long enough to swap armor is impossible. Identify items on pickup so the player always knows what's in the bag. Calibrate loot drops toward the next floor or run broadly, so finds feel like future rewards rather than taunts. Consecrated rooms (shrines) in longer dungeons act as safe rooms where the bad air doesn't reach — equip swaps are allowed there. **Consumables follow different rules** (see below): they can be picked up mid-dungeon and handled freely at the point of pickup, but the bag is sealed once something is inside. Dungeon types affect pressure: short floors have no shrine, long floors (e.g. catacombs) have several.
-**Status:** `worth exploring`
+**Status:** `partially done`.
+**Shipped:** the core equip lock — `_dungeon_locked` in `inventory_panel.gd` disables equip/unequip inside a dungeon; `allows_inventory` on the base `Event` exists for shrine-style exceptions.
+**Remaining:** identify-on-pickup, the consecrated-room equip window actually wired to a shrine event, loot calibration toward the next floor, and the consumable directional rules (own entry below).
 
 ---
 
@@ -298,7 +216,8 @@ A new **OFFHAND slot** is added to `Enums.Slot`. It can hold a shield, a casting
 **Idea:** Status-effect consumables (cure / remove)
 **Added:** 2026-04-20
 **Notes:** Add a `CURE` variant to `ConsumableData.Effect` once a status-effect system exists. Depends on: statuses being a first-class player state (poison, bleed, stun), and the dispatcher in `game.gd` knowing how to clear them. Parking until statuses ship.
-**Status:** `shelved`
+**Update (2026-06-21):** the blocking dependency is met — statuses are now first-class via Effect System v2 (`StatusData`, `apply_status`/`remove_status`, see [[design.md]] 2026-05-02). This is now actionable: a cure consumable would be a new `Effect` subclass that calls `remove_status` by tag, authored as a `.tres` and dropped into `ConsumableData.effects` (no enum needed under the unified Effect pipeline).
+**Status:** `worth exploring`
 
 ---
 
@@ -306,6 +225,8 @@ A new **OFFHAND slot** is added to `Enums.Slot`. It can hold a shield, a casting
 **Added:** 2026-03-25
 **Notes:** Instead of placing dialogue UI nodes individually, wrap them in a container so they scale together as a unit. Makes it easier to maintain consistent proportions when adjusting resolution or layout.
 **Status:** `worth exploring`
+
+---
 
 **Idea:** Roguelike Run Structure
 **Added:** 2026-02-22
@@ -339,75 +260,3 @@ Core gameplay loop is run-based — the player descends through a dungeon, compl
 
 **Status:** `worth exploring`
 
----
-
-**Idea:** Core Player Stats
-**Added:** 2026-02-22
-**Notes:**
-Seven base stats that drive all character interactions:
-
-- **Health** — derived from Constitution; total hit points before death/down
-- **Defense** — base damage mitigation; also influenced by Agility (passive dodge) and equipped armor
-- **Strength (STR)** — damage for power-type melee weapons (swords, axes, maces, hammers); also used as the stat check for equipping heavy armor and high-requirement weapons
-- **Constitution (CON)** — determines max health pool; also governs resistance to status effects (poison, stun, curse, etc.)
-- **Agility (AGI)** — passive defense contribution (harder to hit); damage for finesse weapons (daggers, rapiers, shortbows) and ranged weapons; stat check for equipping finesse-class weapons and light armor
-- **Spirit (SPI)** — occult/devotional magic; power drawn from communion with an unknown higher being rather than study or intellect; governs spell damage, mana/resource pool, and potency of magical effects; not evil per se but deals in forces beyond mortal understanding
-- **Luck (LCK)** — crit chance on attacks; improves loot quality/rarity on drops; small flat bonus on skill/stat checks
-
-Weapon class gating:
-- STR check → heavy armor, two-handers, warhammers, etc.
-- AGI check → finesse melee (daggers, rapiers), ranged (bows, crossbows), light armor
-- SPI check → staves, spell catalysts, occult-focus items
-
-Damage scaling intent:
-- STR weapons scale off STR
-- AGI weapons scale off AGI
-- SPI weapons/spells scale off SPI
-- Hybrid weapons (e.g. a quick shortsword) TBD — maybe the higher of the two, or a split
-
-Questions to resolve:
-- Are stats fixed at character creation or do they grow on level-up?
-- Integer values or derived modifiers (e.g. D&D-style bonus from stat)?
-- Does Defense stack additively with armor or use a formula (e.g. diminishing returns)?
-- How does LCK interact with skill checks — flat bonus, reroll, or just a small ±%?
-- Does SPI also affect non-damage magic (buffs, curses, summons) or is it purely offensive scaling?
-- Is there a separate resource (mana, devotion, favour) tied to SPI, or do spells have cooldowns/charges?
-- Could INT be added later as a distinct arcane path, or is SPI the only magic stat?
-
-**Status:** `worth exploring`
-
----
-
-**Idea:** Grid-Based Equipment System
-**Added:** 2026-02-22
-**Notes:**
-Players equip gear that occupies grid cells on a character sheet — similar to Resident Evil / Diablo-style inventory but applied to the body. Each equipment slot (torso, legs, head, hands, feet, fingers, wrists, neck) maps to a region of the grid. Items have shapes that must fit within their valid region(s).
-
-Categories to support:
-- **Armor** — heavy/light/none; contributes to physical defense, movement penalties
-- **Clothing** — wearable over or under armor; can provide stat bonuses, environmental resistances
-- **Weapons** — one-handed, two-handed, ranged, off-hand; define attack type, damage dice, reach, special move unlocks
-- **Shields** — occupy off-hand slot; block/parry modifiers, maybe size affects coverage vs. mobility
-- **Jewelry** — rings (fingers), necklaces (neck), bracelets (wrists); typically small grid footprint, high modifier density
-
-Modifier considerations to design early:
-- Attack modifiers: damage type (slash/pierce/blunt/magic), bonus to-hit, crit range, special effects on hit
-- Defense modifiers: damage reduction per type, block chance, dodge modifier, elemental resistances
-- Passive stat changes: STR/DEX/INT/etc. bumps, max HP/MP, speed
-- Encumbrance: total weight of equipped gear affecting move speed, stamina drain, stealth
-- Set bonuses: wearing multiple pieces from the same set could unlock extra effects
-- Condition slots: some gear could have gem/rune sockets for further customization
-
-Grid design questions to resolve:
-- Fixed body-silhouette grid vs. flat inventory grid with slot restrictions?
-- Allow overlapping slots (e.g., ring worn on same finger as another ring) or strict exclusion?
-- How does gear interact with race/body-type differences (size, limb count)?
-
-Integration points to keep in mind from the start:
-- Combat system needs to query equipped weapon(s) for attack resolution
-- Defense calculation needs to aggregate all equipped armor/shield values per damage type
-- AI enemies should support the same equipment structure for consistent rules
-- Loot drops should generate items that fit the grid schema
-- UI will need a dedicated equipment screen — grid layout makes this visual and tactile
-
-**Status:** `worth exploring`

@@ -19,6 +19,32 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## End-of-act transition: shrine becomes an "EndAct" town that swaps the world map
+
+**Decision:** The terminal `ShrineMapNode` is renamed to `EndActMapNode` (event `ShrineEvent` → `EndActEvent`) and reframed as an end-of-act **town hub**. Reaching it opens a `TownPanel` whose services are **Temple** (the existing `ShrinePanel` ascension) and **Travel Onward**. Travelling onward swaps the live `WorldMap` scene for the node's `next_act_scene` (a new act), or — when that export is empty — wins the run. **Run-ending victory moves off the boss** onto the final act's end-act node.
+**Date:** 2026-06-27
+**Daily:** [[daily/2026-06-27]]
+**Context:** The run is designed as three acts ([[ideas.md]]) but the code had one hand-authored map and no act machinery; the shrine sat as an unreachable terminal node after the boss, which itself hard-ended the run on `_on_boss_defeated`. We wanted the end of an act to actually load the next act, and the shrine to grow into the planned town hub.
+**Alternatives considered:**
+- *One big map with act "regions"* — no scene swap, but can't reset node graphs per act and bloats a single hand-authored scene. Rejected.
+- *Data-driven `ActData` resource selecting a generic map* — more uniform, but each act's graph (positions/connections/node types) is hand-authored, so a reusable parametric map needs procedural generation we don't have. Deferred.
+- *Keep boss = victory* — leaves the town unreachable and blocks multi-act. Rejected; victory now belongs to the end-act node.
+**Rationale:** `EndActMapNode` keeps mirroring `ShopMapNode` (bypasses the floor pool) and gains `next_act_scene: PackedScene`. `EndActEvent` stays in `RUNNING` while the town is open and emits `town_requested`; `game.gd` shows `TownPanel`, routes **Temple** to the unchanged `ShrinePanel` (ascension now applied **live** during the visit, not at event resolution, so the player can keep using the town), and **Travel Onward** calls `EndActEvent.on_travel_onward()`. The single return-to-map point `game.gd._on_dungeon_complete()` branches: an `EndActMapNode` routes to `_advance_to_next_act()`, which `GUI.swap_world_map(next_act_scene)` (frees the old map, instantiates the next named `WorldMap` so save paths stay valid, its `_ready()` rebuilds the floor pool + resets) or `_enter_victory()` when there is no next act. Save tracks `current_act` + `active_act_scene_path` so Continue rebuilds the correct act map before `apply_state_dict`; `RunSaveData.VERSION` → 2.
+**Trade-offs / risks:** A scene can't `ext_resource` itself, so the placeholder act 2 is a standalone copy (`world_map_act2.tscn`) rather than a literal self-loop; real acts are authored later. The act boss now plays its `on_victory` dialogue but no longer ends the run, which may read oddly until per-act bosses get their own flavor. `swap_world_map` must detach the old node synchronously (not just `queue_free`) or the new map gets auto-renamed and saved paths break. Town services beyond Temple/Travel (shops, blacksmith) are stubbed for later. New `class_name`s need a `godot --import` pass before headless `--check-only` recognizes them.
+
+## Shrine ascension: hand-placed checkpoint + gold tithe (Phase 2)
+
+**Decision:** Patron-saint tier ascension is delivered by a generic `ShrineEvent` reached through a hand-placed `ShrineMapNode`, where the player pays a gold tithe to `ascend_patron()` (replace, never stack) or leaves keeping gold and tier.
+**Date:** 2026-06-21
+**Daily:** [[daily/2026-06-21]]
+**Context:** Phase 1 shipped saints at tier 1 with `ascend_patron()`/`_patron_tier_index` already in place but no in-world trigger. Phase 2 needed the event, the choice UI, and a way for shrines to appear — the original spec ([[ideas.md]]) also wanted an "act" concept the codebase lacks.
+**Alternatives considered:**
+- *Shrine as a random `FloorEventPool` slot* (like combat/rest) — data-driven placement, but unpredictable and would force an "act"/depth concept to decide which tier/when. Rejected for now.
+- *Per-saint authored shrine resources* — custom flavor per saint, but multiplies content authoring; rejected in favor of one generic shrine.
+- *Decline grants gold; ascend is free* (journal's original framing) — rejected by the user in favor of "ascend costs gold, decline keeps gold," which reads as a clearer dark-bargain.
+**Rationale:** `ShrineMapNode` mirrors `ShopMapNode` — it carries `shrine_scene` + `ascension_cost` and bypasses the floor pool, so no "act" machinery is needed; each shrine just advances one tier via the existing `ascend_patron()`. It is placed as a **between-acts checkpoint** (act-1 end nodes funnel through it into the boss), leaving room to grow into a hub later. `ShrineEvent` reads the active saint at runtime through new public `Player` accessors (`get_patron`/`can_ascend_patron`/`get_active_tier`/`get_next_tier`) and emits `shrine_requested(...)`; `game.gd` shows `ShrinePanel` and routes the choice back via `on_shrine_choice(ascend)`. Replace-not-stack is inherent — `ascend_patron()` does `remove_blessing(current) → add_blessing(next)`. Ascension persists through the existing `_patron_tier_index` save field.
+**Trade-offs / risks:** Placement and `ascension_cost` are hand-authored per node (no auto-scaling by act yet). Using placeholder rest-node art. No-patron / final-tier players get a "silent" shrine (Leave only) rather than an alternative reward. New `class_name` scripts require a `godot --import` pass before headless `--check-only` recognizes them.
+
 ## Three-layer character identity: Class + Background + Patron Saint
 
 **Date:** 2026-06-07
