@@ -1,22 +1,20 @@
-[gd_resource type="Resource" script_class="DungeonFloorData" format=3 uid="uid://dfd_demo"]
+[gd_resource type="Resource" script_class="DungeonFloorData" format=3 uid="uid://c5hc8vj4ih37d"]
 
-[ext_resource type="Script" path="res://scripts/dungeon_floor_data.gd" id="1_dfd"]
-[ext_resource type="Script" path="res://scripts/floor_slot.gd" id="2_fs"]
+[ext_resource type="Script" uid="uid://5ljbepi2t2q8" path="res://scripts/dungeon_floor_data.gd" id="1_dfd"]
+[ext_resource type="Script" uid="uid://w4hqsw4a2suq" path="res://scripts/floor_slot.gd" id="2_fs"]
 [ext_resource type="Resource" path="res://resources/events/combat/example.tres" id="3_combat"]
 [ext_resource type="Resource" path="res://resources/events/rest/half_heal.tres" id="4_rest"]
 
 [sub_resource type="Resource" id="Slot_combat"]
 script = ExtResource("2_fs")
-type = 0
 event = ExtResource("3_combat")
 
 [sub_resource type="Resource" id="Slot_rest"]
 script = ExtResource("2_fs")
-type = 0
 event = ExtResource("4_rest")
 
 [resource]
 script = ExtResource("1_dfd")
 display_name = "Scripted Demo"
-tags = ["demo"]
+tags = 8
 slots = [SubResource("Slot_combat"), SubResource("Slot_rest")]

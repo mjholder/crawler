@@ -3,6 +3,7 @@ export interface PropDescriptor {
   type: string;
   enum_ref?: string;
   enum_values?: Record<string, number>;
+  flag_values?: Record<string, number>;
   element_type?: string;
   key_type?: string;
   value_type?: string;

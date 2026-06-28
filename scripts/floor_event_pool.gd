@@ -1,19 +1,19 @@
 class_name FloorEventPool
 
 const TYPE_SCENE_PATHS := {
-	"combat":      "res://scenes/combat_event.tscn",
-	"boss":        "res://scenes/boss_event.tscn",
-	"dialogue":    "res://scenes/dialogue_event.tscn",
-	"skill_check": "res://scenes/skill_check_event.tscn",
-	"rest":        "res://scenes/rest_event.tscn",
+	Enums.EventType.COMBAT:      "res://scenes/combat_event.tscn",
+	Enums.EventType.BOSS:        "res://scenes/boss_event.tscn",
+	Enums.EventType.DIALOGUE:    "res://scenes/dialogue_event.tscn",
+	Enums.EventType.SKILL_CHECK: "res://scenes/skill_check_event.tscn",
+	Enums.EventType.REST:        "res://scenes/rest_event.tscn",
 }
 
 const EVENT_DIRS := {
-	"combat":      "res://resources/events/combat/",
-	"boss":        "res://resources/events/boss/",
-	"dialogue":    "res://resources/events/dialogue/",
-	"skill_check": "res://resources/events/skill_check/",
-	"rest":        "res://resources/events/rest/",
+	Enums.EventType.COMBAT:      "res://resources/events/combat/",
+	Enums.EventType.BOSS:        "res://resources/events/boss/",
+	Enums.EventType.DIALOGUE:    "res://resources/events/dialogue/",
+	Enums.EventType.SKILL_CHECK: "res://resources/events/skill_check/",
+	Enums.EventType.REST:        "res://resources/events/rest/",
 }
 
 var _floors: Array = []
@@ -59,20 +59,16 @@ func all_floors() -> Array:
 	return _floors
 
 
-func filter_by_tags(tags: Array[String]) -> Array:
+func filter_by_tags(mask: int) -> Array:
+	# A floor matches when it carries ALL requested tag bits (AND semantics).
 	var result: Array = []
 	for floor in _floors:
-		var matches := true
-		for tag in tags:
-			if tag not in floor.tags:
-				matches = false
-				break
-		if matches:
+		if (floor.tags & mask) == mask:
 			result.append(floor)
 	return result
 
 
-func pick_of_type(type: String, rng: RandomNumberGenerator) -> Resource:
+func pick_of_type(type: Enums.EventType, rng: RandomNumberGenerator) -> Resource:
 	var options: Array = _events_by_type.get(type, [])
 	if options.is_empty():
 		return null
@@ -84,24 +80,24 @@ func event_config_for(wrapper: Resource) -> Dictionary:
 	# Boss fights belong to dedicated BossMapNodes, which load the boss directly and
 	# bypass this pool entirely. Refuse boss wrappers here so a stray floor slot can
 	# never leak a boss into a regular dungeon node's event list.
-	if type == "boss":
+	if type == Enums.EventType.BOSS:
 		push_warning("[FloorEventPool] Boss events are restricted to boss nodes — skipping boss slot")
 		return {}
 	var scene: PackedScene = _scenes.get(type)
 	if scene == null:
-		push_warning("[FloorEventPool] No scene for event type '%s'" % type)
+		push_warning("[FloorEventPool] No scene for event type %d" % type)
 		return {}
 	var data := _load_json(wrapper.get("event_path") as String)
 	return {"scene": scene, "data": data}
 
 
-func _type_for_wrapper(wrapper: Resource) -> String:
-	if wrapper is CombatEventData:     return "combat"
-	if wrapper is BossEventData:       return "boss"
-	if wrapper is DialogueEventData:   return "dialogue"
-	if wrapper is SkillCheckEventData: return "skill_check"
-	if wrapper is RestEventData:       return "rest"
-	return ""
+func _type_for_wrapper(wrapper: Resource) -> Enums.EventType:
+	if wrapper is CombatEventData:     return Enums.EventType.COMBAT
+	if wrapper is BossEventData:       return Enums.EventType.BOSS
+	if wrapper is DialogueEventData:   return Enums.EventType.DIALOGUE
+	if wrapper is SkillCheckEventData: return Enums.EventType.SKILL_CHECK
+	if wrapper is RestEventData:       return Enums.EventType.REST
+	return Enums.EventType.COMBAT
 
 
 func _load_json(path: String) -> Dictionary:

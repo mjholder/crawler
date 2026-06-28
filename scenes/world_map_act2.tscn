@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bo0tyhr7stse0"]
 
 [ext_resource type="Script" uid="uid://fkhwraaa6xfk" path="res://scripts/boss_map_node.gd" id="1_bossscript"]
 [ext_resource type="Texture2D" uid="uid://bnm7iaexjbl5t" path="res://assets/sprites/world_map/map_background.png" id="1_oru6e"]
@@ -7,8 +7,10 @@
 [ext_resource type="PackedScene" uid="uid://br6bt78br4bmu" path="res://scenes/world_map_node_dungeon.tscn" id="4_sh0tg"]
 [ext_resource type="PackedScene" uid="uid://d1irr22r3o36q" path="res://scenes/world_map_node_shop.tscn" id="5_27p3u"]
 [ext_resource type="PackedScene" path="res://scenes/rest_event.tscn" id="7_rest"]
+[ext_resource type="Resource" uid="uid://ct4crw6phrtwg" path="res://resources/dungeon_floors/standard_medium.tres" id="9_jp5nk"]
 [ext_resource type="Resource" uid="uid://dy5y2nanwc8sm" path="res://resources/shops/debug_shop.tres" id="10_0hitc"]
 [ext_resource type="PackedScene" uid="uid://cn4eqadpt0dkx" path="res://scenes/shop_event.tscn" id="10_6a477"]
+[ext_resource type="Resource" uid="uid://c5hc8vj4ih37d" path="res://resources/dungeon_floors/scripted_demo.tres" id="10_d3tmy"]
 [ext_resource type="PackedScene" uid="uid://c7ijg8k6e50p1" path="res://scenes/boss_event.tscn" id="12_1xmgx"]
 [ext_resource type="PackedScene" path="res://scenes/world_map_node_end_act.tscn" id="13_shrine"]
 
@@ -53,6 +55,7 @@ offset_left = 42.0
 offset_top = 221.0
 offset_right = 82.0
 offset_bottom = 261.0
+floor_tags = 2
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeRest2-1"), NodePath("../WorldMapNodeShop2-2")])
 
 [node name="WorldMapNodeDungeon1-2" parent="NodeContainer" unique_id=319778267 instance=ExtResource("4_sh0tg")]
@@ -61,6 +64,7 @@ offset_left = 170.0
 offset_top = 227.0
 offset_right = 210.0
 offset_bottom = 267.0
+floor_tags = 2
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon2-3")])
 
 [node name="WorldMapNodeRest2-1" parent="NodeContainer" unique_id=694722775 instance=ExtResource("3_qj3iy")]
@@ -88,6 +92,7 @@ offset_left = 177.0
 offset_top = 156.0
 offset_right = 217.0
 offset_bottom = 196.0
+floor = ExtResource("9_jp5nk")
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeRest3-2"), NodePath("../WorldMapNodeShop3-3")])
 
 [node name="WorldMapNodeDungeon3-1" parent="NodeContainer" unique_id=455926292 instance=ExtResource("4_sh0tg")]
@@ -96,6 +101,7 @@ offset_left = 48.0
 offset_top = 85.0
 offset_right = 88.0
 offset_bottom = 125.0
+floor = ExtResource("10_d3tmy")
 connected_nodes = Array[NodePath]([NodePath("../WorldMapNodeDungeon4")])
 
 [node name="WorldMapNodeRest3-2" parent="NodeContainer" unique_id=33038508 instance=ExtResource("3_qj3iy")]

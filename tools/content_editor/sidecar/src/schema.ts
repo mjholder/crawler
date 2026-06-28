@@ -13,6 +13,8 @@ export interface PropDescriptor {
   // For enum fields
   enum_ref?: string;
   enum_values?: Record<string, number>;
+  // For flags (bitmask) fields
+  flag_values?: Record<string, number>;
   // For Array fields
   element_type?: string;
   // For Dictionary fields

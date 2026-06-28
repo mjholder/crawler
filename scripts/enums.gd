@@ -62,3 +62,24 @@ enum NodeState {
 	AVAILABLE, # 1
 	COMPLETED  # 2
 }
+
+# --- Dungeon Events ---
+
+enum EventType {
+	COMBAT,      # 0
+	BOSS,        # 1
+	DIALOGUE,    # 2
+	SKILL_CHECK, # 3
+	REST         # 4
+	# When setting event_type in a .tres file, use the integer key
+	# (matches the old @export_enum order).
+}
+
+# Bitmask — values are powers of two; combine with bitwise OR.
+# Keep in sync with the @export_flags(...) labels on tags / floor_tags.
+enum FloorTag {
+	SHORT  = 1,
+	MEDIUM = 2,
+	MIXED  = 4,
+	DEMO   = 8
+}

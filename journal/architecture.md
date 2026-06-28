@@ -165,20 +165,20 @@ classDiagram
     class DungeonFloorData {
         <<editor Resource>>
         +String display_name
-        +Array~String~ tags
+        +int tags
         +Array~FloorSlot~ slots
     }
     class FloorSlot {
         <<editor Resource>>
         +SlotType type
         +Resource event
-        +int event_type
+        +Enums.EventType event_type
         +Array~WeightedEntry~ entries
     }
     class WeightedEntry {
         <<editor Resource>>
         +Resource event
-        +int event_type
+        +Enums.EventType event_type
         +int weight
     }
 

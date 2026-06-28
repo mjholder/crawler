@@ -10,13 +10,10 @@ enum SlotType { FIXED = 0, RANDOM_TYPE = 1, WEIGHTED = 2 }
 @export var event: Resource
 
 # RANDOM_TYPE: pick a random event of this type from the pool.
-@export_enum("combat", "boss", "dialogue", "skill_check", "rest") var event_type: int = 0
+@export var event_type: Enums.EventType = Enums.EventType.COMBAT
 
 # WEIGHTED: weighted pool of events or types.
 @export var entries: Array = []
-
-
-const TYPE_NAMES := ["combat", "boss", "dialogue", "skill_check", "rest"]
 
 
 func resolve(rng: RandomNumberGenerator, pool) -> Dictionary:
@@ -36,10 +33,9 @@ func _resolve_fixed(pool) -> Dictionary:
 
 
 func _resolve_random(rng: RandomNumberGenerator, pool) -> Dictionary:
-	var type_str: String = TYPE_NAMES[event_type]
-	var wrapper = pool.pick_of_type(type_str, rng)
+	var wrapper = pool.pick_of_type(event_type, rng)
 	if wrapper == null:
-		push_warning("[FloorSlot] No events of type '%s' in pool — skipping" % type_str)
+		push_warning("[FloorSlot] No events of type %d in pool — skipping" % event_type)
 		return {}
 	return pool.event_config_for(wrapper)
 
@@ -59,10 +55,9 @@ func _resolve_weighted(rng: RandomNumberGenerator, pool) -> Dictionary:
 		if roll < 0:
 			if entry.event != null:
 				return pool.event_config_for(entry.event)
-			var type_str: String = TYPE_NAMES[entry.event_type]
-			var wrapper = pool.pick_of_type(type_str, rng)
+			var wrapper = pool.pick_of_type(entry.event_type, rng)
 			if wrapper == null:
-				push_warning("[FloorSlot] No events of type '%s' — skipping entry" % type_str)
+				push_warning("[FloorSlot] No events of type %d — skipping entry" % entry.event_type)
 				return {}
 			return pool.event_config_for(wrapper)
 
@@ -70,6 +65,5 @@ func _resolve_weighted(rng: RandomNumberGenerator, pool) -> Dictionary:
 	var first = entries[0]
 	if first.event != null:
 		return pool.event_config_for(first.event)
-	var type_str: String = TYPE_NAMES[first.event_type]
-	var wrapper = pool.pick_of_type(type_str, rng)
+	var wrapper = pool.pick_of_type(first.event_type, rng)
 	return pool.event_config_for(wrapper) if wrapper != null else {}

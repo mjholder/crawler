@@ -1,10 +1,10 @@
-[gd_resource type="Resource" script_class="WeaponData" format=3]
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://p38x3x57n55p"]
 
-[ext_resource type="PackedScene" path="res://scenes/weapon.tscn" id="1_46d1c"]
-[ext_resource type="Script" path="res://scripts/weapon_data.gd" id="1_gjs71"]
+[ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="1_46d1c"]
+[ext_resource type="Script" uid="uid://bkgb8ckvvwyft" path="res://scripts/weapon_data.gd" id="1_gjs71"]
 [ext_resource type="Resource" path="res://resources/attacks/slash.tres" id="2_slash"]
 [ext_resource type="Resource" path="res://resources/attacks/cleave.tres" id="3_cleave"]
-[ext_resource type="Resource" path="res://resources/attacks/flail.tres" id="4_flail"]
+[ext_resource type="Resource" uid="uid://biyivwbw1eki7" path="res://resources/attacks/flail.tres" id="4_flail"]
 
 [resource]
 script = ExtResource("1_gjs71")

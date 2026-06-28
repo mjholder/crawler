@@ -7,8 +7,8 @@ extends WorldMapNode
 @export var floor: DungeonFloorData = null
 
 # If floor is null, pick at random from all floors matching ALL of these tags.
-# If also empty, pick from the full pool.
-@export var floor_tags: Array[String] = []
+# If also empty (0), pick from the full pool. Bitmask — see Enums.FloorTag.
+@export_flags("Short:1", "Medium:2", "Mixed:4", "Demo:8") var floor_tags: int = 0
 
 # Resolved at world-map load by WorldMap._ready() — do not set manually.
 var _resolved_event_configs: Array[Dictionary] = []
@@ -23,7 +23,7 @@ func resolve_floor(rng: RandomNumberGenerator, pool: FloorEventPool) -> void:
 		resolved_floor = floor
 	else:
 		var candidates := (
-			pool.filter_by_tags(floor_tags) if not floor_tags.is_empty()
+			pool.filter_by_tags(floor_tags) if floor_tags != 0
 			else pool.all_floors()
 		)
 		if candidates.is_empty():

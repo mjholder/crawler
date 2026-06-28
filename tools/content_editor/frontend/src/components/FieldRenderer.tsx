@@ -72,6 +72,17 @@ export function FieldRenderer({ prop, value, onChange, schema, depth = 0, onNavi
         />
       );
 
+    case "flags":
+      return (
+        <FlagsField
+          value={value as number}
+          onChange={onChange}
+          enumRef={prop.enum_ref}
+          flagValues={prop.flag_values}
+          schema={schema}
+        />
+      );
+
     case "Dictionary":
       if (prop.key_type?.startsWith("Enums.")) {
         return (
@@ -222,6 +233,39 @@ function EnumField({
         </option>
       ))}
     </select>
+  );
+}
+
+// --- Flags (bitmask) -------------------------------------------------------
+
+function FlagsField({
+  value,
+  onChange,
+  enumRef,
+  flagValues,
+  schema,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  enumRef?: string;
+  flagValues?: Record<string, number>;
+  schema: GameSchema;
+}) {
+  const entries = enumRef ? schema.enums[enumRef] : flagValues ?? {};
+  const mask = value ?? 0;
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+      {Object.entries(entries ?? {}).map(([name, bit]) => (
+        <label key={bit} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, color: "#ccc" }}>
+          <input
+            type="checkbox"
+            checked={(mask & bit) === bit}
+            onChange={(e) => onChange(e.target.checked ? mask | bit : mask & ~bit)}
+          />
+          {name}
+        </label>
+      ))}
+    </div>
   );
 }
 

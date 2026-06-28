@@ -16,5 +16,5 @@ event_type = 4
 [resource]
 script = ExtResource("1_dfd")
 display_name = "Standard Short"
-tags = ["short"]
+tags = 1
 slots = [SubResource("Slot_combat"), SubResource("Slot_rest")]

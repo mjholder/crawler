@@ -144,6 +144,10 @@ func _describe_property(prop: Dictionary, class_annotations: Dictionary, enums: 
 				else:
 					# Inline enum values from hint_string "NAME:0,NAME2:1,..." or "NAME,NAME2,..."
 					p["enum_values"] = _parse_enum_hint(prop["hint_string"])
+			elif prop["hint"] == PROPERTY_HINT_FLAGS:
+				# Bitmask: hint_string is "Label:bit,Label2:bit2,..." (e.g. "Short:1,Medium:2").
+				p["type"] = "flags"
+				p["flag_values"] = _parse_enum_hint(prop["hint_string"])
 			else:
 				p["type"] = "int"
 

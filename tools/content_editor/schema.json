@@ -387,9 +387,14 @@
 					"type": "String"
 				},
 				{
-					"element_type": "",
+					"flag_values": {
+						"Demo": 8,
+						"Medium": 2,
+						"Mixed": 4,
+						"Short": 1
+					},
 					"name": "tags",
-					"type": "Array"
+					"type": "flags"
 				},
 				{
 					"element_type": "FloorSlot",
@@ -531,11 +536,11 @@
 				},
 				{
 					"enum_values": {
-						"boss": 1,
-						"combat": 0,
-						"dialogue": 2,
-						"rest": 4,
-						"skill_check": 3
+						"Boss": 1,
+						"Combat": 0,
+						"Dialogue": 2,
+						"Rest": 4,
+						"Skill Check": 3
 					},
 					"name": "event_type",
 					"type": "enum"
@@ -1048,11 +1053,11 @@
 				},
 				{
 					"enum_values": {
-						"boss": 1,
-						"combat": 0,
-						"dialogue": 2,
-						"rest": 4,
-						"skill_check": 3
+						"Boss": 1,
+						"Combat": 0,
+						"Dialogue": 2,
+						"Rest": 4,
+						"Skill Check": 3
 					},
 					"name": "event_type",
 					"type": "enum"
@@ -1074,6 +1079,19 @@
 		"ConsumableData.TargetMode": {
 			"ALL_ENEMIES": 1,
 			"SELF": 0
+		},
+		"Enums.EventType": {
+			"BOSS": 1,
+			"COMBAT": 0,
+			"DIALOGUE": 2,
+			"REST": 4,
+			"SKILL_CHECK": 3
+		},
+		"Enums.FloorTag": {
+			"DEMO": 8,
+			"MEDIUM": 2,
+			"MIXED": 4,
+			"SHORT": 1
 		},
 		"Enums.GameState": {
 			"CHARACTER_CREATION": 1,

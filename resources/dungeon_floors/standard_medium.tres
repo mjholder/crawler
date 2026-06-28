@@ -1,33 +1,29 @@
-[gd_resource type="Resource" script_class="DungeonFloorData" format=3 uid="uid://dfd_medium"]
+[gd_resource type="Resource" script_class="DungeonFloorData" format=3 uid="uid://ct4crw6phrtwg"]
 
-[ext_resource type="Script" path="res://scripts/dungeon_floor_data.gd" id="1_dfd"]
-[ext_resource type="Script" path="res://scripts/floor_slot.gd" id="2_fs"]
-[ext_resource type="Script" path="res://scripts/weighted_entry.gd" id="3_we"]
+[ext_resource type="Script" uid="uid://5ljbepi2t2q8" path="res://scripts/dungeon_floor_data.gd" id="1_dfd"]
+[ext_resource type="Script" uid="uid://w4hqsw4a2suq" path="res://scripts/floor_slot.gd" id="2_fs"]
+[ext_resource type="Script" uid="uid://vcl5li4mhqqi" path="res://scripts/weighted_entry.gd" id="3_we"]
+
+[sub_resource type="Resource" id="Slot_combat0"]
+script = ExtResource("2_fs")
+type = 1
+
+[sub_resource type="Resource" id="Slot_combat1"]
+script = ExtResource("2_fs")
+type = 1
 
 [sub_resource type="Resource" id="Entry_combat"]
 script = ExtResource("3_we")
-event_type = 0
 weight = 3
 
 [sub_resource type="Resource" id="Entry_dialogue"]
 script = ExtResource("3_we")
 event_type = 2
-weight = 1
 
 [sub_resource type="Resource" id="Entry_rest"]
 script = ExtResource("3_we")
 event_type = 4
 weight = 2
-
-[sub_resource type="Resource" id="Slot_combat0"]
-script = ExtResource("2_fs")
-type = 1
-event_type = 0
-
-[sub_resource type="Resource" id="Slot_combat1"]
-script = ExtResource("2_fs")
-type = 1
-event_type = 0
 
 [sub_resource type="Resource" id="Slot_weighted"]
 script = ExtResource("2_fs")
@@ -42,5 +38,5 @@ event_type = 3
 [resource]
 script = ExtResource("1_dfd")
 display_name = "Standard Medium"
-tags = ["medium", "mixed"]
+tags = 6
 slots = [SubResource("Slot_combat0"), SubResource("Slot_combat1"), SubResource("Slot_weighted"), SubResource("Slot_skillcheck")]
