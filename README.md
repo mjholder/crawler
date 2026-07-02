@@ -53,6 +53,7 @@ Then open <http://localhost:5173>.
 |---|---|
 | `make up` | Start the editor (sidecar + frontend) at http://localhost:5173 |
 | `make down` | Stop all editor processes |
+| `make mcp` | Run the MCP server on stdio (for manual testing via an MCP inspector) |
 | `make schema` | Re-export `schema.json` from Godot after GDScript class changes (requires Godot; override with `GODOT_BIN=/path/to/godot`) |
 | `make verify` | Round-trip parse/serialise every `.tres` in `resources/` to check for structural diffs |
 
@@ -60,6 +61,34 @@ Then open <http://localhost:5173>.
 
 For a full reference covering every screen and resource type, see the
 [Content Editor User Guide](tools/content_editor/docs/USER_GUIDE.md).
+
+#### Authoring content with an AI agent (MCP)
+
+The same sidecar core is exposed as a stdio **MCP server** so an AI agent
+(Claude Code, Claude Desktop) can list, read, and write content resources
+directly — with linter feedback on every write. It reuses the native `.tres`
+parser, so **Godot does not need to be running** and the web editor above does
+**not** need to be up.
+
+A repo-root `.mcp.json` registers the server, so **Claude Code in this repo
+discovers it automatically** — just start a session and the `crawler-content`
+tools appear. For Claude Desktop, add an equivalent entry pointing at
+`tools/content_editor/sidecar/src/mcp.ts` (see the conventions doc below).
+
+The server provides tools for both `.tres` resources (`get_schema`,
+`list_resources`, `read_resource`, `write_resource`, `lint_resource`,
+`list_assets`, `list_references`) and the JSON content types (`read_event` /
+`write_event`, `read_dialogue` / `write_dialogue`). The recommended agent flow —
+inspect the schema, read an existing sibling to learn the envelope shape, then
+build leaf resources before the parent that references them — plus the directory
+map and JSON envelope encodings are documented in
+[MCP Authoring Conventions](tools/content_editor/docs/mcp-authoring.md). That doc
+is also served to the agent as the MCP server's instructions and as a readable
+resource, so it is available in-session without being pasted in.
+
+Run `npm install` in `tools/content_editor/` once so the MCP SDK is installed.
+`make mcp` runs the server standalone for manual testing (e.g. with
+`npx @modelcontextprotocol/inspector`).
 
 ## Credits
 

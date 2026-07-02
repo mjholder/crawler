@@ -3,12 +3,17 @@ CRAWLER_ROOT := $(shell git -C "$(CE_DIR)" rev-parse --show-toplevel)
 
 GODOT_BIN ?= $(shell which godot 2>/dev/null)
 
-.PHONY: up down schema verify
+.PHONY: up down mcp schema verify
 
 ## Start the editor (http://localhost:5173)
 up:
 	@lsof -ti :5173 :5174 | xargs kill -9 2>/dev/null; true
 	cd "$(CRAWLER_ROOT)" && PROJECT_ROOT="$(CRAWLER_ROOT)" npm run dev --prefix tools/content_editor
+
+## Run the stdio MCP server in the foreground (for manual testing via an MCP inspector)
+mcp:
+	cd "$(CRAWLER_ROOT)" && PROJECT_ROOT="$(CRAWLER_ROOT)" \
+	  npm run mcp --workspace=sidecar --prefix tools/content_editor
 
 ## Stop all editor processes
 down:

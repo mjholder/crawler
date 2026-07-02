@@ -18,6 +18,122 @@ backlog lean. Ideas with a foundation shipped but real work left stay here as `p
 
 ---
 
+**Idea**: Enemy Attack Patterns (Sequenced Moves + Telegraphing)
+
+**Added**: 2026-06-30
+
+**Notes**:
+
+Every enemy currently has exactly one hardcoded behavior via _perform_action() override — no variety turn to turn. This is the enemy-side counterpart to the dual-action combat idea: once the player has more to decide per turn, enemies should too, and telegraphing what's coming gives the player something concrete to react to with their new second action (brace vs. attack vs. defensive spell).
+Core structure — fixed sequence, not weighted/random (for v1):
+
+New EnemyPatternData resource: an ordered list of "moves," each one modeled after the existing AttackData shape (name, target_mode, effects, icon/description) so enemy moves reuse the same Effect subclasses (DamageEffect, StatusEffect, etc.) already driving player attacks and spells — no new effect system needed.
+Enemy gains an optional pattern: EnemyPatternData export and an instance-level _pattern_index: int cursor. Multiple enemies of the same type in one fight naturally run independent cursors since the index lives on the instance.
+Base _perform_action() becomes data-driven when a pattern is assigned: read pattern.moves[_pattern_index], apply its effects, advance the cursor (wrapping at the end — loop the sequence).
+This is additive, not a replacement for the existing override hook — subclasses that need fully custom/code-driven behavior (boss phase transitions, conditional logic) still override _perform_action() directly. Patterns are for the common case; overrides remain for the special case.
+
+Why fixed sequence first, not weighted/reactive:
+
+A weighted pool (move chosen by rolled probability, possibly conditional on HP/state) is more organic but harder to telegraph honestly — you either commit to the roll early and telegraph the result, or show the player a probability, which is a UX problem of its own. A fixed sequence makes telegraphing trivial: "next move" is just pattern.moves[_pattern_index] before it's consumed, so the UI can peek at it for free. Weighted/reactive patterns are worth exploring later as a distinct extension, not a v1 requirement.
+Telegraphing:
+
+Expose the upcoming move (icon/label) on EnemyHUD before the enemy acts. Turns "what will the skeleton do" into a real read for the player — pairs directly with the dual-action combat idea, since a telegraphed heavy swing gives the offhand Brace/Parry action an actual decision to attach to instead of being generically defensive.
+Deferred / explicitly out of scope for this pass:
+
+Weighted or probability-based move selection.
+Patterns that branch based on player state (e.g. enemy reacts to the player having braced last turn) — this couples enemy AI to player action history and is a meaningfully bigger step than a self-contained sequence cursor. Flag as a future extension once dual-action combat and basic patterns both exist.
+
+Status: partially done — see [[design.md]] and [[daily/2026-07-01]].
+Shipped (2026-07-01): `EnemyMoveData` + `EnemyPatternData` resources, the optional `pattern` export + per-instance cursor on `Enemy`, data-driven `_emit_attack()` reusing the existing `Effect` pipeline, `PLAYER`/`SELF` targeting, content-editor schema registration, and a sample skeleton pattern (`skeleton_skirmisher.tscn`). Additive to the `_perform_action()` override hook. `peek_next_move()` is exposed for the telegraph.
+Remaining: the **telegraphing HUD** (surface `peek_next_move()` above each enemy) — the stated payoff, pairs with dual-action combat; per-move sound wiring; and the deferred **weighted/reactive** selection extension.
+
+---
+
+**Idea**: Dual-Action Combat (Mainhand / Offhand)
+
+**Added**: 2026-06-30
+
+**Notes**:
+
+Combat currently gives the player one action per turn (attack, or a registered weapon action), which makes turns feel flat — click one button, repeat. Proposal: split the turn into two independent action slots, one per hand, gated separately rather than sharing a turn-wide action count.
+Structure:
+
+Each hand has its own action(s) and its own "used this turn" flag (_mainhand_used, _offhand_used), both reset at the start of the player's turn.
+Actions can be used in any order — mainhand and offhand aren't sequenced, they're just two independently-gated buttons (or button groups) that disable once spent.
+A new End Turn button lets the player explicitly pass — including declining to use a hand at all. Turn no longer auto-ends on the first action; execute_action sets a hand's _used flag instead of emitting turn_ended directly.
+Consumables and cantrips keep their existing free-action behavior (no turn cost) — this system only governs mainhand/offhand.
+
+What each hand can grant:
+
+Mainhand: attack (existing), or spell casting for casters.
+Offhand: a shield → Brace/Parry (defensive, likely SELF-targeted, possibly a "reduce/negate next incoming hit" duration effect); a second weapon → a second attack-like action; a focus → a second spell slot or a defensive cantrip.
+Unarmed is a real loadout, not a null case — bare mainhand and/or offhand grant a baseline punch action rather than nothing.
+
+Two-handed weapons — the open question:
+
+An empty (unequipped) offhand and a locked offhand (from a two-handed weapon) are explicitly not the same outcome. Empty offhand still yields whatever baseline (e.g. unarmed punch) applies. Locked offhand means the two-handed weapon has to compensate for the lost second action somehow — candidate approaches: the weapon grants actions for both "hands" itself (e.g. a heavy swing that occupies the mainhand slot plus a follow-through that occupies the offhand slot), or the weapon's single action is deliberately stronger/more complex to offset losing the second button. Not resolved — needs its own pass once the base two-action system is in.
+Complementary idea (separate thread): enemy attack pattern system — giving enemies multiple actions/telegraphed sequences instead of one fixed _perform_action — pairs well with this since the player having two actions to allocate makes "what is the enemy about to do" a meaningful thing to react to. Worth exploring together but tracked separately.
+Inspiration: Wanting turns to involve more than one meaningful click; existing OFFHAND slot and two-handed lock (shipped in spell system foundation) already gate equipment this way passively — this makes that gating actionable rather than just stat-modifying.
+Status: worth exploring
+
+---
+
+**Idea:** Elemental caster kits — a comparable matrix
+**Added:** 2026-06-28
+**Notes:** The Pyromancer (fire) establishes a repeatable kit template that should be mirrored across elements so they balance against each other like-for-like: a caster **weapon** with a three-attack shape (*charge-up → single AOE blast → DoT/control AOE*), one **signature status**, a **utility/defensive spell**, and a **glass-cannon-ish class** that starts with it. Building each element to the same skeleton means tuning one and copying the deltas instead of balancing every kit from scratch.
+Draft elements:
+- **Fire** *(shipped 2026-06-28, see [[daily/2026-06-28]])* — `burn` DoT; Pyre Scepter (Kindle / Flameburst / Immolate) + Flicker dodge + Pyromancer class.
+- **Frost** — `chill` (AGI down; freeze/skip-turn at high stacks); control-leaning, tankier class. Utility: barrier or slow.
+- **Storm / Lightning** — chain-hit attacks that arc between enemies; `shock` (target takes +X% damage); high-variance burst. Utility: haste / extra action.
+- **Stone / Earth** — `barrier` absorb; DEF-scaling "bruiser caster," slow but durable. Utility: taunt / guard.
+- **Blight** — leans on existing `poison` / `bleed`; an attrition class that *wants* long fights (counterpoint to burst). Utility: spread / transfer DoT.
+- **Radiant** — heal + smite hybrid, bonus vs undead (ties into the world lore / Forgotten Entity thread). Utility: cleanse.
+Each element's signature status is the balance anchor — see the status-vocabulary entry below. Connects to the Identity/Expression arc in **Run Structure & Act Progression** (gear that combos with a spell is the Act 2 hook).
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Status-effect vocabulary expansion
+**Added:** 2026-06-28
+**Notes:** Combat depth and balance both rest on the set of status "verbs" available. Current roster: `poison`, `bleed`, `stun`, `regen`, `burn`. The Effect System v2 / `StatusData` pipeline already supports `stat_modifiers`, `on_apply`/`on_tick`/`on_expire`, `prevents_action`, and stack policies, so several of these are authoring-only (no new code):
+- **chill** — passive AGI debuff; at N stacks escalate to a freeze (`prevents_action`). Frost signature. *(authoring-only)*
+- **weaken** — STR/SPI debuff to soften enemy output. *(authoring-only)*
+- **haste** — sustained AGI buff / chance at an extra action (Flicker is the one-off spike; haste is the sustained form). *(authoring-only)*
+- **shock / vulnerable** — target takes +X% damage. Needs a damage-amp hook — check whether `take_damage`/`DamageEffect` can read a multiplier status. *(likely needs code)*
+- **barrier / shield** — flat absorb pool consumed before HP; not expressible as a `stat_modifier`. *(needs code)*
+- **mark** — next hit auto-crits / bonus-damages a target; pairs with the "first attack deals Nx" proc noted under the Patron Saint entry. *(needs code)*
+The authoring-only vs needs-code split is itself useful triage. See [[design.md]] Effect System v2.
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Elemental combo reactions
+**Added:** 2026-06-28
+**Notes:** Let statuses interact so builds emerge from *sequencing*, not just stacking — the mechanical payoff of the Act 3 "Expression" phase in **Run Structure & Act Progression**. Examples: a frost hit on a `burn`ing target triggers a thermal-shock burst (consume both, deal a chunk); a `shock`ed target hit by frost/water chains harder; a "rupture" attack detonates accumulated `poison`/`bleed` stacks for instant damage. Needs a reaction hook — on status apply, check the target's existing statuses for a matching pair and fire a reaction effect. Big lever, but adds combat complexity; gate it behind the base elemental kits + statuses landing first. Risk: balloons into a Genshin-style reaction table — keep the first pass to 2–3 hand-picked reactions.
+**Status:** `raw`
+
+---
+
+**Idea:** Sparring-partner enemy archetypes (for balance testing)
+**Added:** 2026-06-28
+**Notes:** Trial-and-error balance needs enemies that *exercise* specific mechanics, not just stat blocks. A small purpose-built roster doubles as a tuning harness and as real content; each archetype maps to a stat axis, so it also serves as a legibility check (if a DEF build can't survive the glass cannon, DEF is undervalued):
+- **Glass cannon** — high damage, low HP/DEF; punishes no-defense builds, rewards stuns/burst/dodge.
+- **DoT-immune brute** — high HP, ignores poison/burn/bleed; forces direct damage, counters pure attrition.
+- **Buffer / support** — buffs allies or shields itself; makes the player value `weaken`, stuns, and priority targeting (the "respond to enemy intent" goal in **Combat Feel & Pacing**).
+- **Evasive skirmisher** — high AGI, hard to hit; rewards accuracy / `mark` and AOE that doesn't rely on landing single hits.
+- **Enrager / wind-up** — telegraphs a big hit over several turns (the brace-before-the-hit decision from **Combat Feel & Pacing**).
+Enemy authoring isn't in the content editor yet (see "Content editor — enemy and event authoring support"), so these would be hand-written `.tres` for now.
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Balance legibility baseline (stat → effect budget)
+**Added:** 2026-06-28
+**Notes:** Before trial-and-error tuning can converge, the numbers need to be *legible* — there's currently no answer to "what is 1 point of SPI worth?" or "how much should a tier-1 weapon hit for?" Capture a reference (candidate: `journal/detailed/balance.md`) pinning down: how each stat converts to its outputs (CON→max HP, SPI→mana + spell scaling, AGI→hit/dodge, DEF→mitigation, STR→melee, LCK→crit/wildcard), the target combat length (5–8 player turns, per **Combat Feel & Pacing**), the expected player stat/HP curve per act (per **Run Structure & Act Progression**), and a rough power budget per item tier so "this feels off" becomes "this is 2× budget." Doesn't lock anything down — it's a yardstick so playtests produce decisions instead of vibes. First step: audit the actual formulas in code (`take_damage`, max-health / max-mana derivation, any hit/dodge roll) and write down what they currently *are*. See [[detailed/character.md]].
+**Status:** `worth exploring`
+
+---
+
 **Idea:** Attack & weapon clarity (tooltips + equipment descriptions)
 **Added:** 2026-06-21
 **Notes:** There's currently no way to learn what an attack does without already knowing it from the code — picking "Assassinate" off the action list doesn't say what it does or who it targets. Two related UI surfaces: (1) in-combat tooltips on action buttons, showing effect and target type before committing to a turn; (2) a weapon description in the inventory/equip screen listing the attacks it grants, so gear choices are informed by actual combat behavior, not just stat deltas. Both point at the same underlying gap: attacks and weapons need a player-facing description, not just internal effect data.
@@ -166,6 +282,18 @@ A new **OFFHAND slot** is added to `Enums.Slot`. It can hold a shield, a casting
 **Status:** `partially done` — foundation shipped 2026-05-08, see [[design.md]] "Spell casting system — foundation design" and [[daily/2026-05-08]].
 **Shipped:** mana resource (`max_mana = effective_SPI × mana_modifier + class_mana_bonus`), `SpellData` registered as player actions through `execute_action`/targeting, `OFFHAND` slot, prep slots (mirrors the consumable belt), innate weapon spells, `spell_cost_multiplier` on `EquipmentData`, mage armor via `BlessingData.stat_modifiers`.
 **Remaining:** tomes (`TomeData`) + learn UI, class-affinity loot tags + dual-pool drops, the two-handed offhand lock, spell animations, and prep-UI polish (the `InventoryPanel` prep UI is dynamic/unpolished).
+
+---
+
+**Idea:** MCP server for AI-assisted content authoring
+
+**Added:** 2026-06-28
+
+**Notes:** Wrap the existing content editor sidecar as an MCP server so an AI agent can generate game content from natural language ideas. The sidecar already has read/write/list endpoints and the Godot headless round-trip — MCP would just be a tool layer on top. Agent gets schema.json + directory conventions in its system prompt so it can derive file paths deterministically before writing. Ext_resource chaining is solved by bottom-up sequencing: agent creates leaf resources first (effects, attacks), captures their paths, then writes the parent (weapon) referencing them. No new infrastructure needed beyond the MCP transport layer and a system prompt that codifies what the frontend already knows implicitly (where each resource type lives). Likely lives as an additional process alongside the sidecar, or a plugin within it. Tools needed at minimum: list_resources, read_resource, write_resource, get_schema. Linter already exists on write — agent gets validation feedback for free.
+
+**Built (2026-06-28):** Standalone stdio MCP server at `tools/content_editor/sidecar/src/mcp.ts` (official MCP TS SDK + zod), reusing the sidecar's core modules directly — no HTTP hop, web sidecar not required. 11 tools: `get_schema`, `list_resources`, `read_resource`, `write_resource` (reads back + lints), `lint_resource`, `list_assets`, `list_references`, `read_event`/`write_event`, `read_dialogue`/`write_dialogue`. Conventions codified in `tools/content_editor/docs/mcp-authoring.md`, surfaced as the server `instructions` and a readable MCP resource. Registered via repo-root `.mcp.json`; `make mcp` runs it standalone. Smoke-tested with an SDK client (list/read/write/lint) and `make verify` (106/0). Open follow-up: the existing linter only flags dangling `uid://` refs, not `__ref` paths pointing at non-existent files (see `getEntry()` in `resource-index.ts`) — agents must verify ref targets exist first; a disk-existence check would close the gap.
+
+Status: partially done
 
 ---
 

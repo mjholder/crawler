@@ -243,10 +243,16 @@ sequenceDiagram
     rect rgb(255, 240, 230)
     note over Game,Enemy: Enemy turn
     Game->>Enemy: take_turn()
-    Enemy->>Enemy: _perform_action()
-    Enemy-->>Game: attack(damage)
-    Game->>Player: take_damage(damage)
-    Player-->>GUI: damaged(amount)
+    Enemy->>Enemy: _perform_action() → _emit_attack()
+    alt has EnemyPatternData
+        Enemy-->>Game: move_performed(move)  (via CombatEvent)
+        Game->>Player: effect.apply(enemy, player)  (SELF → enemy)
+        Player-->>GUI: damaged(amount)
+    else no pattern (legacy)
+        Enemy-->>Game: attack(damage)
+        Game->>Player: take_damage(damage)
+        Player-->>GUI: damaged(amount)
+    end
     Enemy-->>Game: turn_ended
     Game->>Game: state = PLAYER_TURN
     end
@@ -516,13 +522,30 @@ classDiagram
         #_get_base_stat(stat) float
     }
     class Enemy {
+        +signal attack(damage)
+        +signal move_performed(move)
         +float defense
+        +EnemyPatternData pattern
+        -int _pattern_index
         +take_turn()
+        +peek_next_move() EnemyMoveData
+        #_emit_attack()
         #_get_base_stat(stat) float
     }
     class Skeleton {
     }
     class SkeletonLord {
+    }
+    class EnemyPatternData {
+        <<Resource>>
+        +String pattern_name
+        +Array~EnemyMoveData~ moves
+    }
+    class EnemyMoveData {
+        <<Resource>>
+        +String move_name
+        +Target target
+        +Array~Effect~ effects
     }
 
     Combatant o-- StatusInstance : _active_statuses
@@ -531,4 +554,9 @@ classDiagram
     Combatant <|-- Enemy
     Enemy <|-- Skeleton
     Enemy <|-- SkeletonLord
+    Enemy o-- EnemyPatternData : pattern
+    EnemyPatternData o-- EnemyMoveData : moves
+    EnemyMoveData o-- Effect : effects
 ```
+
+`EnemyPatternData` is an ordered, looping list of `EnemyMoveData`; each move carries the same `Effect` subclasses the player uses. `Enemy._emit_attack()` (the single emission seam — animation-gated enemies fire it from an animation method track) emits `move_performed(move)` and advances `_pattern_index` when a pattern is set, else falls back to `attack(attack_damage)`. `game._on_enemy_move_performed()` applies the move's effects (`target = player`, or the enemy for `SELF` moves), mirroring `_on_player_attack_hit`. Patterns are additive to the `_perform_action()` override hook. See [[design.md]] — Enemy action patterns (2026-07-01).

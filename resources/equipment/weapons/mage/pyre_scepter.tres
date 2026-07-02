@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://bp72q37y5ckhs"]
+
+[ext_resource type="Script" uid="uid://bkgb8ckvvwyft" path="res://scripts/weapon_data.gd" id="1_weapon"]
+[ext_resource type="Resource" path="res://resources/attacks/kindle.tres" id="2_kindle"]
+[ext_resource type="Resource" uid="uid://rqy5ctsp7cya" path="res://resources/attacks/flameburst.tres" id="3_flameburst"]
+[ext_resource type="Resource" uid="uid://c7m3ro7r10q7i" path="res://resources/attacks/immolate.tres" id="4_immolate"]
+[ext_resource type="Texture2D" uid="uid://drbota0c0gcff" path="res://assets/sprites/weapons/battle_axe/windup.png" id="5_windup"]
+[ext_resource type="Texture2D" uid="uid://dbv4prm15qp3l" path="res://assets/sprites/weapons/battle_axe/swing.png" id="6_swing"]
+[ext_resource type="Texture2D" uid="uid://bx8qgjpp08r0n" path="res://assets/sprites/weapons/battle_axe/idle.png" id="7_idle"]
+[ext_resource type="Texture2D" uid="uid://bj083b7w7egw7" path="res://assets/sprites/weapons/battle_axe/icon.png" id="8_icon"]
+[ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="9_scene"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_windup"]
+atlas = ExtResource("5_windup")
+region = Rect2(0, 0, 480, 270)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_main"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_idle")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("6_swing")
+}],
+"loop": false,
+"name": &"swing",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_windup")
+}],
+"loop": true,
+"name": &"wind_up",
+"speed": 5.0
+}]
+
+[resource]
+script = ExtResource("1_weapon")
+attacks = Array[Resource]([ExtResource("2_kindle"), ExtResource("3_flameburst"), ExtResource("4_immolate")])
+item_name = "Pyre Scepter"
+description = "A blackened rod crowned with a perpetual ember. It hungers to spread its fire — kindle the flame, then unleash it across the field."
+sprite_frames = SubResource("SpriteFrames_main")
+paper_doll_front = ExtResource("8_icon")
+stat_modifiers = {
+4: 12.0
+}
+scene = ExtResource("9_scene")
+price = 140

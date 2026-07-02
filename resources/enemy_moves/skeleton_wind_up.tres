@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EnemyMoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/enemy_move_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/effects/enemy_wind_up_damage.tres" id="2_new"]
+
+[resource]
+script = ExtResource("1_script")
+move_name = "Wind Up"
+description = "The skeleton draws its blade back, testing the guard with a light jab."
+target = 0
+effects = [ExtResource("2_new")]

@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://d18bfd7hrju10"]
+
+[ext_resource type="PackedScene" uid="uid://brbnfv00v65s2" path="res://scenes/skeleton.tscn" id="1_base"]
+[ext_resource type="Resource" path="res://resources/enemy_patterns/skeleton_basic.tres" id="2_pat"]
+
+[node name="Skeleton" instance=ExtResource("1_base")]
+pattern = ExtResource("2_pat")

@@ -20,6 +20,8 @@ const RESOURCE_SCRIPTS: Array[String] = [
 	"res://scripts/weapon_data.gd",
 	"res://scripts/consumable_data.gd",
 	"res://scripts/attack_data.gd",
+	"res://scripts/enemy_move_data.gd",
+	"res://scripts/enemy_pattern_data.gd",
 	"res://scripts/shop_data.gd",
 	"res://scripts/player_class_data.gd",
 	"res://scripts/proc_def.gd",
@@ -45,6 +47,7 @@ const RESOURCE_SCRIPTS: Array[String] = [
 const ENUM_SCRIPTS: Array[String] = [
 	"res://scripts/enums.gd",
 	"res://scripts/attack_data.gd",
+	"res://scripts/enemy_move_data.gd",
 	"res://scripts/consumable_data.gd",
 	"res://scripts/status_data.gd",
 ]

@@ -1,8 +1,8 @@
 {
 	"name": "debug_combat",
 	"waves": [
-		{ "enemies": [{ "scene": "res://scenes/skeleton.tscn", "count": 1 }] },
-		{ "enemies": [{ "scene": "res://scenes/skeleton.tscn", "count": 2 }] }
+		{ "enemies": [{ "scene": "res://scenes/skeleton_skirmisher.tscn", "count": 1 }] },
+		{ "enemies": [{ "scene": "res://scenes/skeleton_skirmisher.tscn", "count": 2 }] }
 	],
 	"rewards": {
 		"experience": 30,

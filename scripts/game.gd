@@ -446,6 +446,25 @@ func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
 					print("[PLAYER] %s on %s" % [attack_data.attack_name, (target as Enemy).enemy_name])
 
 
+func _on_enemy_move_performed(enemy: Enemy, move: EnemyMoveData) -> void:
+	# Mirror of _on_player_attack_hit for the enemy side: the game owns effect
+	# resolution because enemies hold no player reference.
+	var target: Node = enemy if move.target == EnemyMoveData.Target.SELF else player
+	var deals_damage := false
+	for effect_res in move.effects:
+		var effect := effect_res as Effect
+		if effect == null:
+			continue
+		effect.apply(enemy, target)
+		if effect is DamageEffect:
+			deals_damage = true
+	# Keep equipment retaliation procs firing (equipment.gd keys on enemy_attack_hit).
+	# The damage itself already reached the player via take_damage inside the effect,
+	# so the amount here is unused by the proc — pass 0.0.
+	if move.target == EnemyMoveData.Target.PLAYER and deals_damage:
+		enemy_attack_hit.emit(enemy, 0.0)
+
+
 func _on_player_weapon_attacks_changed(_attacks: Array) -> void:
 	if _targeting_action != "":
 		_cancel_targeting()

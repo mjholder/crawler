@@ -409,6 +409,62 @@
 			"properties": [],
 			"script": "res://scripts/effect.gd"
 		},
+		"EnemyMoveData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "move_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"enum_values": {
+						"Player": 0,
+						"Self": 1
+					},
+					"name": "target",
+					"type": "enum"
+				},
+				{
+					"element_type": "Effect",
+					"name": "effects",
+					"type": "Array"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "sound",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				}
+			],
+			"script": "res://scripts/enemy_move_data.gd"
+		},
+		"EnemyPatternData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "pattern_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"element_type": "EnemyMoveData",
+					"name": "moves",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/enemy_pattern_data.gd"
+		},
 		"EquipmentData": {
 			"extends": "",
 			"properties": [
@@ -1079,6 +1135,10 @@
 		"ConsumableData.TargetMode": {
 			"ALL_ENEMIES": 1,
 			"SELF": 0
+		},
+		"EnemyMoveData.Target": {
+			"PLAYER": 0,
+			"SELF": 1
 		},
 		"Enums.EventType": {
 			"BOSS": 1,

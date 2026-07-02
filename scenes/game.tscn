@@ -10,8 +10,8 @@
 [ext_resource type="Script" uid="uid://b1ry2py3hwthj" path="res://scripts/dialogue_panel.gd" id="12_kvuet"]
 [ext_resource type="Script" uid="uid://dqjg77kuidypf" path="res://scripts/skill_check_panel.gd" id="13_skcp"]
 [ext_resource type="Script" uid="uid://bdit4rf6yc7t7" path="res://scripts/rest_panel.gd" id="14_rstp"]
-[ext_resource type="Script" path="res://scripts/shrine_panel.gd" id="14_shrp"]
-[ext_resource type="Script" path="res://scripts/town_panel.gd" id="14_townp"]
+[ext_resource type="Script" uid="uid://p7a16ya6g3yg" path="res://scripts/shrine_panel.gd" id="14_shrp"]
+[ext_resource type="Script" uid="uid://ddqp83ddmt7ba" path="res://scripts/town_panel.gd" id="14_townp"]
 [ext_resource type="PackedScene" uid="uid://b0sqp1dfwigqy" path="res://scenes/world_map.tscn" id="16_ca42v"]
 [ext_resource type="Script" uid="uid://cwnh362po6p8" path="res://scripts/character_creation_panel.gd" id="19_264po"]
 [ext_resource type="Script" path="res://scripts/player_class_data.gd" id="20_bt5mj"]
@@ -25,6 +25,7 @@
 [ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
 [ext_resource type="Script" uid="uid://qloduutsnv77" path="res://scripts/victory_panel.gd" id="25_bhx41"]
 [ext_resource type="Script" uid="uid://biwwcl2cyveoh" path="res://scripts/consumable_belt_ui.gd" id="26_cbeltu"]
+[ext_resource type="Resource" path="res://resources/classes/pyromancer.tres" id="26_pyro"]
 [ext_resource type="Script" uid="uid://ctce0wdnj5igm" path="res://scripts/paper_doll.gd" id="26_suyxu"]
 [ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
 
@@ -492,8 +493,8 @@ text = "Town"
 [node name="DescriptionLabel" type="Label" parent="GUI/TownPanel/PanelContainer/VBoxContainer" unique_id=199060803]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-autowrap_mode = 3
 text = "You reach a town at the edge of the act. Rest, visit the temple, then travel onward."
+autowrap_mode = 3
 
 [node name="Services" type="VBoxContainer" parent="GUI/TownPanel/PanelContainer/VBoxContainer" unique_id=1968797802]
 layout_mode = 2
@@ -519,7 +520,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("19_264po")
-available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior"), ExtResource("20_suyxu"), ExtResource("21_sgl2t")])
+available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior"), ExtResource("20_suyxu"), ExtResource("21_sgl2t"), ExtResource("26_pyro")])
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/CharacterCreationPanel" unique_id=490170422]
 layout_mode = 1
@@ -533,160 +534,160 @@ offset_bottom = -60.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Margin" type="MarginContainer" parent="GUI/CharacterCreationPanel/PanelContainer"]
+[node name="Margin" type="MarginContainer" parent="GUI/CharacterCreationPanel/PanelContainer" unique_id=130440936]
 layout_mode = 2
 theme_override_constants/margin_left = 24
 theme_override_constants/margin_top = 24
 theme_override_constants/margin_right = 24
 theme_override_constants/margin_bottom = 24
 
-[node name="Root" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin"]
+[node name="Root" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin" unique_id=201380733]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="StepTitleLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root"]
+[node name="StepTitleLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root" unique_id=1085625720]
 layout_mode = 2
 text = "Choose Your Class"
 
-[node name="StepIndicatorLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root"]
+[node name="StepIndicatorLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root" unique_id=1608066818]
 layout_mode = 2
 text = "Step 1 of 4"
 
-[node name="Steps" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root"]
+[node name="Steps" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root" unique_id=1136917463]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Step1_Class" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps"]
+[node name="Step1_Class" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps" unique_id=1842960292]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 6
 
-[node name="NameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class"]
+[node name="NameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class" unique_id=1329350630]
 layout_mode = 2
 text = "Name"
 
-[node name="NameInput" type="LineEdit" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class"]
+[node name="NameInput" type="LineEdit" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class" unique_id=508564495]
 layout_mode = 2
 
-[node name="ClassList" type="ItemList" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class"]
+[node name="ClassList" type="ItemList" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class" unique_id=499057007]
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ClassInfoScroll" type="ScrollContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class"]
+[node name="ClassInfoScroll" type="ScrollContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class" unique_id=1976100459]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="ClassInfo" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class/ClassInfoScroll"]
+[node name="ClassInfo" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class/ClassInfoScroll" unique_id=223215267]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ClassNameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class/ClassInfoScroll/ClassInfo"]
+[node name="ClassNameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class/ClassInfoScroll/ClassInfo" unique_id=2130706462]
 layout_mode = 2
 
-[node name="ClassDescLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class/ClassInfoScroll/ClassInfo"]
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="ClassStatsLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class/ClassInfoScroll/ClassInfo"]
+[node name="ClassDescLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class/ClassInfoScroll/ClassInfo" unique_id=1335281126]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="Step2_Background" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps"]
+[node name="ClassStatsLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step1_Class/ClassInfoScroll/ClassInfo" unique_id=1309114084]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="Step2_Background" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps" unique_id=1011879041]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 6
 
-[node name="BackgroundList" type="ItemList" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background"]
+[node name="BackgroundList" type="ItemList" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background" unique_id=457481415]
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="BgInfoScroll" type="ScrollContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background"]
+[node name="BgInfoScroll" type="ScrollContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background" unique_id=102325730]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="BgInfo" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background/BgInfoScroll"]
+[node name="BgInfo" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background/BgInfoScroll" unique_id=612274781]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="BgNameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background/BgInfoScroll/BgInfo"]
+[node name="BgNameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background/BgInfoScroll/BgInfo" unique_id=1232494571]
 layout_mode = 2
 
-[node name="BgDescLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background/BgInfoScroll/BgInfo"]
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="BgEffectsLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background/BgInfoScroll/BgInfo"]
+[node name="BgDescLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background/BgInfoScroll/BgInfo" unique_id=400698094]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="Step3_Patron" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps"]
+[node name="BgEffectsLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step2_Background/BgInfoScroll/BgInfo" unique_id=536606345]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="Step3_Patron" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps" unique_id=1421818822]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 6
 
-[node name="PatronList" type="ItemList" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron"]
+[node name="PatronList" type="ItemList" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron" unique_id=69291773]
 custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="PatronInfoScroll" type="ScrollContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron"]
+[node name="PatronInfoScroll" type="ScrollContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron" unique_id=146058665]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="PatronInfo" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron/PatronInfoScroll"]
+[node name="PatronInfo" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron/PatronInfoScroll" unique_id=1970498266]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PatronNameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron/PatronInfoScroll/PatronInfo"]
+[node name="PatronNameLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron/PatronInfoScroll/PatronInfo" unique_id=937493443]
 layout_mode = 2
 
-[node name="PatronDescLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron/PatronInfoScroll/PatronInfo"]
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="PatronTiersLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron/PatronInfoScroll/PatronInfo"]
+[node name="PatronDescLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron/PatronInfoScroll/PatronInfo" unique_id=221128713]
 layout_mode = 2
 autowrap_mode = 2
 
-[node name="Step4_Confirm" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps"]
+[node name="PatronTiersLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step3_Patron/PatronInfoScroll/PatronInfo" unique_id=1683918666]
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="Step4_Confirm" type="VBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps" unique_id=514318640]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SummaryScroll" type="ScrollContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step4_Confirm"]
+[node name="SummaryScroll" type="ScrollContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step4_Confirm" unique_id=1531171308]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="SummaryLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step4_Confirm/SummaryScroll"]
+[node name="SummaryLabel" type="Label" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/Steps/Step4_Confirm/SummaryScroll" unique_id=1003452025]
 layout_mode = 2
 size_flags_horizontal = 3
 autowrap_mode = 2
 
-[node name="NavBar" type="HBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root"]
+[node name="NavBar" type="HBoxContainer" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root" unique_id=164607459]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="BackButton" type="Button" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/NavBar"]
+[node name="BackButton" type="Button" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/NavBar" unique_id=395505195]
 layout_mode = 2
 disabled = true
 text = "Back"
 
-[node name="Spacer" type="Control" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/NavBar"]
+[node name="Spacer" type="Control" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/NavBar" unique_id=1160557664]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NextButton" type="Button" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/NavBar"]
+[node name="NextButton" type="Button" parent="GUI/CharacterCreationPanel/PanelContainer/Margin/Root/NavBar" unique_id=1745774582]
 layout_mode = 2
 text = "Next"
 

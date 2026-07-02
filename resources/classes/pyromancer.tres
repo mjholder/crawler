@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="PlayerClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/player_class_data.gd" id="1_pcd"]
+[ext_resource type="Resource" path="res://resources/equipment/weapons/mage/pyre_scepter.tres" id="2_scepter"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/apprentice_robes.tres" id="3_robes"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/plate/plate_sabatons.tres" id="4_sabatons"]
+[ext_resource type="Resource" path="res://resources/spells/flicker.tres" id="5_flicker"]
+
+[resource]
+script = ExtResource("1_pcd")
+class_name_text = "Pyromancer"
+description = "A wrathful firecaster who scorns subtlety. Channels spirit through the Pyre Scepter — kindle the flame, then engulf the whole battlefield. Plated boots keep her grounded amid the blaze."
+strength = 30.0
+defense = 40.0
+constitution = 40.0
+agility = 40.0
+spirit = 70.0
+luck = 45.0
+class_health_bonus = 0.0
+class_mana_bonus = 5.0
+growth_rates = {
+4: 3.0,
+2: 1.0
+}
+starting_equipped = {
+0: ExtResource("2_scepter"),
+2: ExtResource("4_sabatons"),
+4: ExtResource("3_robes")
+}
+starting_prep_slots = 2
+starting_learned_spells = Array[Resource]([ExtResource("5_flicker")])
+starting_prepared_spells = Array[Resource]([ExtResource("5_flicker")])
+mana_regen_per_turn = 2.0

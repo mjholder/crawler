@@ -11,6 +11,7 @@ signal player_attacked(damage: float)
 signal enemy_turns_complete
 signal enemy_turn_started(enemy: Enemy)
 signal enemy_turn_ended(enemy: Enemy)
+signal enemy_move_performed(enemy: Enemy, move: EnemyMoveData)
 signal wave_started
 signal wave_completed
 
@@ -47,6 +48,7 @@ func _on_enter(game: Node) -> void:
 	enemy_turns_complete.connect(game._on_enemy_turns_complete)
 	enemy_turn_started.connect(game._on_combat_enemy_turn_started)
 	enemy_turn_ended.connect(game._on_combat_enemy_turn_ended)
+	enemy_move_performed.connect(game._on_enemy_move_performed)
 	wave_started.connect(game._on_combat_wave_started)
 	wave_completed.connect(game._on_combat_wave_completed)
 	game._gui.set_sheathed(false)
@@ -62,6 +64,7 @@ func _on_exit(game: Node) -> void:
 	enemy_turns_complete.disconnect(game._on_enemy_turns_complete)
 	enemy_turn_started.disconnect(game._on_combat_enemy_turn_started)
 	enemy_turn_ended.disconnect(game._on_combat_enemy_turn_ended)
+	enemy_move_performed.disconnect(game._on_enemy_move_performed)
 	wave_started.disconnect(game._on_combat_wave_started)
 	wave_completed.disconnect(game._on_combat_wave_completed)
 	for enemy in _enemies:
@@ -203,6 +206,7 @@ func add_enemy(enemy: Enemy) -> void:
 	_enemies.append(enemy)
 	$Enemies.add_child(enemy)
 	enemy.attack.connect(_on_enemy_attacked)
+	enemy.move_performed.connect(_on_enemy_move_performed.bind(enemy))
 	enemy.died.connect(_on_enemy_died)
 	enemy_added.emit(enemy, _total_expected_enemies)
 
@@ -238,6 +242,10 @@ func _on_enemy_turn_ended() -> void:
 
 func _on_enemy_attacked(damage: float) -> void:
 	player_attacked.emit(damage)
+
+
+func _on_enemy_move_performed(move: EnemyMoveData, enemy: Enemy) -> void:
+	enemy_move_performed.emit(enemy, move)
 
 
 func _on_enemy_died() -> void:

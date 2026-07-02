@@ -7,6 +7,7 @@ signal died
 signal death_finished
 signal turn_ended
 signal attack(damage: float)
+signal move_performed(move: EnemyMoveData)
 
 # --- Stats ---
 @export var enemy_name: String = "Enemy"
@@ -15,11 +16,15 @@ signal attack(damage: float)
 @export var experience_value: int = 10
 @export var defense: float = 0.0
 
+# --- Behavior ---
+@export var pattern: EnemyPatternData = null
+
 # --- State ---
 var health: float
 var is_dead: bool = false
 var _turn_pending: bool = false
 var _death_finished_emitted: bool = false
+var _pattern_index: int = 0
 
 
 func _ready() -> void:
@@ -59,8 +64,22 @@ func _begin_attack() -> void:
 	print("[ENEMY] %s attacks for %.0f damage" % [enemy_name, attack_damage])
 
 
+## The move this enemy will perform on its current turn, or null when it has no
+## pattern. Peeking does not advance the cursor — the move is consumed by
+## _emit_attack(). Used for telegraphing the upcoming move on the HUD.
+func peek_next_move() -> EnemyMoveData:
+	if pattern == null or pattern.moves.is_empty():
+		return null
+	return pattern.moves[_pattern_index] as EnemyMoveData
+
+
 func _emit_attack() -> void:
-	attack.emit(attack_damage)
+	var move := peek_next_move()
+	if move == null:
+		attack.emit(attack_damage)
+		return
+	move_performed.emit(move)
+	_pattern_index = (_pattern_index + 1) % pattern.moves.size()
 
 
 # --- Combat ---

@@ -16,6 +16,12 @@
   "AttackData": {
     "effects": { "element_type": "Effect" }
   },
+  "EnemyMoveData": {
+    "effects": { "element_type": "Effect" }
+  },
+  "EnemyPatternData": {
+    "moves": { "element_type": "EnemyMoveData" }
+  },
   "SpellData": {
     "effects": { "element_type": "Effect" }
   },

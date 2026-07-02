@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://rqy5ctsp7cya"]
+
+[ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://drp2lj1h0sptk" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
+
+[sub_resource type="Resource" id="DamageEffect_main"]
+script = ExtResource("2_dmg_script")
+damage_expression = "spirit * 0.6"
+
+[resource]
+script = ExtResource("1_script")
+attack_name = "Flameburst"
+description = "A concussive bloom of fire that engulfs every foe at once."
+target_mode = 1
+effects = Array[Resource]([SubResource("DamageEffect_main")])
