@@ -5,7 +5,8 @@ extends CanvasLayer
 signal character_created(player_name: String, class_data: PlayerClassData, background: BackgroundData, patron: PatronSaintData)
 signal level_up_complete
 signal quit_to_main_requested
-signal attack_requested(attack_name: String)
+signal attack_requested(hand: int, attack_name: String)
+signal end_turn_requested
 signal dialogue_complete(terminal_node_id: String)
 signal skill_check_complete(success: bool)
 signal rest_requested
@@ -36,6 +37,12 @@ signal continue_requested
 @onready var _combat_hud: Control = $CombatHUD
 @onready var _enemy_hud: Control = $CombatHUD/EnemyHUD
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
+# Dual-action bar: one button group per hand plus an explicit End Turn. Built in the
+# scene under ActionMenu; if absent (scene not yet updated), _ensure_action_nodes()
+# creates a usable fallback so combat still works.
+@onready var _mainhand_actions: HBoxContainer = get_node_or_null("CombatHUD/ActionMenu/MainhandActions")
+@onready var _offhand_actions: HBoxContainer = get_node_or_null("CombatHUD/ActionMenu/OffhandActions")
+@onready var _end_turn_button: Button = get_node_or_null("CombatHUD/ActionMenu/EndTurnButton")
 @onready var _consumable_belt: ConsumableBeltUI = $ConsumableBelt
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
@@ -54,16 +61,18 @@ signal continue_requested
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
 
 var _enemy_bars: Dictionary = {}
+# Action-bar gating. A button is enabled iff it's the player's turn, weapons aren't
+# sheathed, that hand isn't spent, and (for spells) it's affordable.
+var _sheathed: bool = true
+var _is_player_turn: bool = false
+var _mh_used: bool = false
+var _oh_used: bool = false
+var _oh_locked: bool = false
+var _action_mana: float = 0.0
 var _player_status_label: Label = null
 var _player_mana_label: Label = null
 var _player_mana_bar: ProgressBar = null
 var _enemy_status_labels: Dictionary = {}
-
-const _BTN_WIDTH := 90
-const _BTN_HEIGHT := 35
-const _BTN_MARGIN_RIGHT := -83.0
-const _BTN_MARGIN_BOTTOM := -73.0
-const _BTN_GAP := 5
 
 
 func _ready() -> void:
@@ -131,6 +140,46 @@ func _ready() -> void:
 	_player_mana_label.offset_right = 190.0
 	_player_mana_label.offset_bottom = 86.0
 	_player_hud.add_child(_player_mana_label)
+	_ensure_action_nodes()
+	if _end_turn_button != null:
+		_end_turn_button.pressed.connect(func() -> void: end_turn_requested.emit())
+
+
+# --- Action Bar (dual-action) ---
+
+## Creates fallback action-bar nodes if the scene doesn't provide them yet. Once the
+## CombatHUD scene defines MainhandActions / OffhandActions / EndTurnButton under
+## ActionMenu, these are used instead and this is a no-op.
+func _ensure_action_nodes() -> void:
+	if _mainhand_actions == null:
+		_mainhand_actions = _make_action_row("MainhandActions", -120.0)
+	if _offhand_actions == null:
+		_offhand_actions = _make_action_row("OffhandActions", -82.0)
+	if _end_turn_button == null:
+		var btn := Button.new()
+		btn.name = "EndTurnButton"
+		btn.text = "End Turn"
+		btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+		btn.offset_left = -110.0
+		btn.offset_right = -20.0
+		btn.offset_top = -44.0
+		btn.offset_bottom = -14.0
+		_action_menu.add_child(btn)
+		_end_turn_button = btn
+
+
+func _make_action_row(node_name: String, bottom: float) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.name = node_name
+	row.alignment = BoxContainer.ALIGNMENT_END
+	row.add_theme_constant_override("separation", 5)
+	row.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	row.offset_left = -640.0
+	row.offset_right = -20.0
+	row.offset_top = bottom - 35.0
+	row.offset_bottom = bottom
+	_action_menu.add_child(row)
+	return row
 
 
 # --- Inventory ---
@@ -141,10 +190,6 @@ func setup_inventory(inventory: Inventory) -> void:
 
 func setup_spell_prep(player: Player) -> void:
 	_inventory_panel.setup_spell_prep(player)
-
-
-func setup_tomes(player: Player) -> void:
-	_inventory_panel.setup_tomes(player)
 
 
 func toggle_inventory(can_equip: bool = true) -> void:
@@ -235,9 +280,8 @@ func hide_event_hud() -> void:
 
 
 func set_sheathed(sheathed: bool) -> void:
-	for child in _action_menu.get_children():
-		if child is Button:
-			child.disabled = sheathed
+	_sheathed = sheathed
+	_apply_action_states()
 
 
 func _on_consumable_belt_pressed(index: int) -> void:
@@ -342,61 +386,89 @@ func refresh_player_statuses(statuses: Array) -> void:
 	_player_status_label.text = " ".join(parts)
 
 
-func rebuild_action_buttons(attacks: Array, spells: Array[SpellData] = [], current_mana: float = 0.0) -> void:
-	for child in _action_menu.get_children():
+func rebuild_action_buttons(
+	mainhand_attacks: Array, mainhand_spells: Array,
+	offhand_attacks: Array, offhand_spells: Array,
+	current_mana: float,
+	mainhand_used: bool, offhand_used: bool, offhand_locked: bool
+) -> void:
+	_action_mana = current_mana
+	_mh_used = mainhand_used
+	_oh_used = offhand_used
+	_oh_locked = offhand_locked
+	_populate_hand_group(_mainhand_actions, Player.Hand.MAINHAND, mainhand_attacks, mainhand_spells)
+	_populate_hand_group(_offhand_actions, Player.Hand.OFFHAND, offhand_attacks, offhand_spells)
+	# The offhand row hides entirely when the hand offers nothing (e.g. a two-hander that
+	# locks the offhand and grants no supporting action).
+	_offhand_actions.visible = _offhand_actions.get_child_count() > 0
+	_apply_action_states()
+
+
+func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spells: Array) -> void:
+	if group == null:
+		return
+	for child in group.get_children():
 		child.queue_free()
-	var items: Array = []
 	for atk_res in attacks:
-		if atk_res is AttackData:
-			items.append(atk_res)
-	for spell in spells:
+		var atk := atk_res as AttackData
+		if atk != null:
+			_add_action_button(group, hand, atk.attack_name, 0.0)
+	for spell_res in spells:
+		var spell := spell_res as SpellData
 		if spell != null:
-			items.append(spell)
-	for i in items.size():
-		var item = items[i]
-		var btn := Button.new()
-		var action_name: String
-		if item is AttackData:
-			action_name = (item as AttackData).attack_name
-			btn.text = action_name
-		elif item is SpellData:
-			var spell := item as SpellData
-			action_name = spell.spell_name
-			var cost := spell.mana_cost
-			btn.text = "%s (%d)" % [action_name, int(cost)] if cost > 0.0 else action_name
-			btn.disabled = current_mana < cost
-		var offset_right := _BTN_MARGIN_RIGHT - i * (_BTN_WIDTH + _BTN_GAP)
-		var offset_left := offset_right - _BTN_WIDTH
-		btn.set_anchor(SIDE_LEFT, 1.0)
-		btn.set_anchor(SIDE_TOP, 1.0)
-		btn.set_anchor(SIDE_RIGHT, 1.0)
-		btn.set_anchor(SIDE_BOTTOM, 1.0)
-		btn.set_offset(SIDE_LEFT, offset_left)
-		btn.set_offset(SIDE_TOP, _BTN_MARGIN_BOTTOM - _BTN_HEIGHT)
-		btn.set_offset(SIDE_RIGHT, offset_right)
-		btn.set_offset(SIDE_BOTTOM, _BTN_MARGIN_BOTTOM)
-		var captured_name := action_name
-		btn.pressed.connect(func() -> void: attack_requested.emit(captured_name))
-		_action_menu.add_child(btn)
+			_add_action_button(group, hand, spell.spell_name, spell.mana_cost)
 
 
-func set_targeting_action(action_name: String) -> void:
-	var targeting := action_name != ""
-	for child in _action_menu.get_children():
+func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float) -> void:
+	var btn := Button.new()
+	btn.text = "%s (%d)" % [action_name, int(cost)] if cost > 0.0 else action_name
+	btn.set_meta("hand", hand)
+	btn.set_meta("action", action_name)
+	btn.set_meta("cost", cost)
+	btn.pressed.connect(func() -> void: attack_requested.emit(hand, action_name))
+	group.add_child(btn)
+
+
+## Recomputes every action button's disabled/focus state from the current gates.
+func _apply_action_states() -> void:
+	_apply_group_states(_mainhand_actions, _mh_used)
+	_apply_group_states(_offhand_actions, _oh_used)
+	if _end_turn_button != null:
+		_end_turn_button.disabled = not (_is_player_turn and not _sheathed)
+
+
+func _apply_group_states(group: HBoxContainer, hand_used: bool) -> void:
+	if group == null:
+		return
+	var base := _is_player_turn and not _sheathed and not hand_used
+	for child in group.get_children():
 		if not child is Button:
 			continue
 		var btn := child as Button
-		btn.focus_mode = Control.FOCUS_NONE if targeting else Control.FOCUS_ALL
-		if targeting and btn.text == action_name:
-			btn.modulate = Color(1.4, 1.4, 0.6)
-		else:
-			btn.modulate = Color.WHITE
+		var cost: float = btn.get_meta("cost", 0.0)
+		btn.disabled = not base or (cost > 0.0 and _action_mana < cost)
+
+
+func set_targeting_action(hand: int, action_name: String) -> void:
+	var targeting := action_name != ""
+	for group in [_mainhand_actions, _offhand_actions]:
+		if group == null:
+			continue
+		for child in group.get_children():
+			if not child is Button:
+				continue
+			var btn := child as Button
+			btn.focus_mode = Control.FOCUS_NONE if targeting else Control.FOCUS_ALL
+			var match_hand: int = btn.get_meta("hand", -1)
+			if targeting and match_hand == hand and btn.get_meta("action", "") == action_name:
+				btn.modulate = Color(1.4, 1.4, 0.6)
+			else:
+				btn.modulate = Color.WHITE
 
 
 func set_player_turn(is_player_turn: bool) -> void:
-	for child in _action_menu.get_children():
-		if child is Button:
-			child.disabled = not is_player_turn
+	_is_player_turn = is_player_turn
+	_apply_action_states()
 
 
 func log_message(text: String) -> void:

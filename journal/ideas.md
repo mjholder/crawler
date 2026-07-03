@@ -18,6 +18,13 @@ backlog lean. Ideas with a foundation shipped but real work left stay here as `p
 
 ---
 
+**Idea:** Per-Hand Weapon Restriction + Offhand Moveset
+**Added:** 2026-07-03
+**Notes:** Weapons should carry a `hand_restriction` enum (`MAINHAND_ONLY`, `OFFHAND_ONLY`, `EITHER`) so the equip UI can enforce which slot they're dragged into. Default is `MAINHAND_ONLY` — existing weapons need no changes. For weapons flagged `EITHER`, an optional `as_offhand_attacks` array defines a different moveset when the weapon is in the offhand slot; if omitted, `attacks` is used for both hands. The existing `offhand_attacks` field on `WeaponData` should be renamed `locked_offhand_attacks` to disambiguate — it means "actions the locked offhand gets when *this* two-hander is in the mainhand," not "what this weapon does when *it* is in the offhand." Needs a detailed design pass before implementing — the rename touches content and `_rebuild_hand_actions()`.
+**Status:** `moved to plan` — implemented 2026-07-03; scope grew to include a hand-selection UI (highlight + arrow-cycle, mirroring combat targeting) and animated mirrored offhand weapons. See [[design.md]] — [[daily/2026-07-03]].
+
+---
+
 **Idea**: Enemy Attack Patterns (Sequenced Moves + Telegraphing)
 
 **Added**: 2026-06-30
@@ -284,7 +291,7 @@ Full magic system built around learned spells, mana, and casting equipment. Brai
 
 A new **OFFHAND slot** is added to `Enums.Slot`. It can hold a shield, a casting focus (orb/tome/catalyst), or be left empty. Two-handed weapons lock the offhand using the existing dungeon lock pattern. Spellcasting is not hard-locked by class — any class can equip a focus and cast. The economy enforces specialization naturally: low SPIRIT means low mana and few slots. A warrior who finds a focus with a good innate cantrip gets real hybrid value with no friction.
 
-**Tomes** are a third item type (`TomeData`) that teach spells. They sit in the bag, have gold value for any class, and trigger a dedicated learn interface on use. Learning is blocked by the dungeon lock — you can't study mid-dungeon. Exception: the **sanctified room**, a rare dungeon event that lifts the inventory lock temporarily (already supported via `allows_inventory = true` on the base `Event` class).
+**Tomes** are a third item type (`TomeData extends EquipmentData`) that teach spells. They live in the bag as ordinary items — clicking a tome in the bag consumes it and learns its spell (the hover detail shows "Teaches: <spell>"); there is no separate tome section. They have gold value for any class. Learning is blocked by the dungeon lock — you can't study mid-dungeon — because it routes through the dungeon-locked bag. Exception: the **sanctified room**, a rare dungeon event that lifts the inventory lock temporarily (already supported via `allows_inventory = true` on the base `Event` class).
 
 **Loot pools** use explicit class tags on each `EquipmentData` (array of class affinities, plus a universal tag for gear that always appears). Two pools at drop time: primary is class-aligned gear, secondary is off-class gear for selling or surprise hybrid builds. Ratio is a tuning lever, roughly 70/30. Stat-weighted rolling was considered but explicit tags were preferred for authorial control and handcrafted intent.
 

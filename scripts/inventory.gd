@@ -7,7 +7,6 @@ signal ring_changed(index: int, new_data: EquipmentData, old_data: EquipmentData
 signal bag_changed()
 signal consumable_belt_changed(index: int, new_data: ConsumableData, old_data: ConsumableData)
 signal belt_size_changed(new_size: int)
-signal tomes_changed()
 
 # --- Config ---
 @export var max_bag_size: int = 15
@@ -21,7 +20,6 @@ var _consumable_belt: Array = []     # Array of ConsumableData or null, length =
 var _bag: Array[EquipmentData] = []
 var _dungeon_locked: bool = false    # true while inside a dungeon; blocks equip/unequip/remove_from_bag
 var _slot_locks: Dictionary = {}    # Enums.Slot -> bool; e.g. OFFHAND locked by a two-handed weapon
-var _tomes: Array = []              # Array[TomeData]
 
 
 func _ready() -> void:
@@ -233,26 +231,6 @@ func get_bag() -> Array[EquipmentData]:
 	return _bag.duplicate()
 
 
-# --- Tome API ---
-
-func add_tome(data: TomeData) -> void:
-	_tomes.append(data)
-	tomes_changed.emit()
-
-
-func remove_tome(index: int) -> TomeData:
-	if index < 0 or index >= _tomes.size():
-		return null
-	var data: TomeData = _tomes[index]
-	_tomes.remove_at(index)
-	tomes_changed.emit()
-	return data
-
-
-func get_tomes() -> Array:
-	return _tomes.duplicate()
-
-
 # --- Save / Load ---
 
 func to_save_dict() -> Dictionary:
@@ -268,9 +246,6 @@ func to_save_dict() -> Dictionary:
 	var bag: Array[String] = []
 	for item in _bag:
 		bag.append(item.resource_path)
-	var tomes: Array[String] = []
-	for tome in _tomes:
-		tomes.append(tome.resource_path if tome != null else "")
 	return {
 		"belt_size": _consumable_belt.size(),
 		"max_rings": _rings.size(),
@@ -279,7 +254,6 @@ func to_save_dict() -> Dictionary:
 		"rings": rings,
 		"consumable_belt": belt,
 		"bag": bag,
-		"tomes": tomes,
 	}
 
 
@@ -288,7 +262,6 @@ func apply_save_dict(d: Dictionary) -> void:
 	_rings.fill(null)
 	_consumable_belt.fill(null)
 	_bag.clear()
-	_tomes.clear()
 	var saved_belt: int = d.get("belt_size", _consumable_belt.size())
 	_consumable_belt.resize(saved_belt)
 	_consumable_belt.fill(null)
@@ -325,16 +298,16 @@ func apply_save_dict(d: Dictionary) -> void:
 		var data := load(path) as EquipmentData
 		if data != null:
 			_bag.append(data)
-	if not _bag.is_empty():
-		bag_changed.emit()
+	# Legacy saves stored tomes separately; tomes are now bag items (TomeData extends
+	# EquipmentData), so fold any old "tomes" list into the bag.
 	for path in d.get("tomes", []):
 		if path.is_empty():
 			continue
-		var data := load(path) as TomeData
+		var data := load(path) as EquipmentData
 		if data != null:
-			_tomes.append(data)
-	if not _tomes.is_empty():
-		tomes_changed.emit()
+			_bag.append(data)
+	if not _bag.is_empty():
+		bag_changed.emit()
 
 
 # --- Utility ---
@@ -344,7 +317,6 @@ func clear() -> void:
 	_rings.fill(null)
 	_consumable_belt.fill(null)
 	_bag.clear()
-	_tomes.clear()
 	_slot_locks.clear()
 
 

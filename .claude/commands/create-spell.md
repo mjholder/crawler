@@ -207,7 +207,7 @@ Examples: "damage_spi_half, poison" or "heal 30 flat" or "buff STR+15 for 2 turn
 
 **Group 4 — Tome**
 Also create a Tome for this spell? [no]
-If yes: Tome name, description, gold value?
+If yes: Tome name, description, price (gold value)?
 
 ## Output format
 
@@ -295,7 +295,7 @@ effects = Array[Resource]([SubResource("BuffEffect_custom")])
 script = ExtResource("1_script")
 item_name = "TOME NAME"
 description = "DESCRIPTION"
-gold_value = 30
+price = 30
 spell = ExtResource("2_spell")
 ```
 

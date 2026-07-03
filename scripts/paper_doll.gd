@@ -10,6 +10,7 @@ const _BASE_TEXTURE := preload("res://assets/sprites/paper_doll/man.png")
 	Enums.Slot.FEET:  {"front": $FeetLayer},
 	Enums.Slot.HANDS:  {"front": $HandsFrontLayer, "back": $HandsBackLayer},
 	Enums.Slot.WEAPON: {"front": $WeaponLayer},
+	Enums.Slot.OFFHAND: {"front": $OffhandLayer},  # mirrored via TextureRect.flip_h
 }
 
 var _inventory: Inventory

@@ -1,8 +1,8 @@
 class_name TomeData
-extends Resource
+extends EquipmentData
 
-@export var item_name: String = ""
-@export var description: String = ""
-@export var icon: Texture2D
-@export var gold_value: int = 0
+## A tome is a bag item that teaches a spell when used (clicked). It lives in the bag
+## like any other item; the inventory panel routes a tome click to Player.learn_spell
+## instead of equipping. Non-tome equipment fields inherited from EquipmentData are
+## unused and keep their defaults.
 @export var spell: SpellData = null

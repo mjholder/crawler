@@ -6,7 +6,6 @@ extends Control
 @onready var _paper_doll: PaperDoll = get_node_or_null("HBoxContainer/PaperDollPanel/PaperDoll")
 @onready var _equipped_slots: VBoxContainer = $HBoxContainer/PanelContainer/VBoxContainer/EquippedSlots
 @onready var _bag_grid: GridContainer = $HBoxContainer/PanelContainer/VBoxContainer/BagGrid
-@onready var _detail_panel: PanelContainer = $HBoxContainer/DetailPanel
 @onready var _detail_name_label: Label = $HBoxContainer/DetailPanel/VBoxContainer/DetailNameLabel
 @onready var _detail_stats_label: Label = $HBoxContainer/DetailPanel/VBoxContainer/DetailStatsLabel
 
@@ -18,6 +17,7 @@ const _SLOT_CONTAINER_NAMES: Array[String] = [
 	"LegsEquipment", "TorsoEquipment", "HeadEquipment", "OffhandEquipment"
 ]
 const _RING_CONTAINER_NAMES: Array[String] = ["RingEquipment1", "RingEquipment2"]
+const _SLOT_HIGHLIGHT := Color(1.4, 1.4, 0.6)
 
 # --- State ---
 
@@ -28,15 +28,27 @@ var _ring_buttons: Array[Button] = []
 var _bag_buttons: Array[Button] = []
 var _prep_buttons: Array[Button] = []
 var _prep_container: VBoxContainer = null
-var _tome_buttons: Array[Button] = []
-var _tome_container: VBoxContainer = null
 var _can_equip: bool = true
 var _dungeon_locked: bool = false
+
+# Hand-selection state: while a weapon flagged EITHER awaits a hand choice, the candidate
+# slot buttons highlight and the arrow keys cycle between them (mirrors combat targeting).
+var _selecting_hand_data: WeaponData = null
+var _slot_choice_candidates: Array[Enums.Slot] = []
+var _slot_choice_index: int = 0
 
 
 func _ready() -> void:
 	_collect_node_refs()
 	_connect_buttons()
+	visibility_changed.connect(_on_visibility_changed)
+
+
+func _on_visibility_changed() -> void:
+	# Closing the panel mid-choice (e.g. Esc handled elsewhere) cancels the selection so the
+	# highlight and button focus don't linger.
+	if not visible and _selecting_hand_data != null:
+		_cancel_slot_choice()
 
 
 func set_can_equip(value: bool) -> void:
@@ -63,8 +75,6 @@ func _apply_equip_state() -> void:
 	for btn in _bag_buttons:
 		btn.disabled = not active
 	for btn in _prep_buttons:
-		btn.disabled = _dungeon_locked
-	for btn in _tome_buttons:
 		btn.disabled = _dungeon_locked
 
 
@@ -152,6 +162,12 @@ func _on_ring_changed(_index: int, _new: EquipmentData, _old: EquipmentData) -> 
 func _on_slot_button_pressed(slot: Enums.Slot) -> void:
 	if _inventory == null:
 		return
+	# While choosing a hand, clicking a candidate slot confirms that choice.
+	if _selecting_hand_data != null:
+		if slot in _slot_choice_candidates:
+			_slot_choice_index = _slot_choice_candidates.find(slot)
+			_confirm_slot_choice()
+		return
 	if _inventory.get_equipped(slot) != null:
 		_inventory.unequip(slot)
 
@@ -171,6 +187,24 @@ func _on_bag_button_pressed(index: int) -> void:
 	if index >= bag.size():
 		return
 	var data: EquipmentData = bag[index]
+	# A tome isn't equipped — using it consumes the tome and teaches its spell. Buttons are
+	# disabled under the dungeon lock, so removal always succeeds here.
+	if data is TomeData:
+		var tome := data as TomeData
+		if _player == null or tome.spell == null:
+			return
+		_inventory.remove_from_bag(data)
+		_player.learn_spell(tome.spell)
+		return
+	# An EITHER weapon needs a hand chosen first; defer removing it from the bag until the
+	# player confirms, so cancelling never loses the item.
+	if _should_prompt_for_hand(data):
+		_begin_slot_selection(data as WeaponData)
+		return
+	var target_slot := _target_slot_for(data)
+	# An OFFHAND_ONLY weapon can't be equipped while a two-hander locks the offhand.
+	if not data.is_ring and not (data is ConsumableData) and _inventory.is_slot_locked(target_slot):
+		return
 	_inventory.remove_from_bag(data)
 	if data is ConsumableData:
 		if not _inventory.equip_consumable(data as ConsumableData):
@@ -178,7 +212,107 @@ func _on_bag_button_pressed(index: int) -> void:
 	elif data.is_ring:
 		_inventory.equip_ring(data)
 	else:
-		_inventory.equip(data.slot, data)
+		_inventory.equip(target_slot, data)
+
+
+# --- Hand Selection ---
+
+## Resolves which slot an item equips into. Weapons route by hand_restriction; everything
+## else uses its authored slot. EITHER resolves to WEAPON here (used only when the offhand
+## is locked and no prompt is shown).
+func _target_slot_for(data: EquipmentData) -> Enums.Slot:
+	if data is WeaponData:
+		if (data as WeaponData).hand_restriction == Enums.HandRestriction.OFFHAND_ONLY:
+			return Enums.Slot.OFFHAND
+		return Enums.Slot.WEAPON
+	return data.slot
+
+
+func _should_prompt_for_hand(data: EquipmentData) -> bool:
+	if not data is WeaponData:
+		return false
+	if (data as WeaponData).hand_restriction != Enums.HandRestriction.EITHER:
+		return false
+	# With the offhand locked by a two-hander there's only one valid hand — no prompt.
+	return not _inventory.is_slot_locked(Enums.Slot.OFFHAND)
+
+
+func _begin_slot_selection(data: WeaponData) -> void:
+	_selecting_hand_data = data
+	_slot_choice_candidates = [Enums.Slot.WEAPON, Enums.Slot.OFFHAND]
+	_slot_choice_index = 0
+	# Disable every button except the candidate slots so the rest of the inventory greys out and
+	# can't steal keyboard focus. FOCUS_NONE on the candidates keeps them clickable-to-confirm
+	# without capturing the arrow keys (a click doesn't need focus).
+	for i in _slot_buttons.size():
+		_slot_buttons[i].disabled = (i as Enums.Slot) not in _slot_choice_candidates
+		_slot_buttons[i].focus_mode = Control.FOCUS_NONE
+	for btn in _ring_buttons:
+		btn.disabled = true
+	for btn in _bag_buttons:
+		btn.disabled = true
+	for btn in _prep_buttons:
+		btn.disabled = true
+	# Drop focus from the just-clicked bag button so ui_left/ui_right reach _unhandled_input
+	# instead of navigating UI focus.
+	get_viewport().gui_release_focus()
+	_highlight_slot_choice()
+
+
+func _highlight_slot_choice() -> void:
+	var current: Enums.Slot = _slot_choice_candidates[_slot_choice_index]
+	for i in _slot_buttons.size():
+		_slot_buttons[i].modulate = _SLOT_HIGHLIGHT if i == current else Color.WHITE
+
+
+func _cycle_slot_choice(direction: int) -> void:
+	var count := _slot_choice_candidates.size()
+	_slot_choice_index = (_slot_choice_index + direction) % count
+	if _slot_choice_index < 0:
+		_slot_choice_index += count
+	_highlight_slot_choice()
+
+
+func _confirm_slot_choice() -> void:
+	var data := _selecting_hand_data
+	var chosen: Enums.Slot = _slot_choice_candidates[_slot_choice_index]
+	_end_slot_selection()
+	_inventory.remove_from_bag(data)
+	_inventory.equip(chosen, data)
+
+
+func _cancel_slot_choice() -> void:
+	# The item was never removed from the bag, so cancelling just clears the prompt.
+	_end_slot_selection()
+
+
+func _end_slot_selection() -> void:
+	_selecting_hand_data = null
+	_slot_choice_candidates = []
+	_slot_choice_index = 0
+	for btn in _slot_buttons:
+		btn.modulate = Color.WHITE
+		btn.focus_mode = Control.FOCUS_ALL
+	# Restore correct disabled state (honors _can_equip/_dungeon_locked and empty bag slots).
+	_apply_equip_state()
+	_refresh_bag()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _selecting_hand_data == null:
+		return
+	if event.is_action_pressed("ui_cancel"):
+		_cancel_slot_choice()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_accept") or event.is_action_pressed("attack"):
+		_confirm_slot_choice()
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_right"):
+		_cycle_slot_choice(1)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_left"):
+		_cycle_slot_choice(-1)
+		get_viewport().set_input_as_handled()
 
 
 # --- Spell Prep ---
@@ -236,48 +370,6 @@ func _on_prep_button_pressed(index: int) -> void:
 	_player.prepare_spell(unprepared[0], index)
 
 
-# --- Tome List ---
-
-func setup_tomes(player: Player) -> void:
-	_player = player
-	_inventory.tomes_changed.connect(_rebuild_tome_ui)
-	_rebuild_tome_ui()
-
-
-func _rebuild_tome_ui() -> void:
-	if _player == null:
-		return
-	if _tome_container == null:
-		_tome_container = VBoxContainer.new()
-		_tome_container.name = "TomeContainer"
-		var lbl := Label.new()
-		lbl.text = "Tomes"
-		_tome_container.add_child(lbl)
-		$HBoxContainer/PanelContainer/VBoxContainer.add_child(_tome_container)
-	for btn in _tome_buttons:
-		btn.queue_free()
-	_tome_buttons.clear()
-	var tomes := _inventory.get_tomes()
-	for i in tomes.size():
-		var tome: TomeData = tomes[i]
-		var btn := Button.new()
-		var spell_name := tome.spell.spell_name if tome.spell != null else "???"
-		btn.text = "%s → %s" % [tome.item_name, spell_name]
-		btn.disabled = _dungeon_locked
-		btn.pressed.connect(_on_tome_button_pressed.bind(i))
-		_tome_container.add_child(btn)
-		_tome_buttons.append(btn)
-
-
-func _on_tome_button_pressed(index: int) -> void:
-	if _player == null or _dungeon_locked:
-		return
-	var tome: TomeData = _inventory.remove_tome(index)
-	if tome == null or tome.spell == null:
-		return
-	_player.learn_spell(tome.spell)
-
-
 # --- Detail Panel ---
 
 func _on_slot_button_hovered(slot: Enums.Slot) -> void:
@@ -305,16 +397,24 @@ func _show_detail(data: EquipmentData) -> void:
 		_hide_detail()
 		return
 	_detail_name_label.text = data.item_name
+	if data is TomeData:
+		var tome := data as TomeData
+		var spell_name := tome.spell.spell_name if tome.spell != null else "???"
+		_detail_stats_label.text = "Teaches: %s" % spell_name
+		return
 	var stats_text := _format_stat_modifiers(data.stat_modifiers)
 	if data.spell_cost_multiplier != 1.0:
 		var pct := int(round((1.0 - data.spell_cost_multiplier) * 100.0))
 		stats_text += "\n-%d%% Spell Cost" % pct
 	_detail_stats_label.text = stats_text
-	_detail_panel.show()
 
 
+# The panel stays visible so its reserved width never collapses; clearing the labels
+# empties it without reflowing the rest of the inventory row (which caused a hover flicker
+# loop when the panel expanded, shifted a button out from under the cursor, then contracted).
 func _hide_detail() -> void:
-	_detail_panel.hide()
+	_detail_name_label.text = ""
+	_detail_stats_label.text = ""
 
 
 func _format_stat_modifiers(modifiers: Dictionary) -> String:

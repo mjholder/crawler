@@ -192,7 +192,7 @@ classDiagram
 
 ## 3. Turn & signal flow
 
-Three flows that cover the combat loop end-to-end. See [[detailed/game-flow.md]] and [[detailed/enemy-system.md]]. The **player turn** is gated by the weapon's attack animation (`turn_ended` doesn't fire until the sprite finishes). The **enemy turn** runs one enemy at a time from a queue `CombatEvent` maintains. **Event completion** is the single exit point — `Game._on_event_complete` applies rewards and frees the event.
+Three flows that cover the combat loop end-to-end. See [[detailed/game-flow.md]] and [[detailed/enemy-system.md]]. The **player turn** is **dual-action**: two independently-gated hands (mainhand = WEAPON slot, offhand = OFFHAND slot). Each action marks its hand used and emits `action_resolved(hand)` — it does **not** end the turn. The mainhand action is still gated by the weapon's animation (its `attack_hit`/`cast_hit` waits for the sprite); offhand actions resolve immediately (v1, non-animating). The turn ends only when the player presses **End Turn** (`end_turn_requested` → `Player.end_turn()` → `turn_ended`), which is also where statuses tick. The **enemy turn** runs one enemy at a time from a queue `CombatEvent` maintains. **Event completion** is the single exit point — `Game._on_event_complete` applies rewards and frees the event.
 
 `game.gd` also emits a **lifecycle signal bus** at each transition — `player_turn_started/ended`, `enemy_turn_started/ended(enemy)`, `event_started/completed(event)`, `combat_wave_started/completed`, `player_attack_hit`, `enemy_attack_hit`, `player_damaged/healed`, `enemy_damaged/died`, `consumable_used`. These are omitted from the flow below to keep it readable; they fire in parallel with the sequence shown. Statuses, blessings, and equipment procs will subscribe to them in later phases.
 
@@ -207,35 +207,29 @@ sequenceDiagram
     participant Event as CombatEvent
 
     rect rgb(230, 245, 255)
-    note over User,Weapon: Player turn — attack (with targeting)
-    User->>GUI: click action button
-    GUI->>Game: attack_requested(name)
-    Game->>Game: enter targeting state
-    note over Game: indicator shown on target
+    note over User,Weapon: Player turn — mainhand attack (dual-action)
+    Game->>Player: begin_turn()  (reset _mainhand_used/_offhand_used)
+    User->>GUI: click action button (hand)
+    GUI->>Game: attack_requested(hand, name)
+    Game->>Game: enter targeting state (remember hand)
     User->>GUI: click same button (confirm)
-    GUI->>Game: attack_requested(name)
+    GUI->>Game: attack_requested(hand, name)
     Game->>Player: set_pending_attack_payload(AttackData, targets)
-    Game->>Player: execute_action(name)
-    Player-->>Weapon: attack_performed(AttackData, targets)
-    Weapon->>Weapon: play "attack" anim
+    Game->>Player: execute_action(hand, name)
+    Player-->>Weapon: attack_performed / offhand_attack_performed(AttackData, targets)  (per hand)
+    Weapon->>Weapon: play "attack" anim  (offhand weapon mirrored via scale.x = -1)
     Game->>Game: apply effects to each target
     Weapon-->>Player: animation_finished
-    Player-->>Game: turn_ended
-    Game->>Game: state = ENEMY_TURN
+    Player-->>Game: action_resolved(hand)  (hand marked used; turn NOT ended)
+    Game->>GUI: refresh bar — used hand disabled, other hand live
     end
 
     rect rgb(220, 235, 255)
-    note over User,Player: Player turn — spell cast
-    User->>GUI: click spell button
-    GUI->>Game: attack_requested(spell_name)
-    Game->>Game: mana check; enter targeting state
-    User->>GUI: click same button (confirm)
-    GUI->>Game: attack_requested(spell_name)
-    Game->>Player: set_pending_spell_payload(SpellData, targets)
-    Game->>Player: execute_action(spell_name)
-    Player->>Player: spend_mana; emit cast_performed
-    Player-->>Game: cast_hit(spell, targets)
-    Game->>Game: apply spell effects to each target
+    note over User,Player: Player turn — end turn (explicit)
+    User->>GUI: click End Turn
+    GUI->>Game: end_turn_requested
+    Game->>Player: end_turn()  (offhand may be unused)
+    Player->>Player: _tick_statuses()
     Player-->>Game: turn_ended
     Game->>Game: state = ENEMY_TURN
     end
@@ -280,13 +274,17 @@ Phase 6 added `BlessingData` — run-long permanent boons held on `Player._bless
 
 Phase 7 added the spell system. `SpellData` (resource, mirrors `AttackData`) carries `spell_name`, `mana_cost`, `target_mode`, and `effects: Array[Resource]`. `EquipmentData` gains `spell_cost_multiplier: float = 1.0` and `bonus_prep_slots: int = 0`. `WeaponData` gains `innate_spells: Array[Resource]` — registered as player actions on equip alongside `attacks`, bypassing prep slots. `Enums.Slot` gains `OFFHAND` (value 6). `Player` gains mana (`max_mana`, `mana` derived from SPI like health from CON), a learned-spell roster, a prep-slot-indexed prepared list, and the `_do_cast` action callable. `PlayerClassData` gains `class_mana_bonus`, `starting_prep_slots`, `starting_learned_spells`, `starting_prepared_spells`. Mana restores fully at world-node entry in `_on_world_node_selected`.
 
-Phase 8 extended the spell system with five additions. **Two-handed lock**: `WeaponData.is_two_handed` causes `Player._setup_equipment` to call `Inventory.lock_slot(OFFHAND)` on equip and `unlock_slot` on teardown; `Inventory._slot_locks: Dictionary` enforces this in `equip()`. **Spell animations**: `Weapon` gains `cast_animation_finished` signal and `_on_player_cast()` handler (falls back to "attack" anim if no "cast" anim exists); `_do_cast` in `Player` now gates `cast_hit` behind animation like `_do_attack` does for `attack_hit`. **Mana regen**: `EquipmentData.bonus_mana_regen`, `PlayerClassData.mana_regen_per_turn / mana_on_kill` feed into `Player.mana_regen / mana_on_kill` (computed in `_recalculate_mana_regen`, called from `_recalculate_max_mana`); `game.gd` restores mana at the start of each player turn and on each enemy kill. **Tomes**: `TomeData` (new `Resource` — item_name, spell, gold_value) held in `Inventory._tomes`; `InventoryPanel` renders a dynamic Tomes section; clicking a tome button calls `player.learn_spell` (blocked by dungeon lock). **Affinity tags**: `EquipmentData.affinity_tags: Array[StringName]` — data field only; loot pool logic deferred until procedural generation is built.
+Phase 8 extended the spell system with five additions. **Two-handed lock**: `WeaponData.is_two_handed` causes `Player._setup_equipment` to call `Inventory.lock_slot(OFFHAND)` on equip and `unlock_slot` on teardown; `Inventory._slot_locks: Dictionary` enforces this in `equip()`. **Spell animations**: `Weapon` gains `cast_animation_finished` signal and `_on_player_cast()` handler (falls back to "attack" anim if no "cast" anim exists); `_do_cast` in `Player` now gates `cast_hit` behind animation like `_do_attack` does for `attack_hit`. **Mana regen**: `EquipmentData.bonus_mana_regen`, `PlayerClassData.mana_regen_per_turn / mana_on_kill` feed into `Player.mana_regen / mana_on_kill` (computed in `_recalculate_mana_regen`, called from `_recalculate_max_mana`); `game.gd` restores mana at the start of each player turn and on each enemy kill. **Tomes**: `TomeData extends EquipmentData` (adds `spell`) so tomes are ordinary bag items in `Inventory._bag` (no separate list). `InventoryPanel._on_bag_button_pressed` branches on `TomeData` — instead of equipping, it removes the tome from the bag and calls `player.learn_spell` (blocked by the dungeon lock, since removal is); the detail panel shows "Teaches: <spell>". Delivered via `PlayerClassData.starting_tomes` and `event.rewards["tomes"]`, both routed to `add_to_bag`. **Affinity tags**: `EquipmentData.affinity_tags: Array[StringName]` — data field only; loot pool logic deferred until procedural generation is built.
 
 Phase 9 added the **three-layer character identity**: alongside `PlayerClassData`, creation now picks a `BackgroundData` (*who you were*) and a `PatronSaintData` (*what watches over you*). `BackgroundData` carries a signed `stat_modifiers` shift, `starting_gold`, economy floats (`gold_reward_multiplier` read in `game.gd._apply_rewards`; `shop_buy_multiplier`/`shop_sell_multiplier` injected into the shop event's `data` dict and stacked onto `ShopData`'s own multipliers in `ShopEvent.initialize`), and an optional `passive: BlessingData`. `PatronSaintData` wraps three `BlessingData` `tiers` (one per act) sharing a `lineage_id` (new field on `BlessingData`). `Player` gained `gold_reward_multiplier`/`shop_buy_multiplier`/`shop_sell_multiplier` fields, `_background`/`_patron`/`_patron_tier_index` state, `_setup_background`/`_setup_patron` (mirroring `_setup_starting_blessings`), an `ascend_patron()` tier-swap (Phase 2 shrine hook), a `_background.stat_modifiers` term in `get_effective_stat`, and save/load fields. `Player.initialize()` / `GUI.character_created` / `CharacterCreationPanel.character_confirmed` all gained optional `background`/`patron` params (default `null`, back-compatible). The creation UI (`character_creation_panel.gd` + the `CharacterCreationPanel` subtree in `game.tscn`) is a hand-built 4-step wizard (Class → Background → Patron Saint → Confirm) anchored full-rect so it resizes with the viewport. Both resources are pure schema-driven in the content editor. Saint flow: `CharacterCreationPanel.character_confirmed → GUI.character_created → game._on_character_created → player.initialize(name, class, background, patron)`.
 
 **Phase 2 — shrine ascension (2026-06-21).** A hand-placed `ShrineMapNode` (mirrors `ShopMapNode`; carries `shrine_scene` + `ascension_cost`, bypasses the floor pool) is placed as a between-acts checkpoint that funnels the act-1 end nodes into the boss. Selecting it loads `ShrineEvent`, which reads the player's active saint at runtime via new public `Player` accessors (`get_patron`, `can_ascend_patron`, `get_active_tier`, `get_next_tier`) and emits `shrine_requested(saint_name, has_next, next_tier_name, next_tier_desc, next_stat_mods, cost)`. `game._on_shrine_requested` shows `ShrinePanel` (Ascend / Leave). On Ascend, `GUI.shrine_ascend_requested → game._on_gui_shrine_ascend_requested → ShrineEvent.on_shrine_choice(true)`; in `_on_resolution` the event charges the gold tithe (`player.spend_gold`) and calls `player.ascend_patron()`, which **replaces** the current tier blessing with the next (never stacks). Leave keeps gold and tier. If there is no patron or it is already at the final tier the shrine is "silent" (Leave only). Tier ascension persists via the existing `_patron_tier_index` save field.
 
 **Phase 3 — end-of-act town + act transition (2026-06-27).** `ShrineMapNode`/`ShrineEvent` were renamed `EndActMapNode`/`EndActEvent` and reframed as an end-of-act **town hub**. `EndActMapNode` adds `next_act_scene: PackedScene` (empty = final act). Selecting it loads `EndActEvent`, which emits `town_requested` and stays in `RUNNING` while `game._on_town_requested` shows `TownPanel` (services: **Temple**, **Travel Onward**). **Temple** (`GUI.town_temple_requested → game._on_gui_town_temple_requested`) reuses the unchanged `ShrinePanel`; ascension is now applied **live** in `game._on_gui_shrine_ascend_requested` (charge tithe + `ascend_patron`) and returns to the town, rather than at event resolution. **Travel Onward** (`GUI.town_travel_requested → game._on_gui_town_travel_requested → EndActEvent.on_travel_onward()`) completes the event. The single return point `game._on_dungeon_complete` branches on `EndActMapNode` to `_advance_to_next_act`, which either `GUI.swap_world_map(next_act_scene)` (frees the old map, re-instantiates named `WorldMap` so saved node paths stay valid, then `_enter_world_map`) and bumps `current_act`, or `_enter_victory()` when there is no next act. `RunSaveData` (now `VERSION = 2`) gained `current_act` + `active_act_scene_path`, and `_on_continue_requested` swaps to the saved act map before `apply_state_dict`. Placeholder act 2 is `world_map_act2.tscn` (standalone copy; a scene can't reference itself).
+
+**Phase 9 — dual-action combat (2026-07-02).** The player turn splits into two per-hand action slots. `Player` swaps its single `_actions` registry for per-hand registries (`_hand_actions[Hand]`, with `_hand_attacks`/`_hand_spells` source lists) gated by `_mainhand_used`/`_offhand_used`; `begin_turn()` resets them, `execute_action(hand, name)` marks a hand and emits `action_resolved(hand)` (via a new `_action_resolving` flag in `_process`), and `end_turn()` is the sole emitter of `turn_ended` (End Turn button `GUI.end_turn_requested`, or stun). `_rebuild_hand_actions()` derives each hand's actions from its equipped item — `attacks`, plus the prepared repertoire iff `grants_casting` (a **focus**), else a weapon's `innate_spells`; an empty hand gets the shared `unarmed_strike.tres` punch; a two-hander's locked offhand draws from `locked_offhand_attacks`. `attacks` + `grants_casting` are promoted to `EquipmentData`; `WeaponData` adds `locked_offhand_attacks`. `game.gd` resolves/targets per hand and rebuilds a two-group bar on `Player.hand_actions_changed` / `action_resolved`; `GUI.rebuild_action_buttons` builds `MainhandActions`/`OffhandActions` groups + `EndTurnButton` under `ActionMenu` (fallback nodes auto-created if the scene omits them). See [[design.md]] — Dual-action combat.
+
+**Phase 10 — per-hand weapon restriction + animated offhand weapons (2026-07-03).** `WeaponData` gains `hand_restriction` (`Enums.HandRestriction` — `MAINHAND_ONLY`/`OFFHAND_ONLY`/`EITHER`, default `MAINHAND_ONLY`) and `as_offhand_attacks`; the old `offhand_attacks` is renamed `locked_offhand_attacks`. `InventoryPanel._on_bag_button_pressed` routes a weapon to a slot via `_target_slot_for` (by `hand_restriction`), and an `EITHER` weapon enters a self-contained **hand-selection** mode — candidate slot buttons (`WEAPON`/`OFFHAND`) highlight, `_unhandled_input` cycles with `←/→` and confirms with `Space`/`Enter`/`ui_accept` or a slot click, `Esc` cancels; bag removal is deferred to confirm and a `visibility_changed` guard cancels a dangling choice. `Player._build_hand_actions` uses a weapon's `as_offhand_attacks` when it sits in the offhand (falling back to `attacks`). Animated offhand weapons: `_setup_equipment`/`_teardown_equipment` wire an OFFHAND `Weapon` node flipped `scale.x = -1`, driven by new `offhand_attack_performed`/`offhand_cast_performed` signals; `_do_attack`/`_do_cast` defer the offhand hit via parallel `_offhand_*` in-flight state, and `_is_turn_complete()`/`set_weapon_visible` account for it. Cosmetic mirrored `OffhandLayer` added to the paper doll. See [[design.md]] — Per-hand weapon restriction.
 
 ```mermaid
 classDiagram
@@ -298,6 +296,8 @@ classDiagram
         +Enums.Slot slot
         +bool is_ring
         +int price
+        +Array~AttackData~ attacks
+        +bool grants_casting
         +Array on_equip_effects
         +Array on_unequip_effects
         +Array proc_effects
@@ -321,15 +321,13 @@ classDiagram
     }
     class WeaponData {
         +AudioStream attack_sfx
-        +Array~Resource~ attacks
         +Array~Resource~ innate_spells
         +bool is_two_handed
+        +HandRestriction hand_restriction
+        +Array~Resource~ locked_offhand_attacks
+        +Array~Resource~ as_offhand_attacks
     }
     class TomeData {
-        <<Resource>>
-        +String item_name
-        +String description
-        +int gold_value
         +SpellData spell
     }
     class AttackData {
@@ -431,29 +429,24 @@ classDiagram
         -Array _rings
         -Array _consumable_belt
         -Array~EquipmentData~ _bag
-        -Array~TomeData~ _tomes
         +signal slot_changed
         +signal ring_changed
         +signal bag_changed
         +signal consumable_belt_changed
-        +signal tomes_changed
         +lock_slot(slot)
         +unlock_slot(slot)
         +is_slot_locked(slot) bool
-        +add_tome(data)
-        +remove_tome(index) TomeData
-        +get_tomes() Array
     }
 
     EquipmentData <|-- WeaponData
     EquipmentData <|-- ConsumableData
+    EquipmentData <|-- TomeData
     Equipment <|-- Weapon
     EquipmentData ..> Equipment : scene instantiates
     EquipmentData o-- ProcDef : proc_effects
     EquipmentData o-- ConditionalModifier : conditional_modifiers
     ProcDef o-- Effect : effect
     Inventory o-- EquipmentData : stores
-    Inventory o-- TomeData : _tomes
     PlayerClassData o-- EquipmentData : starting loadout
     PlayerClassData o-- BlessingData : starting_blessings
     PlayerClassData o-- TomeData : starting_tomes

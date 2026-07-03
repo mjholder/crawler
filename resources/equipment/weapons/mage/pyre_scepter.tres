@@ -43,7 +43,6 @@ animations = [{
 
 [resource]
 script = ExtResource("1_weapon")
-attacks = Array[Resource]([ExtResource("2_kindle"), ExtResource("3_flameburst"), ExtResource("4_immolate")])
 item_name = "Pyre Scepter"
 description = "A blackened rod crowned with a perpetual ember. It hungers to spread its fire — kindle the flame, then unleash it across the field."
 sprite_frames = SubResource("SpriteFrames_main")
@@ -53,3 +52,5 @@ stat_modifiers = {
 }
 scene = ExtResource("9_scene")
 price = 140
+attacks = Array[Resource]([ExtResource("2_kindle"), ExtResource("3_flameburst"), ExtResource("4_immolate")])
+grants_casting = true

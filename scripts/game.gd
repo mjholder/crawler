@@ -55,6 +55,7 @@ var current_act: int = 1
 # --- Targeting State ---
 
 var _targeting_action: String = ""
+var _targeting_hand: Player.Hand = Player.Hand.MAINHAND
 var _targeting_attack: AttackData = null
 var _targeting_spell: SpellData = null
 var _targeting_candidates: Array = []
@@ -80,13 +81,13 @@ func _ready() -> void:
 	$Player.position = screen_center
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
 	_gui.setup_inventory($Player.get_node("Inventory") as Inventory)
-	_gui.setup_tomes(player)
 
 	_gui.character_created.connect(_on_character_created)
 	_gui.continue_requested.connect(_on_continue_requested)
 	_gui.level_up_complete.connect(_on_level_up_complete)
 	_gui.quit_to_main_requested.connect(quit_to_main)
 	_gui.attack_requested.connect(_on_action_requested)
+	_gui.end_turn_requested.connect(_on_end_turn_requested)
 	_gui.consumable_use_requested.connect(_on_consumable_use_requested)
 	_gui.dialogue_complete.connect(_on_gui_dialogue_complete)
 	_gui.skill_check_complete.connect(_on_gui_skill_check_complete)
@@ -151,25 +152,23 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # --- Targeting ---
 
-func _on_action_requested(action_name: String) -> void:
+func _on_action_requested(hand: int, action_name: String) -> void:
 	if state != Enums.TurnState.PLAYER_TURN:
 		return
-	if _targeting_action == action_name:
+	if _targeting_action == action_name and _targeting_hand == hand:
 		_confirm_targeting()
 		return
 	_cancel_targeting()
-	# Try attack first.
-	var weapon_data := player.get_inventory().get_equipped(Enums.Slot.WEAPON)
-	if weapon_data is WeaponData:
-		for atk_res in (weapon_data as WeaponData).attacks:
-			var atk := atk_res as AttackData
-			if atk != null and atk.attack_name == action_name:
-				_targeting_attack = atk
-				break
-	# Try spell if not an attack.
+	# Resolve the name within the requesting hand's own action list.
+	for atk_res in player.get_hand_attacks(hand):
+		var atk := atk_res as AttackData
+		if atk != null and atk.attack_name == action_name:
+			_targeting_attack = atk
+			break
 	if _targeting_attack == null:
-		for spell in player.get_castable_spells():
-			if spell.spell_name == action_name:
+		for spell_res in player.get_hand_spells(hand):
+			var spell := spell_res as SpellData
+			if spell != null and spell.spell_name == action_name:
 				var cost := player.compute_spell_cost(spell)
 				if player.mana < cost:
 					_gui.show_status("Not enough mana")
@@ -179,6 +178,7 @@ func _on_action_requested(action_name: String) -> void:
 	if _targeting_attack == null and _targeting_spell == null:
 		return
 	_targeting_action = action_name
+	_targeting_hand = hand
 	_targeting_candidates = _build_candidates(_active_target_mode())
 	if _targeting_candidates.is_empty():
 		_targeting_action = ""
@@ -187,7 +187,7 @@ func _on_action_requested(action_name: String) -> void:
 		return
 	_targeting_index = 0
 	_show_targeting_visuals()
-	_gui.set_targeting_action(action_name)
+	_gui.set_targeting_action(_targeting_hand, action_name)
 
 
 func _active_target_mode() -> AttackData.TargetMode:
@@ -218,8 +218,9 @@ func _confirm_targeting() -> void:
 		_cancel_targeting()
 		return
 	var confirmed_action := _targeting_action
+	var confirmed_hand := _targeting_hand
 	_hide_targeting_visuals()
-	_gui.set_targeting_action("")
+	_gui.set_targeting_action(_targeting_hand, "")
 	_targeting_action = ""
 	_targeting_candidates = []
 	_targeting_index = 0
@@ -232,14 +233,14 @@ func _confirm_targeting() -> void:
 		var confirmed_spell := _targeting_spell
 		_targeting_spell = null
 		player.set_pending_spell_payload(confirmed_spell, targets)
-	player.execute_action(confirmed_action)
+	player.execute_action(confirmed_hand, confirmed_action)
 
 
 func _cancel_targeting() -> void:
 	if _targeting_action == "":
 		return
 	_hide_targeting_visuals()
-	_gui.set_targeting_action("")
+	_gui.set_targeting_action(_targeting_hand, "")
 	_targeting_action = ""
 	_targeting_attack = null
 	_targeting_spell = null
@@ -384,8 +385,8 @@ func set_player(p: Player) -> void:
 	player.stats_changed.connect(_on_player_stats_changed)
 	player.attack_hit.connect(_on_player_attack_hit)
 	player.cast_hit.connect(_on_player_cast_hit)
-	player.weapon_attacks_changed.connect(_on_player_weapon_attacks_changed)
-	player.prepared_spells_changed.connect(_on_player_prepared_spells_changed)
+	player.hand_actions_changed.connect(_on_player_hand_actions_changed)
+	player.action_resolved.connect(_on_player_action_resolved)
 	player.mana_spent.connect(_on_player_mana_spent)
 	player.mana_restored.connect(_on_player_mana_restored)
 	player.dodged.connect(_on_player_dodged)
@@ -465,24 +466,38 @@ func _on_enemy_move_performed(enemy: Enemy, move: EnemyMoveData) -> void:
 		enemy_attack_hit.emit(enemy, 0.0)
 
 
-func _on_player_weapon_attacks_changed(_attacks: Array) -> void:
+func _on_player_hand_actions_changed() -> void:
 	if _targeting_action != "":
 		_cancel_targeting()
 	_refresh_action_bar()
 
 
-func _on_player_prepared_spells_changed(_spells: Array) -> void:
-	if _targeting_action != "":
-		_cancel_targeting()
+## One hand finished resolving. Refresh the bar so the used hand disables and the other
+## re-enables (recomputing spell affordability against spent mana), then unlock input.
+## Guard against the post-killing-blow window where the wave is clearing into RESOLUTION.
+func _on_player_action_resolved(_hand: int) -> void:
+	if state != Enums.TurnState.PLAYER_TURN:
+		return
+	if current_event is CombatEvent and _build_candidates(AttackData.TargetMode.SINGLE_ENEMY).is_empty():
+		return
 	_refresh_action_bar()
+	_gui.set_player_turn(true)
+
+
+func _on_end_turn_requested() -> void:
+	if state != Enums.TurnState.PLAYER_TURN:
+		return
+	_cancel_targeting()
+	player.end_turn()
 
 
 func _refresh_action_bar() -> void:
-	var weapon_data := player.get_inventory().get_equipped(Enums.Slot.WEAPON)
-	var attacks: Array = []
-	if weapon_data is WeaponData:
-		attacks = (weapon_data as WeaponData).attacks
-	_gui.rebuild_action_buttons(attacks, player.get_castable_spells(), player.mana)
+	_gui.rebuild_action_buttons(
+		player.get_hand_attacks(Player.Hand.MAINHAND), player.get_hand_spells(Player.Hand.MAINHAND),
+		player.get_hand_attacks(Player.Hand.OFFHAND), player.get_hand_spells(Player.Hand.OFFHAND),
+		player.mana,
+		player.is_hand_used(Player.Hand.MAINHAND), player.is_hand_used(Player.Hand.OFFHAND),
+		player.is_offhand_locked())
 
 
 func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
@@ -886,6 +901,14 @@ func _on_combat_enemy_turn_ended(enemy: Enemy) -> void:
 
 func _on_combat_wave_started() -> void:
 	combat_wave_started.emit()
+	# A new wave that begins mid player-turn (the previous wave's last enemy fell to one
+	# hand while the other was still free) must hand control back: action_resolved already
+	# fired into the momentarily-empty encounter and bailed via its guard, leaving the bar
+	# disabled from _confirm_targeting. Keying off wave start (not raw enemy spawn) means a
+	# summoner adding minions during the enemy turn never re-grants control.
+	if state == Enums.TurnState.PLAYER_TURN and _targeting_action == "":
+		_refresh_action_bar()
+		_gui.set_player_turn(true)
 
 
 func _on_combat_wave_completed() -> void:
@@ -913,7 +936,7 @@ func _on_gui_dialogue_complete(terminal_node_id: String) -> void:
 
 
 # --- Consumable Dispatch ---
-# This path never calls execute_action() and never touches _turn_pending — turn does not end.
+# This path never calls execute_action() and never marks a hand used — turn does not end.
 
 func _on_consumable_use_requested(index: int) -> void:
 	if state in [Enums.TurnState.ENEMY_TURN, Enums.TurnState.GAME_OVER, Enums.TurnState.VICTORY]:
@@ -954,12 +977,14 @@ func _start_player_turn() -> void:
 	round_number += 1
 	if player.mana_regen > 0.0:
 		player.restore_mana(player.mana_regen)
+	player.begin_turn()
 	player_turn_started.emit()
 	print("[ROUND %d] === Player Turn ===" % round_number)
 	if player.has_preventing_status():
 		_gui.log_message("[Round %d] You are stunned! Turn skipped." % round_number)
 		player.pass_turn()
 		return
+	_refresh_action_bar()
 	_gui.set_player_turn(true)
 	_gui.set_consumables_enabled(true)
 	_gui.log_message("[Round %d] Your turn." % round_number)
@@ -1050,7 +1075,7 @@ func _apply_rewards(r: Dictionary) -> void:
 	var tomes: Array = r.get("tomes", [])
 	for t in tomes:
 		if t is TomeData:
-			player.get_inventory().add_tome(t as TomeData)
+			player.get_inventory().add_to_bag(t as TomeData)
 	print("[GAME] Rewards applied: %d XP, %d gold, %d blessings, %d tomes" % [xp, gold, blessings.size(), tomes.size()])
 
 

@@ -786,7 +786,6 @@ layout_mode = 2
 autowrap_mode = 2
 
 [node name="CombatHUD" type="Control" parent="GUI" unique_id=1958488847]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -809,6 +808,39 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="MainhandActions" type="HBoxContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=1498324752]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 60.0
+offset_top = -188.0
+offset_right = 660.0
+offset_bottom = -68.0
+grow_vertical = 0
+
+[node name="OffhandActions" type="HBoxContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=1176052192]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -647.0
+offset_top = -191.0
+offset_right = -47.0
+offset_bottom = -71.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="EndTurnButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=359829558]
+layout_mode = 0
+offset_left = 848.0
+offset_top = 916.0
+offset_right = 938.0
+offset_bottom = 947.0
+text = "END TURN"
 
 [node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
 layout_mode = 0
@@ -895,6 +927,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="OffhandLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=1481900952]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flip_h = true
 
 [node name="HandsBackLayer" type="TextureRect" parent="GUI/InventoryPanel/HBoxContainer/PaperDollPanel/PaperDoll" unique_id=1927630430]
 layout_mode = 1

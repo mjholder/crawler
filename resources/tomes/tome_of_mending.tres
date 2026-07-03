@@ -7,5 +7,5 @@
 script = ExtResource("1_tome")
 item_name = "Tome of Mending"
 description = "A weathered tome containing the secrets of the Mend spell."
-gold_value = 30
+price = 30
 spell = ExtResource("2_mend")

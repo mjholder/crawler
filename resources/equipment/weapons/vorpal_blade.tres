@@ -52,6 +52,8 @@ animations = [{
 [resource]
 script = ExtResource("1_script")
 attacks = Array[Resource]([ExtResource("7_stab"), ExtResource("8_assassinate"), ExtResource("9_flail")])
+hand_restriction = 2
+as_offhand_attacks = Array[Resource]([ExtResource("7_stab")])
 item_name = "Vorpal Blade"
 description = "A long thin dagger with a subtle green sheen."
 sprite_frames = SubResource("SpriteFrames_main")

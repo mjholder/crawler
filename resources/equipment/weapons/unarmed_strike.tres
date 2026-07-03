@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/effects/unarmed_damage.tres" id="2_new"]
+
+[resource]
+script = ExtResource("1_script")
+attack_name = "Punch"
+description = "A bare-handed strike."
+target_mode = 0
+effects = [ExtResource("2_new")]

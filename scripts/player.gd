@@ -8,7 +8,16 @@ signal died
 signal turn_ended
 signal attack_performed(attack_data: AttackData, targets: Array)
 signal attack_hit(attack_data: AttackData, targets: Array)
-signal weapon_attacks_changed(attacks: Array)
+## Offhand equivalents of attack_performed / cast_performed. Kept separate so a weapon in the
+## offhand only animates on offhand actions (and vice-versa for the mainhand).
+signal offhand_attack_performed(attack_data: AttackData, targets: Array)
+signal offhand_cast_performed(spell: SpellData, targets: Array)
+## One hand's action finished resolving (animation + effects done). The turn does NOT end
+## here — that's explicit via end_turn(). game.gd refreshes the action bar on this.
+signal action_resolved(hand: int)
+## A hand's available actions changed (equip/unequip, spell prep). Triggers a full
+## action-bar rebuild in game.gd. Distinct from prepared_spells_changed (spell-prep UI).
+signal hand_actions_changed
 signal gold_changed(new_total: int)
 signal experience_changed(new_total: int)
 signal stats_changed(stats: Dictionary)
@@ -46,6 +55,12 @@ signal dodged
 # --- State Machine ---
 enum State { IDLE, DEAD }
 
+# --- Hands (dual-action combat) ---
+# Each hand is an independently-gated action slot. Mainhand = WEAPON slot, offhand =
+# OFFHAND slot. A hand's action group is derived from the item it holds (see
+# _rebuild_hand_actions). Actions never end the turn — only end_turn() does.
+enum Hand { MAINHAND, OFFHAND }
+
 var _state: State = State.IDLE
 var max_health: float = 0.0
 var health: float = 0.0
@@ -60,9 +75,19 @@ var pending_growth_bonuses: Dictionary = {}
 var is_dead: bool = false
 var mana_regen: float = 0.0
 var mana_on_kill: float = 0.0
-var _turn_pending: bool = false
+var _mainhand_used: bool = false
+var _offhand_used: bool = false
+var _action_resolving: bool = false   # one action in flight; blocks a second until it resolves
+var _pending_hand: Hand = Hand.MAINHAND
 var _attack_animation_pending: bool = false
 var _cast_animation_pending: bool = false
+# Offhand equivalents, used only when a weapon (with an animating scene) sits in the offhand.
+var _offhand_attack_animation_pending: bool = false
+var _offhand_cast_animation_pending: bool = false
+var _offhand_in_flight_attack_data: AttackData = null
+var _offhand_in_flight_targets: Array = []
+var _offhand_in_flight_spell: SpellData = null
+var _offhand_in_flight_spell_targets: Array = []
 var _evaluating_conditionals: bool = false
 var _weapon_visible: bool = false
 var _hurt_overlay: ColorRect = null
@@ -97,10 +122,17 @@ var _patron_tier_index: int = -1         # which saint tier is active; -1 = none
 
 var _cond_eval: StatExprEval = StatExprEval.new()
 
+# Baseline action for an empty hand — a bare-handed punch.
+const _UNARMED: AttackData = preload("res://resources/equipment/weapons/unarmed_strike.tres")
+
 # --- Actions ---
-# Maps action name -> Callable.
-# Register new actions with register_action(); call them via execute_action().
-var _actions: Dictionary = {}
+# Per-hand registries: hand -> {action_name: Callable}. A mainhand "Strike" and an
+# offhand "Punch" never collide. Register via register_action(name, callable, hand);
+# call via execute_action(hand, name). _hand_attacks / _hand_spells hold the source
+# resources so game.gd can build buttons and resolve names without re-deriving.
+var _hand_actions := { Hand.MAINHAND: {}, Hand.OFFHAND: {} }
+var _hand_attacks := { Hand.MAINHAND: [], Hand.OFFHAND: [] }   # hand -> Array[AttackData]
+var _hand_spells := { Hand.MAINHAND: [], Hand.OFFHAND: [] }    # hand -> Array[SpellData]
 
 
 func _ready() -> void:
@@ -111,10 +143,12 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if _turn_pending and _is_turn_complete():
-		_turn_pending = false
-		_tick_statuses()
-		turn_ended.emit()
+	# An action resolves (animation + effects done) one frame after it's issued. Mark its
+	# hand used and notify listeners — but never end the turn here; that's explicit.
+	if _action_resolving and _is_turn_complete():
+		_action_resolving = false
+		_set_hand_used(_pending_hand)
+		action_resolved.emit(_pending_hand)
 
 
 # --- Initialization ---
@@ -151,9 +185,12 @@ func reset_run_state() -> void:
 	for bd in _blessings.duplicate():
 		remove_blessing(bd)
 	_active_statuses.clear()
-	for spell in _prepared_spells:
-		if spell != null:
-			unregister_action(spell.spell_name)
+	_hand_actions[Hand.MAINHAND].clear()
+	_hand_actions[Hand.OFFHAND].clear()
+	_hand_attacks[Hand.MAINHAND] = []
+	_hand_attacks[Hand.OFFHAND] = []
+	_hand_spells[Hand.MAINHAND] = []
+	_hand_spells[Hand.OFFHAND] = []
 	_learned_spells.clear()
 	_prepared_spells.clear()
 	_innate_spell_names.clear()
@@ -166,7 +203,9 @@ func reset_run_state() -> void:
 	_in_flight_spell_targets = []
 	_pending_spell = null
 	_pending_spell_targets = []
-	_turn_pending = false
+	_mainhand_used = false
+	_offhand_used = false
+	_action_resolving = false
 	_attack_animation_pending = false
 	_cast_animation_pending = false
 	is_dead = false
@@ -192,7 +231,7 @@ func _setup_starting_equipment(class_data: PlayerClassData) -> void:
 		_inventory.add_to_bag(item)
 	for tome_res in class_data.starting_tomes:
 		if tome_res is TomeData:
-			_inventory.add_tome(tome_res as TomeData)
+			_inventory.add_to_bag(tome_res as TomeData)
 
 
 func _setup_starting_blessings(class_data: PlayerClassData) -> void:
@@ -295,26 +334,77 @@ func _register_actions() -> void:
 	pass
 
 
-func register_action(action_name: String, callable: Callable) -> void:
-	_actions[action_name] = callable
+func register_action(action_name: String, callable: Callable, hand: Hand = Hand.MAINHAND) -> void:
+	_hand_actions[hand][action_name] = callable
 
 
-func unregister_action(action_name: String) -> void:
-	_actions.erase(action_name)
+func unregister_action(action_name: String, hand: Hand = Hand.MAINHAND) -> void:
+	_hand_actions[hand].erase(action_name)
 
 
+## Resets both hands at the start of the player's turn. The offhand starts spent only
+## when it has no action to offer (locked by a two-hander with no supporting action).
+func begin_turn() -> void:
+	_mainhand_used = false
+	_offhand_used = _offhand_has_no_action()
+	_action_resolving = false
+
+
+## Explicitly ends the player's turn. The End Turn button and the stun path both call
+## this — an action never ends the turn on its own.
+func end_turn() -> void:
+	if is_dead or _action_resolving:
+		return
+	_tick_statuses()
+	turn_ended.emit()
+
+
+## Stun path: forfeit the whole turn.
 func pass_turn() -> void:
-	if is_dead or _turn_pending:
-		return
-	_turn_pending = true
+	end_turn()
 
 
-func execute_action(action_name: String) -> void:
-	if is_dead or _turn_pending or not _actions.has(action_name):
+func is_hand_used(hand: Hand) -> bool:
+	return _mainhand_used if hand == Hand.MAINHAND else _offhand_used
+
+
+func is_offhand_locked() -> bool:
+	return _inventory.is_slot_locked(Enums.Slot.OFFHAND)
+
+
+func get_hand_attacks(hand: Hand) -> Array:
+	return _hand_attacks[hand]
+
+
+func get_hand_spells(hand: Hand) -> Array:
+	return _hand_spells[hand]
+
+
+func execute_action(hand: Hand, action_name: String) -> void:
+	if is_dead or _action_resolving or is_hand_used(hand):
 		return
-	print("[PLAYER] Action: %s" % action_name)
-	_actions[action_name].call()
-	_turn_pending = true
+	if not _hand_actions[hand].has(action_name):
+		return
+	print("[PLAYER] Action (%s): %s" % ["main" if hand == Hand.MAINHAND else "off", action_name])
+	_pending_hand = hand
+	_hand_actions[hand][action_name].call()
+	_action_resolving = true
+
+
+func _set_hand_used(hand: Hand) -> void:
+	if hand == Hand.MAINHAND:
+		_mainhand_used = true
+	else:
+		_offhand_used = true
+
+
+## The offhand offers no action only when a two-handed weapon locks it and defines no
+## locked_offhand_attacks. An empty (unlocked) offhand still yields the unarmed punch.
+func _offhand_has_no_action() -> bool:
+	if not _inventory.is_slot_locked(Enums.Slot.OFFHAND):
+		return false
+	var wdata := _inventory.get_equipped(Enums.Slot.WEAPON) as WeaponData
+	return wdata == null or wdata.locked_offhand_attacks.is_empty()
 
 
 func set_pending_attack_payload(attack_data: AttackData, targets: Array) -> void:
@@ -332,15 +422,27 @@ func _do_attack() -> void:
 	if attack_data == null:
 		push_warning("[PLAYER] _do_attack() called with no pending payload")
 		return
-	var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
-	if weapon_data != null and weapon_data.scene != null and attack_data.target_mode != AttackData.TargetMode.SELF:
-		_attack_animation_pending = true
-		_in_flight_attack_data = attack_data
-		_in_flight_targets = targets
 	print("  Player performs: %s" % attack_data.attack_name)
-	attack_performed.emit(attack_data, targets)
-	if not _attack_animation_pending:
-		attack_hit.emit(attack_data, targets)
+	# Each hand animates its own weapon scene when it holds one; otherwise the hit resolves
+	# immediately. A non-SELF attack defers its hit until the weapon's hit_landed fires.
+	if _pending_hand == Hand.MAINHAND:
+		var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
+		if weapon_data != null and weapon_data.scene != null and attack_data.target_mode != AttackData.TargetMode.SELF:
+			_attack_animation_pending = true
+			_in_flight_attack_data = attack_data
+			_in_flight_targets = targets
+		attack_performed.emit(attack_data, targets)
+		if not _attack_animation_pending:
+			attack_hit.emit(attack_data, targets)
+	else:
+		var off_data := _inventory.get_equipped(Enums.Slot.OFFHAND)
+		if off_data is WeaponData and off_data.scene != null and attack_data.target_mode != AttackData.TargetMode.SELF:
+			_offhand_attack_animation_pending = true
+			_offhand_in_flight_attack_data = attack_data
+			_offhand_in_flight_targets = targets
+			offhand_attack_performed.emit(attack_data, targets)
+		else:
+			attack_hit.emit(attack_data, targets)
 
 
 # --- Rewards ---
@@ -549,9 +651,6 @@ func _recalculate_prep_slots() -> void:
 	if new_size == prep_slots:
 		return
 	if new_size < prep_slots:
-		for i in range(new_size, prep_slots):
-			if i < _prepared_spells.size() and _prepared_spells[i] != null:
-				unregister_action(_prepared_spells[i].spell_name)
 		_prepared_spells.resize(new_size)
 	else:
 		_prepared_spells.resize(new_size)
@@ -560,6 +659,7 @@ func _recalculate_prep_slots() -> void:
 	prep_slots = new_size
 	prep_slots_changed.emit(prep_slots)
 	prepared_spells_changed.emit(get_castable_spells())
+	_rebuild_hand_actions()
 
 
 func learn_spell(spell: SpellData) -> void:
@@ -586,12 +686,9 @@ func prepare_spell(spell: SpellData, index: int) -> void:
 		return
 	if not _learned_spells.has(spell):
 		return
-	var displaced := _prepared_spells[index]
-	if displaced != null:
-		unregister_action(displaced.spell_name)
 	_prepared_spells[index] = spell
-	register_action(spell.spell_name, _do_cast)
 	prepared_spells_changed.emit(get_castable_spells())
+	_rebuild_hand_actions()
 
 
 func unprepare_spell(index: int) -> void:
@@ -600,9 +697,9 @@ func unprepare_spell(index: int) -> void:
 	var spell := _prepared_spells[index]
 	if spell == null:
 		return
-	unregister_action(spell.spell_name)
 	_prepared_spells[index] = null
 	prepared_spells_changed.emit(get_castable_spells())
+	_rebuild_hand_actions()
 
 
 func get_castable_spells() -> Array[SpellData]:
@@ -665,15 +762,27 @@ func _do_cast() -> void:
 	if not spend_mana(cost):
 		push_warning("[PLAYER] _do_cast() insufficient mana for: %s" % spell.spell_name)
 		return
-	var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
-	if weapon_data != null and weapon_data.scene != null and spell.target_mode != AttackData.TargetMode.SELF:
-		_cast_animation_pending = true
-		_in_flight_spell = spell
-		_in_flight_spell_targets = targets
 	print("  Player casts: %s" % spell.spell_name)
-	cast_performed.emit(spell, targets)
-	if not _cast_animation_pending:
-		cast_hit.emit(spell, targets)
+	# Each hand animates its own weapon scene when it holds one; otherwise the cast resolves
+	# immediately. A non-SELF cast defers its hit until the weapon's cast animation finishes.
+	if _pending_hand == Hand.MAINHAND:
+		var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
+		if weapon_data != null and weapon_data.scene != null and spell.target_mode != AttackData.TargetMode.SELF:
+			_cast_animation_pending = true
+			_in_flight_spell = spell
+			_in_flight_spell_targets = targets
+		cast_performed.emit(spell, targets)
+		if not _cast_animation_pending:
+			cast_hit.emit(spell, targets)
+	else:
+		var off_data := _inventory.get_equipped(Enums.Slot.OFFHAND)
+		if off_data is WeaponData and off_data.scene != null and spell.target_mode != AttackData.TargetMode.SELF:
+			_offhand_cast_animation_pending = true
+			_offhand_in_flight_spell = spell
+			_offhand_in_flight_spell_targets = targets
+			offhand_cast_performed.emit(spell, targets)
+		else:
+			cast_hit.emit(spell, targets)
 
 
 func _on_stat_modifiers_changed() -> void:
@@ -690,6 +799,7 @@ func _on_slot_changed(slot: Enums.Slot, new_data: EquipmentData, old_data: Equip
 	_recalculate_max_health()
 	_recalculate_max_mana()
 	_recalculate_prep_slots()
+	_rebuild_hand_actions()
 	stats_changed.emit(build_stats_dict())
 
 
@@ -701,7 +811,91 @@ func _on_ring_changed(_index: int, new_data: EquipmentData, old_data: EquipmentD
 	_recalculate_max_health()
 	_recalculate_max_mana()
 	_recalculate_prep_slots()
+	_rebuild_hand_actions()
 	stats_changed.emit(build_stats_dict())
+
+
+# --- Hand action registry ---
+
+## Single source of truth for what each hand can do. Rebuilds both registries and their
+## source-resource lists from the currently equipped items + castable repertoire, then
+## announces the change so the action bar rebuilds. Called on any equip/unequip or
+## spell-prep change — never per turn.
+func _rebuild_hand_actions() -> void:
+	_hand_actions[Hand.MAINHAND].clear()
+	_hand_actions[Hand.OFFHAND].clear()
+	_hand_attacks[Hand.MAINHAND] = []
+	_hand_attacks[Hand.OFFHAND] = []
+	_hand_spells[Hand.MAINHAND] = []
+	_hand_spells[Hand.OFFHAND] = []
+	_rebuild_innate_spell_names()
+	_build_hand_actions(Hand.MAINHAND, Enums.Slot.WEAPON)
+	_build_hand_actions(Hand.OFFHAND, Enums.Slot.OFFHAND)
+	hand_actions_changed.emit()
+
+
+## Populates one hand from the item in its slot. Attacks come from the item's `attacks`;
+## casting (the prepared repertoire) requires the item to be a focus (grants_casting);
+## a weapon always channels its own innate spells. A locked offhand draws its supporting
+## actions from the two-hander; an empty, capability-less hand falls back to the punch.
+func _build_hand_actions(hand: Hand, slot: Enums.Slot) -> void:
+	if slot == Enums.Slot.OFFHAND and _inventory.is_slot_locked(Enums.Slot.OFFHAND):
+		var wdata := _inventory.get_equipped(Enums.Slot.WEAPON) as WeaponData
+		if wdata != null:
+			for atk_res in wdata.locked_offhand_attacks:
+				_register_hand_attack(hand, atk_res as AttackData)
+		return
+	var data := _inventory.get_equipped(slot)
+	if data == null:
+		_register_hand_attack(hand, _UNARMED)
+		return
+	# A weapon placed in the offhand uses its as_offhand_attacks moveset if it defines one,
+	# otherwise its normal attacks.
+	var attack_source: Array = data.attacks
+	if slot == Enums.Slot.OFFHAND and data is WeaponData:
+		var off_moveset := (data as WeaponData).as_offhand_attacks
+		if not off_moveset.is_empty():
+			attack_source = off_moveset
+	var granted := false
+	for atk_res in attack_source:
+		granted = _register_hand_attack(hand, atk_res as AttackData) or granted
+	if data.grants_casting:
+		for spell in get_castable_spells():
+			granted = _register_hand_spell(hand, spell) or granted
+	elif data is WeaponData:
+		for spell_res in (data as WeaponData).innate_spells:
+			granted = _register_hand_spell(hand, spell_res as SpellData) or granted
+	if not granted:
+		_register_hand_attack(hand, _UNARMED)
+
+
+func _register_hand_attack(hand: Hand, atk: AttackData) -> bool:
+	if atk == null:
+		return false
+	register_action(atk.attack_name, _do_attack, hand)
+	_hand_attacks[hand].append(atk)
+	return true
+
+
+func _register_hand_spell(hand: Hand, spell: SpellData) -> bool:
+	if spell == null:
+		return false
+	register_action(spell.spell_name, _do_cast, hand)
+	_hand_spells[hand].append(spell)
+	return true
+
+
+## Rebuilds the innate-spell name list from the mainhand weapon so get_castable_spells()
+## (which resolves innate names against the equipped weapon) stays correct.
+func _rebuild_innate_spell_names() -> void:
+	_innate_spell_names.clear()
+	var wdata := _inventory.get_equipped(Enums.Slot.WEAPON) as WeaponData
+	if wdata == null:
+		return
+	for spell_res in wdata.innate_spells:
+		var spell := spell_res as SpellData
+		if spell != null:
+			_innate_spell_names.append(spell.spell_name)
 
 
 func _setup_equipment(slot, data: EquipmentData) -> void:
@@ -723,6 +917,17 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 			(node as Weapon).hit_landed.connect(_on_weapon_hit_landed)
 			cast_performed.connect((node as Weapon)._on_player_cast)
 			(node as Weapon).cast_animation_finished.connect(_on_weapon_cast_animation_finished)
+		elif slot == Enums.Slot.OFFHAND and node is Weapon:
+			print("[PLAYER] Equipped offhand weapon scene: %s" % data.item_name)
+			node.visible = _weapon_visible
+			node.scale.x = -1  # mirror the mainhand animation for the offhand
+			offhand_attack_performed.connect((node as Weapon)._on_player_attacked)
+			(node as Weapon).animation_finished.connect(_on_offhand_animation_finished)
+			(node as Weapon).hit_landed.connect(_on_offhand_hit_landed)
+			offhand_cast_performed.connect((node as Weapon)._on_player_cast)
+			(node as Weapon).cast_animation_finished.connect(_on_offhand_cast_animation_finished)
+	# A two-handed weapon evicts and locks the offhand. Hand action registries are
+	# rebuilt centrally in _rebuild_hand_actions() (called from _on_slot_changed).
 	if slot == Enums.Slot.WEAPON and data is WeaponData:
 		print("[PLAYER] Equipped weapon: %s" % data.item_name)
 		var wdata := data as WeaponData
@@ -730,23 +935,6 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 			if _inventory.get_equipped(Enums.Slot.OFFHAND) != null:
 				_inventory.unequip(Enums.Slot.OFFHAND)
 			_inventory.lock_slot(Enums.Slot.OFFHAND)
-		for atk_res in wdata.attacks:
-			var atk := atk_res as AttackData
-			if atk == null:
-				continue
-			if _actions.has(atk.attack_name):
-				push_warning("[PLAYER] Duplicate attack name: %s" % atk.attack_name)
-			register_action(atk.attack_name, _do_attack)
-		for spell_res in wdata.innate_spells:
-			var spell := spell_res as SpellData
-			if spell == null:
-				continue
-			if _actions.has(spell.spell_name):
-				push_warning("[PLAYER] Duplicate action name from innate spell: %s" % spell.spell_name)
-			_innate_spell_names.append(spell.spell_name)
-			register_action(spell.spell_name, _do_cast)
-		weapon_attacks_changed.emit(wdata.attacks)
-		prepared_spells_changed.emit(get_castable_spells())
 
 
 func _teardown_equipment(slot, data: EquipmentData) -> void:
@@ -764,22 +952,19 @@ func _teardown_equipment(slot, data: EquipmentData) -> void:
 					(child as Weapon).hit_landed.disconnect(_on_weapon_hit_landed)
 					cast_performed.disconnect((child as Weapon)._on_player_cast)
 					(child as Weapon).cast_animation_finished.disconnect(_on_weapon_cast_animation_finished)
+				elif slot == Enums.Slot.OFFHAND and child is Weapon:
+					offhand_attack_performed.disconnect((child as Weapon)._on_player_attacked)
+					(child as Weapon).animation_finished.disconnect(_on_offhand_animation_finished)
+					(child as Weapon).hit_landed.disconnect(_on_offhand_hit_landed)
+					offhand_cast_performed.disconnect((child as Weapon)._on_player_cast)
+					(child as Weapon).cast_animation_finished.disconnect(_on_offhand_cast_animation_finished)
 				child.queue_free()
 				break
+	# Unlock the offhand a two-hander held. Action registries are rebuilt centrally.
 	if slot == Enums.Slot.WEAPON and data is WeaponData:
 		var wdata := data as WeaponData
 		if wdata.is_two_handed:
 			_inventory.unlock_slot(Enums.Slot.OFFHAND)
-		for atk_res in wdata.attacks:
-			var atk := atk_res as AttackData
-			if atk == null:
-				continue
-			unregister_action(atk.attack_name)
-		for name in _innate_spell_names:
-			unregister_action(name)
-		_innate_spell_names.clear()
-		weapon_attacks_changed.emit([])
-		prepared_spells_changed.emit(get_castable_spells())
 
 
 func get_equipped_node(slot: Enums.Slot) -> Equipment:
@@ -797,6 +982,10 @@ func set_weapon_visible(show: bool) -> void:
 	var weapon := get_equipped_node(Enums.Slot.WEAPON)
 	if weapon != null:
 		weapon.visible = show
+	# An offhand weapon shares the mainhand's exploration/combat visibility.
+	var offhand := get_equipped_node(Enums.Slot.OFFHAND)
+	if offhand is Weapon:
+		offhand.visible = show
 
 
 func get_base_stat(stat: Enums.Stat) -> float:
@@ -981,7 +1170,11 @@ func set_hurt_overlay(overlay: ColorRect) -> void:
 # --- Internal ---
 
 func _is_turn_complete() -> bool:
-	return not _attack_animation_pending and not _cast_animation_pending and (_state == State.IDLE or _state == State.DEAD)
+	if _attack_animation_pending or _cast_animation_pending:
+		return false
+	if _offhand_attack_animation_pending or _offhand_cast_animation_pending:
+		return false
+	return _state == State.IDLE or _state == State.DEAD
 
 
 func _transition(next: State) -> void:
@@ -1010,6 +1203,31 @@ func _on_weapon_hit_landed() -> void:
 	var targets := _in_flight_targets
 	_in_flight_attack_data = null
 	_in_flight_targets = []
+	attack_hit.emit(attack_data, targets)
+
+
+func _on_offhand_animation_finished() -> void:
+	_offhand_attack_animation_pending = false
+
+
+func _on_offhand_cast_animation_finished() -> void:
+	_offhand_cast_animation_pending = false
+	if _offhand_in_flight_spell == null:
+		return
+	var spell := _offhand_in_flight_spell
+	var targets := _offhand_in_flight_spell_targets
+	_offhand_in_flight_spell = null
+	_offhand_in_flight_spell_targets = []
+	cast_hit.emit(spell, targets)
+
+
+func _on_offhand_hit_landed() -> void:
+	if _offhand_in_flight_attack_data == null:
+		return
+	var attack_data := _offhand_in_flight_attack_data
+	var targets := _offhand_in_flight_targets
+	_offhand_in_flight_attack_data = null
+	_offhand_in_flight_targets = []
 	attack_hit.emit(attack_data, targets)
 
 

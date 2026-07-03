@@ -13,6 +13,12 @@ extends Resource
 @export var slot: Enums.Slot = Enums.Slot.WEAPON
 @export var is_ring: bool = false
 @export var price: int = 0
+## Hand actions this item grants when equipped. In dual-action combat these become the
+## action group for the hand holding this item (mainhand = WEAPON slot, offhand = OFFHAND).
+@export var attacks: Array[Resource] = []  # Array[AttackData]
+## When true this item is a spellcasting focus: its hand can cast the player's prepared
+## repertoire (get_castable_spells). No focus in either hand means no casting at all.
+@export var grants_casting: bool = false
 @export var on_equip_effects: Array[Resource] = []
 @export var on_unequip_effects: Array[Resource] = []
 @export var proc_effects: Array[Resource] = []       # Array[ProcDef]

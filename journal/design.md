@@ -19,6 +19,71 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Per-hand weapon restriction, offhand moveset, and animated offhand weapons
+
+**Decision:** Weapons declare where they may be equipped via `WeaponData.hand_restriction`
+(`Enums.HandRestriction` — `MAINHAND_ONLY` / `OFFHAND_ONLY` / `EITHER`, default `MAINHAND_ONLY`).
+The inventory routes equips accordingly: forced slots equip directly; an `EITHER` weapon opens a
+**hand-selection interaction** in `InventoryPanel` that mirrors combat targeting — the WEAPON and
+OFFHAND slot buttons highlight, `←/→` cycle the choice, `Space`/`Enter` (or clicking a slot)
+confirm, `Esc` cancels — and the item is only removed from the bag on confirm, so cancelling never
+loses it. A weapon sitting in the offhand uses a new `WeaponData.as_offhand_attacks` moveset if it
+defines one, otherwise its normal `attacks`; the override is applied in `_build_hand_actions()`. The
+old `WeaponData.offhand_attacks` is **renamed `locked_offhand_attacks`** (it means "what the *locked*
+offhand does while THIS two-hander is in the mainhand", not "what this weapon does in the offhand").
+Offhand weapons now **animate**: `_setup_equipment` wires an OFFHAND `Weapon` scene node the same way
+as the mainhand but flips it (`node.scale.x = -1`) to mirror the mainhand animation, driven by new
+`offhand_attack_performed` / `offhand_cast_performed` signals (kept separate so a hand only animates
+on its own actions); `_do_attack`/`_do_cast` defer the offhand hit until the offhand weapon's
+`hit_landed` / cast-finished, via parallel `_offhand_*` in-flight state. A cosmetic mirrored
+`OffhandLayer` was added to the paper doll.
+**Date:** 2026-07-03
+**Daily:** [[daily/2026-07-03]]
+**Context:** A weapon was hard-bound to the mainhand by `EquipmentData.slot`; there was no way to
+author an off-hand-capable weapon nor for the player to choose a hand. Scoped in [[ideas.md]]
+("Per-Hand Weapon Restriction + Offhand Moveset"). This also retired the v1 limitation that only the
+mainhand weapon animated (see the dual-action-combat entry below).
+**Alternatives considered:**
+- *Reuse `EquipmentData.slot` and add an `EITHER` sentinel slot* — rejected; the slot enum maps to
+  concrete equipped slots, and a weapon still needs a concrete destination. A separate
+  `hand_restriction` keeps slot meaning intact and defaults every existing weapon to `MAINHAND_ONLY`.
+- *A modal popup / ConfirmationDialog for hand choice* — rejected in favour of reusing the existing
+  keyboard target-selection UX (highlight + `←/→` cycle + confirm/cancel) the user already knows;
+  it's consistent and needs no new scene.
+- *Remove the item from the bag up-front (as the immediate-equip path does)* — rejected; deferring
+  removal to confirm makes cancel/close a no-op that can't lose the item.
+- *One shared `attack_performed` signal, filter by hand in the weapon node* — rejected; separate
+  `offhand_*` signals mean each weapon node only reacts to its own hand with no per-node filtering.
+- *Put `hand_restriction` on `EquipmentData`* — kept on `WeaponData` per the idea; non-weapon
+  off-slot items (focuses) still route by their authored `slot`.
+**Rationale:** `hand_restriction` on `WeaponData` with a `MAINHAND_ONLY` default is a zero-content-
+change migration. The moveset override is a two-line branch in the existing `_build_hand_actions()`.
+Mirroring by flipping the root `Weapon` node (not `_sprite`, which `_scale_sprite_to_viewport()`
+overwrites) reuses the entire mainhand animation with no new art. The offhand animation path is a
+structural parallel of the mainhand path, so `_do_attack`/`_do_cast` stay symmetric.
+**Trade-offs / risks:** The offhand path duplicates the mainhand in-flight state and handlers rather
+than fully generalizing per-hand — accepted for clarity over a larger refactor. `_rebuild_innate_
+spell_names()` still only reads the mainhand weapon, so `get_castable_spells()` name-resolution
+ignores an offhand weapon's innate spells (the offhand hand still registers them directly). The
+hand-selection `_unhandled_input` coexists with `game.gd`'s; it's safe because game.gd's targeting
+block is inactive outside `PLAYER_TURN` and the panel consumes its keys, with a `visibility_changed`
+guard that cancels a dangling selection if the panel closes.
+
+## Dual-action combat: per-hand action gating, explicit turn end, focus-granted casting
+
+**Decision:** The player turn splits into two independently-gated action slots — **mainhand** (WEAPON slot) and **offhand** (OFFHAND slot). `Player` replaces its single `_actions` registry with per-hand registries (`_hand_actions[Hand]`, plus `_hand_attacks`/`_hand_spells` source lists) and `_mainhand_used`/`_offhand_used` flags reset by `begin_turn()`. `execute_action(hand, name)` no longer ends the turn: it runs the action and sets `_action_resolving`; `_process` clears that on resolve, marks the hand used, and emits `action_resolved(hand)`. **The turn ends only via the explicit `end_turn()`** (End Turn button or stun `pass_turn()`), which is now the sole place `_tick_statuses()` + `turn_ended` fire. A hand's action set is derived in `_rebuild_hand_actions()` from the item it holds: its `attacks`, plus the prepared repertoire iff the item is a **focus** (`grants_casting`), else a weapon's `innate_spells`; an empty hand falls back to a shared unarmed `Punch`. A two-handed weapon locks the offhand but supplies its supporting action(s) via `offhand_attacks`. Data model: `attacks` + `grants_casting` promoted from `WeaponData` to `EquipmentData`; `offhand_attacks` added to `WeaponData`. v1 keeps offhand actions **non-animating** (only the mainhand WEAPON scene animates).
+**Date:** 2026-07-02
+**Daily:** [[daily/2026-07-02]]
+**Context:** Combat gave one action per turn — `execute_action` set `_turn_pending` and `_process` emitted `turn_ended` the moment it resolved, so turns were one click. [[ideas.md]] ("Dual-Action Combat", 2026-06-30) spec'd two per-hand slots as the player-side counterpart to enemy attack patterns. Spellcasting was an ungated free action independent of equipment; the user asked to fold it into the hand system so it, too, costs a hand.
+**Alternatives considered:**
+- *One flat action registry keyed by name, with a parallel hand map* — smaller diff, but a mainhand and offhand sharing an action name (two "Punch"es) collide in one dict. Rejected for per-hand registries, which make collisions impossible and hand-gating natural.
+- *Auto-end the turn when both hands are spent* — fewer clicks, but the user chose **explicit End Turn always** (turn never auto-ends) for full control and to allow declining a hand.
+- *Casting stays a baseline ungated action; a focus only adds a second casting hand* — rejected: the user wanted **no focus, no casting**, unifying casting into the same per-hand economy as attacks.
+- *Two-handed weapon forfeits the offhand entirely* — rejected as too costly on action economy; a two-hander instead grants a supporting `offhand_attacks` action.
+- *Animate offhand weapons now* — deferred to v2; `_do_attack`/`_do_cast` and the equipment signal wiring hardcode the mainhand WEAPON scene, so a second animating node is a larger change. v1 offhand actions (Brace/cantrip/punch) resolve without animation.
+**Rationale:** `_turn_pending` conflated "an action is resolving, block input" with "end the turn on resolve"; splitting it into `_action_resolving` (gating) + explicit `end_turn()` is the enabler for everything else. Deriving each hand's actions from the equipped item in one `_rebuild_hand_actions()` (called on equip/unequip and spell-prep changes, never per turn) keeps a single source of truth and lets `game.gd`/`gui.gd` read per-hand attack/spell lists without re-deriving the focus rule. Casting reuses the existing prepared-repertoire + `get_castable_spells()` machinery; a focus is just `grants_casting = true` (set on `pyre_scepter`/`oak_staff`), so no new item content is needed. SELF Brace and the unarmed punch ride the existing `AttackData`/Effect pipeline with zero new plumbing. Mid-turn hand state never needs saving — `SaveManager.write` only runs after combat.
+**Trade-offs / risks:** The CombatHUD scene must define `MainhandActions`/`OffhandActions`/`EndTurnButton` under `ActionMenu`; until then `gui.gd` auto-creates fallback nodes (usable but unstyled). The post-killing-blow window is racy — a mainhand kill can flip the event to RESOLUTION via `await death_finished` while `_process` still emits `action_resolved`, so `_on_player_action_resolved` guards on `PLAYER_TURN` **and** living enemies. Offhand weapons with their own swing animation are unsupported until v2 generalizes `_do_attack`/`_do_cast` per hand. A hand with an innate-spell weapon that isn't a focus still casts that innate spell (weapon channels its own), so "no focus, no casting" applies to the prepared repertoire, not weapon-innate spells.
+
 ## Enemy action patterns: data-driven optional move sequence over the `_perform_action` hook
 
 **Decision:** Enemies gain an optional, looping **fixed-sequence** move pattern. New `EnemyMoveData` (name, description, `Target` enum `PLAYER`/`SELF`, `effects: Array[Effect]`, icon, sound) and `EnemyPatternData` (`moves: Array[EnemyMoveData]`) resources. `Enemy` carries an optional `pattern` export and a per-instance `_pattern_index` cursor; `_emit_attack()` is made pattern-aware — with a pattern it emits `move_performed(move)` and advances the cursor (wrapping), otherwise it keeps the legacy `attack(attack_damage)` behavior. Effect resolution lives in `game._on_enemy_move_performed()` (via a `CombatEvent.enemy_move_performed` relay), mirroring `_on_player_attack_hit`: it applies each effect with `source = enemy`, `target = player` (or the enemy itself for `SELF` moves).

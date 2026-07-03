@@ -48,6 +48,14 @@ enum Slot {
 	# e.g. slot = 5 is HEAD, slot = 6 is OFFHAND
 }
 
+# Which hand(s) a weapon may be equipped into. Drives the equip UI's slot routing:
+# MAINHAND_ONLY / OFFHAND_ONLY force a slot; EITHER prompts the player to choose.
+enum HandRestriction {
+	MAINHAND_ONLY,  # 0
+	OFFHAND_ONLY,   # 1
+	EITHER          # 2
+}
+
 # --- World Map ---
 
 enum NodeType {

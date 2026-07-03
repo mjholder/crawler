@@ -703,14 +703,16 @@ A castable spell. Spells are learned from tomes and prepared into active slots.
 
 ### TomeData
 
-A collectible item that teaches a spell. Found in shops and as loot.
+A collectible bag item that teaches a spell. Extends `EquipmentData`, so it lives in
+the bag like any other item; clicking it in the inventory learns its spell instead of
+equipping. Found in shops and as loot. Only the fields below are meaningful — the
+inherited equipment fields (`slot`, `stat_modifiers`, `attacks`, …) are unused.
 
 | Field | In-game meaning | Widget | Example |
 |---|---|---|---|
 | `item_name` | Display name. | Text | `"Tome of Magic Missile"` |
 | `description` | Tooltip text. | Textarea | |
-| `icon` | Item icon. | Asset picker (Texture2D) | |
-| `gold_value` | Sell price. | Integer | `30` |
+| `price` | Sell price. | Integer | `30` |
 | `spell` | The spell this tome teaches when read. | Resource picker (`SpellData`) | `magic_missile.tres` |
 
 ---
