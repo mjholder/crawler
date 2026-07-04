@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "9e54d804607ab98e",
+        "id": "3691e1b5da5fb1ac",
         "type": "tabs",
         "children": [
           {
-            "id": "23e0d0285e5479ef",
+            "id": "c125f276b97323a8",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "ideas.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "ideas"
+              "title": "New tab"
             }
           }
         ]
@@ -183,20 +179,26 @@
       "bases:Create new base": false
     }
   },
-  "active": "23e0d0285e5479ef",
+  "active": "c125f276b97323a8",
   "lastOpenFiles": [
-    "daily/2026-07-01.md.tmp.38221.bc881d4319b6",
-    "daily/2026-07-01.md.tmp.38221.c4343f1321b6",
-    "design.md.tmp.38221.6540ea22a931",
-    "ideas.md.tmp.38221.1122a19141c4",
-    "ideas.md.tmp.38221.6cd4bc221b95",
-    "architecture.md.tmp.38221.1fd829c9de18",
-    "architecture.md.tmp.38221.64f0db6cb653",
-    "ideas.md.tmp.38221.4ca3ead149a3",
-    "design.md.tmp.38221.4ef3144312c3",
-    "daily/2026-07-01.md.tmp.38221.cd2ed9edfeec",
+    "daily/2026-07-03.md.tmp.38221.f5885c819ba6",
+    "daily/2026-07-03.md.tmp.38221.aa3b5d435405",
+    "daily/2026-07-03.md.tmp.83163.fc145eac7ec9",
+    "daily/2026-07-03.md.tmp.38221.b6462437cab7",
+    "daily/2026-07-03.md.tmp.38221.f0d6965fef38",
+    "daily/2026-07-03.md.tmp.38221.b5d5e316a1a2",
+    "architecture.md.tmp.38221.bb6048777237",
+    "architecture.md.tmp.38221.8c32673270aa",
+    "architecture.md.tmp.38221.ac1cf05df1eb",
+    "architecture.md.tmp.38221.f0993c1dc859",
+    "architecture.md.tmp.38221.d3d33f0fa0ba",
+    "daily/2026-07-03.md",
+    "canvas/Untitled 2.canvas",
+    "detailed/event-system.md",
+    "detailed/character.md",
+    "daily/2026-07-02.md",
+    "ideas.md",
     "daily/2026-07-01.md",
-    "daily/2026-07-01.md.tmp.7038.b6f16e1537cb",
     "daily/2026-06-28.md",
     "daily/2026-06-27.md",
     "daily/2026-05-26.md",
@@ -210,7 +212,6 @@
     "daily/2026-05-09.md",
     "README.md",
     "daily/2026-05-08.md",
-    "ideas.md",
     "daily/2026-05-05.md",
     "daily/2026-05-03.md",
     "daily/2026-05-02.md",
@@ -219,10 +220,6 @@
     "daily/2026-04-20.md",
     "daily/2026-05-01.md",
     "canvas/Untitled.canvas",
-    "daily/2026-04-30.md",
-    "detailed/character.md",
-    "architecture.md",
-    "detailed/enemy-system.md",
     "Untitled.canvas"
   ]
 }

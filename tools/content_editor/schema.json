@@ -294,6 +294,15 @@
 					"type": "int"
 				},
 				{
+					"element_type": "AttackData",
+					"name": "attacks",
+					"type": "Array"
+				},
+				{
+					"name": "grants_casting",
+					"type": "bool"
+				},
+				{
 					"element_type": "Effect",
 					"name": "on_equip_effects",
 					"type": "Array"
@@ -532,6 +541,15 @@
 				{
 					"name": "price",
 					"type": "int"
+				},
+				{
+					"element_type": "AttackData",
+					"name": "attacks",
+					"type": "Array"
+				},
+				{
+					"name": "grants_casting",
+					"type": "bool"
 				},
 				{
 					"element_type": "Effect",
@@ -945,54 +963,12 @@
 			"script": "res://scripts/status_effect.gd"
 		},
 		"TomeData": {
-			"extends": "",
+			"extends": "EquipmentData",
 			"properties": [
-				{
-					"name": "item_name",
-					"type": "String"
-				},
-				{
-					"name": "description",
-					"type": "String"
-				},
-				{
-					"name": "icon",
-					"resource_type": "Texture2D",
-					"type": "Resource"
-				},
-				{
-					"name": "gold_value",
-					"type": "int"
-				},
 				{
 					"name": "spell",
 					"resource_type": "SpellData",
 					"type": "Resource"
-				}
-			],
-			"script": "res://scripts/tome_data.gd"
-		},
-		"WeaponData": {
-			"extends": "EquipmentData",
-			"properties": [
-				{
-					"name": "attack_sfx",
-					"resource_type": "AudioStream",
-					"type": "Resource"
-				},
-				{
-					"element_type": "AttackData",
-					"name": "attacks",
-					"type": "Array"
-				},
-				{
-					"element_type": "SpellData",
-					"name": "innate_spells",
-					"type": "Array"
-				},
-				{
-					"name": "is_two_handed",
-					"type": "bool"
 				},
 				{
 					"name": "item_name",
@@ -1058,6 +1034,165 @@
 				{
 					"name": "price",
 					"type": "int"
+				},
+				{
+					"element_type": "AttackData",
+					"name": "attacks",
+					"type": "Array"
+				},
+				{
+					"name": "grants_casting",
+					"type": "bool"
+				},
+				{
+					"element_type": "Effect",
+					"name": "on_equip_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "Effect",
+					"name": "on_unequip_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ProcDef",
+					"name": "proc_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ConditionalModifier",
+					"name": "conditional_modifiers",
+					"type": "Array"
+				},
+				{
+					"name": "spell_cost_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "bonus_prep_slots",
+					"type": "int"
+				},
+				{
+					"name": "bonus_mana_regen",
+					"type": "float"
+				},
+				{
+					"element_type": "",
+					"name": "affinity_tags",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/tome_data.gd"
+		},
+		"WeaponData": {
+			"extends": "EquipmentData",
+			"properties": [
+				{
+					"name": "attack_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"element_type": "SpellData",
+					"name": "innate_spells",
+					"type": "Array"
+				},
+				{
+					"name": "is_two_handed",
+					"type": "bool"
+				},
+				{
+					"enum_values": {
+						"Either": 2,
+						"Mainhand Only": 0,
+						"Offhand Only": 1
+					},
+					"name": "hand_restriction",
+					"type": "enum"
+				},
+				{
+					"element_type": "AttackData",
+					"name": "locked_offhand_attacks",
+					"type": "Array"
+				},
+				{
+					"element_type": "AttackData",
+					"name": "as_offhand_attacks",
+					"type": "Array"
+				},
+				{
+					"name": "item_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "sprite_frames",
+					"resource_type": "SpriteFrames",
+					"type": "Resource"
+				},
+				{
+					"name": "paper_doll_front",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "paper_doll_back",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "equip_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"name": "unequip_sfx",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "stat_modifiers",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"name": "scene",
+					"resource_type": "PackedScene",
+					"type": "Resource"
+				},
+				{
+					"enum_values": {
+						"Feet": 2,
+						"Hands": 1,
+						"Head": 5,
+						"Legs": 3,
+						"Offhand": 6,
+						"Torso": 4,
+						"Weapon": 0
+					},
+					"name": "slot",
+					"type": "enum"
+				},
+				{
+					"name": "is_ring",
+					"type": "bool"
+				},
+				{
+					"name": "price",
+					"type": "int"
+				},
+				{
+					"element_type": "AttackData",
+					"name": "attacks",
+					"type": "Array"
+				},
+				{
+					"name": "grants_casting",
+					"type": "bool"
 				},
 				{
 					"element_type": "Effect",
@@ -1160,6 +1295,11 @@
 			"MAIN_MENU": 0,
 			"VICTORY": 5,
 			"WORLD_MAP": 2
+		},
+		"Enums.HandRestriction": {
+			"EITHER": 2,
+			"MAINHAND_ONLY": 0,
+			"OFFHAND_ONLY": 1
 		},
 		"Enums.NodeState": {
 			"AVAILABLE": 1,

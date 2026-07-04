@@ -42,6 +42,8 @@ export const CONTENT_TYPES = [
   { label: "Weapons",      cls: "WeaponData",      dir: "res://resources/equipment/weapons/" },
   { label: "Armor & Rings",cls: "EquipmentData",   dir: "res://resources/equipment/armor/" },
   { label: "Attacks",      cls: "AttackData",       dir: "res://resources/attacks/" },
+  { label: "Enemy Patterns",cls: "EnemyPatternData", dir: "res://resources/enemy_patterns/" },
+  { label: "Enemy Moves",  cls: "EnemyMoveData",    dir: "res://resources/enemy_moves/" },
   { label: "Effects",      cls: "DamageEffect",     dir: "res://resources/effects/" },
   { label: "Classes",      cls: "PlayerClassData",  dir: "res://resources/classes/" },
   { label: "Backgrounds",  cls: "BackgroundData",   dir: "res://resources/backgrounds/" },

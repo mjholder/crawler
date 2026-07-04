@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import type { GameSchema } from "../types/schema.js";
 import { getAllProperties } from "../types/schema.js";
+import { FIELD_VISIBILITY } from "../types/fieldVisibility.js";
 import { api } from "../api.js";
 import { FieldRenderer, FormRow } from "./FieldRenderer.js";
 import { WhereUsed } from "./WhereUsed.js";
@@ -63,7 +64,9 @@ export function ResourceForm({ resPath, schema, onNavigate }: Props) {
 
   const meta = data._godot_meta as Record<string, unknown> | undefined;
   const cls = (meta?.class as string) ?? "";
-  const props = getAllProperties(cls, schema);
+  const allProps = getAllProperties(cls, schema);
+  const predicate = FIELD_VISIBILITY[cls];
+  const props = predicate ? allProps.filter((p) => predicate(p.name, data)) : allProps;
   const uid = (meta?.uid as string) ?? "";
 
   return (

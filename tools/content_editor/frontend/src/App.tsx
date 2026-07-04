@@ -5,6 +5,8 @@ import { api } from "./api.js";
 import { Sidebar } from "./components/Sidebar.js";
 import { ResourceForm } from "./components/ResourceForm.js";
 import { ResourceTable } from "./components/ResourceTable.js";
+import { EventTable } from "./components/events/EventTable.js";
+import { DialogueTable } from "./components/DialogueTable.js";
 import { DialogueEditor } from "./components/DialogueEditor.js";
 import { EventEditor } from "./components/events/EventEditor.js";
 import { FloorSlotBuilder } from "./components/FloorSlotBuilder.js";
@@ -68,6 +70,14 @@ export function App() {
     setSelectedPath(prev.path);
   }
 
+  // Open a path in form view (used by every table's row-click).
+  function openFormAt(path: string) {
+    if (!selectedType) return;
+    setSelectedPath(path);
+    setViewMode("form");
+    setNavStack((s) => [...s, { type: selectedType, path }]);
+  }
+
   const canGoBack = navStack.length >= 2;
 
   if (schemaError) {
@@ -97,9 +107,12 @@ export function App() {
   }
 
   const isBuilderView = selectedType !== null && BUILDER_VIEWS.has(selectedType);
-  const isCustomView = selectedType === "DialogueData"
-    || (selectedType !== null && EVENT_TYPES.has(selectedType))
-    || isBuilderView;
+  const isEventView = selectedType !== null && EVENT_TYPES.has(selectedType);
+  const isDialogueView = selectedType === "DialogueData";
+  const isCustomView = isDialogueView || isEventView || isBuilderView;
+  // Events and dialogue keep a custom form editor but now also get a table view;
+  // only the builder view has no table.
+  const hasTableView = selectedType !== null && !isBuilderView;
 
   return (
     <div style={styles.root}>
@@ -120,7 +133,7 @@ export function App() {
                 ← Back
               </button>
             )}
-            {!isCustomView && (
+            {hasTableView && (
               <>
                 <button
                   style={{ ...styles.modeBtn, ...(viewMode === "form" ? styles.modeBtnActive : {}) }}
@@ -169,12 +182,16 @@ export function App() {
           <ResourceTable
             cls={selectedType}
             schema={schema}
-            onOpenForm={(path) => {
-              setSelectedPath(path);
-              setViewMode("form");
-              setNavStack((s) => [...s, { type: selectedType, path }]);
-            }}
+            onOpenForm={openFormAt}
           />
+        )}
+
+        {selectedType && viewMode === "table" && isEventView && (
+          <EventTable cls={selectedType} onOpenForm={openFormAt} />
+        )}
+
+        {viewMode === "table" && isDialogueView && (
+          <DialogueTable onOpenForm={openFormAt} />
         )}
 
         {selectedType && viewMode === "form" && !selectedPath && !isCustomView && (
@@ -187,16 +204,20 @@ export function App() {
           <ResourceForm resPath={selectedPath} schema={schema} onNavigate={navigateToPath} />
         )}
 
-        {selectedType === "DialogueData" && selectedPath && (
+        {viewMode === "form" && isDialogueView && selectedPath && (
           <DialogueEditor resPath={selectedPath} />
         )}
 
-        {selectedType && EVENT_TYPES.has(selectedType) && selectedPath && (
+        {viewMode === "form" && isEventView && selectedPath && (
           <EventEditor resPath={selectedPath} onNavigate={navigateToPath} />
         )}
 
-        {selectedType && EVENT_TYPES.has(selectedType) && !selectedPath && (
-          <div style={styles.empty}>Select an event from the sidebar.</div>
+        {viewMode === "form" && isEventView && !selectedPath && (
+          <div style={styles.empty}>Select an event from the sidebar, or switch to Table view.</div>
+        )}
+
+        {viewMode === "form" && isDialogueView && !selectedPath && (
+          <div style={styles.empty}>Select a dialogue from the sidebar, or switch to Table view.</div>
         )}
 
         {isBuilderView && selectedType === "FloorSlotBuilder" && (

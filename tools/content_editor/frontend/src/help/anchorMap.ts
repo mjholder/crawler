@@ -38,8 +38,10 @@ export function anchorForView(
   hasPath: boolean
 ): string {
   if (!selectedType) return "sidebar";
-  if (isCustomView) return EVENT_ANCHOR[selectedType] ?? "event-editor";
+  // Events and dialogue are custom views but now also have a table; the table help
+  // applies whenever we're in table mode.
   if (viewMode === "table") return "table-view";
+  if (isCustomView) return EVENT_ANCHOR[selectedType] ?? "event-editor";
   if (!hasPath) return "form-view";
   return CLASS_TO_ANCHOR[selectedType] ?? "form-view";
 }

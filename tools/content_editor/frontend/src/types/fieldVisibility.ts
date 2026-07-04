@@ -23,6 +23,19 @@ export const FIELD_VISIBILITY: Record<string, FieldPredicate> = {
     if (propName === "event_type") return data.event == null;
     return true;
   },
+
+  WeaponData: (propName, data) => {
+    // The two offhand movesets only apply in specific configurations:
+    //  - as_offhand_attacks: this weapon's moveset while IT sits in the offhand,
+    //    so only relevant when it may be equipped there (hand_restriction EITHER = 2).
+    //  - locked_offhand_attacks: actions granted to the locked offhand while this
+    //    two-hander holds the mainhand, so only relevant when is_two_handed.
+    switch (propName) {
+      case "as_offhand_attacks":     return data.hand_restriction === 2; // EITHER
+      case "locked_offhand_attacks": return data.is_two_handed === true;
+      default:                       return true;
+    }
+  },
 };
 
 // Override the directory scanned for a Resource-typed field.
