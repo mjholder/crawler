@@ -18,6 +18,21 @@ backlog lean. Ideas with a foundation shipped but real work left stay here as `p
 
 ---
 
+**Idea:** Consecutive-attack dodge decay (per-round)
+**Added:** 2026-07-05
+**Notes:** AGI-based dodge currently reads as more satisfying than DEF-based mitigation (binary dodge event vs. quiet flat damage reduction) — partly a starting-numbers issue, but also likely an inherent property of discrete vs. smooth defensive math worth keeping in mind separately. This idea addresses a related but distinct problem: uncapped flat dodge chance lets a high-AGI build occasionally no-sell an entire multi-attack round through variance, which undercuts the 5–8 turn attrition-based pacing goal.
+
+Proposed fix: dodge chance halves after each successful dodge against the player within the same round, regardless of source — e.g., a 3-enemy round at 100% dodge: first attack rolls at 100% and is dodged, chance drops to 50% for the second, dodged again drops to 25% for the third, which lands. Resets to full at the start of the next round. Applies identically whether the pressure comes from multiple enemies or a single enemy's multi-attack move within one turn.
+
+Only a successful dodge triggers the decay — an attack that misses for an unrelated reason (e.g. enemy-side accuracy debuff like blind) does not halve dodge chance, since the decay represents the player's own evasion being read/exploited, not just attack volume.
+
+This gives evasive builds a strong, satisfying early-round payoff while preventing "untouchable" degenerate cases, and creates a legible counterplay axis for enemy design — an enemy (or encounter) with several attacks per turn becomes specifically good into AGI-heavy builds without being a hard counter, fitting the "some builds are naturally favored, nothing absolute" enemy philosophy. Pairs with the sparring-partner "evasive skirmisher" archetype already scoped.
+
+Also flagged: this doesn't resolve the deeper open question of whether dodge (binary) and mitigation (smooth) should even be structurally symmetric, or whether AGI and DEF are meant to feel different on purpose — separate thread, likely folded into the balance-legibility baseline work once base stats/growth rates are revisited.
+**Status:** `worth exploring`
+
+---
+
 **Idea:** Player Class Roster — 10-class stat-coverage matrix
 **Added:** 2026-07-04
 **Notes:** Full class roster to unblock content generation and give the balance pass a finite, comparable target — same discipline as the elemental caster kit matrix (build to a shared skeleton, tune one, copy deltas). Each class differentiates primarily through stat block + starting kit/spells, not bespoke mechanics. Classes stay mechanical/archetypal in naming; gothic flavor lives in the Background layer instead, avoiding overlap.
