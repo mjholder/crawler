@@ -51,6 +51,7 @@ func _on_enter(game: Node) -> void:
 	enemy_move_performed.connect(game._on_enemy_move_performed)
 	wave_started.connect(game._on_combat_wave_started)
 	wave_completed.connect(game._on_combat_wave_completed)
+	game.player_turn_started.connect(_on_round_started)
 	game._gui.set_sheathed(false)
 	game._gui.set_player_turn(false)
 	game._start_combat_music()
@@ -67,6 +68,7 @@ func _on_exit(game: Node) -> void:
 	enemy_move_performed.disconnect(game._on_enemy_move_performed)
 	wave_started.disconnect(game._on_combat_wave_started)
 	wave_completed.disconnect(game._on_combat_wave_completed)
+	game.player_turn_started.disconnect(_on_round_started)
 	for enemy in _enemies:
 		game._gui.remove_enemy_health_bar(enemy)
 	game._gui.set_sheathed(true)
@@ -239,6 +241,14 @@ func _on_enemy_turn_ended() -> void:
 
 
 # --- Signal Handlers ---
+
+## Each round starts with the player's turn; refresh every living enemy's armor buffer so it
+## is full going into the phase where the player attacks (mirrors player.begin_turn).
+func _on_round_started() -> void:
+	for e in _enemies:
+		if not e.is_dead:
+			e.refresh_armor()
+
 
 func _on_enemy_attacked(damage: float) -> void:
 	player_attacked.emit(damage)

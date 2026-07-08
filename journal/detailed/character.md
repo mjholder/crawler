@@ -633,6 +633,21 @@ Reads from `EquipmentData.stat_modifiers` directly — not from Equipment nodes.
 
 `_calculate_damage()` and `_apply_defense()` call `get_effective_stat()` rather than reading raw floats directly — so buffs automatically flow into attack/defense math without extra wiring.
 
+**Defense — armor buffer (not percentage).** `DEF` no longer scales damage by a percentage.
+Each combatant carries an `armor` buffer whose maximum (`max_armor`) is the effective DEF;
+`_apply_defense()` subtracts incoming damage from the buffer and only the overflow reaches
+HP. The buffer refreshes to full at the **start of each round** — `player.begin_turn()` for
+the player, `CombatEvent._on_round_started()` (off `game.player_turn_started`) for enemies,
+which take damage during the player's turn. A hit larger than the remaining buffer pierces
+straight to HP, so DEF can't reach immunity. A fully-absorbed hit deals 0 (no 1-damage
+floor) and emits `armor_absorbed` for a combat-log line rather than a hurt flash.
+
+**Agility — decaying dodge.** `_roll_dodge()` reads dodge chance as `AGI/100`, halved once
+per successful dodge already made this round (`_dodge_streak`, reset in `begin_turn()`).
+Only a *successful* dodge decays the chance. See [[design.md]] "DEF is a refreshing per-round
+armor buffer; AGI dodge decays within a round" (2026-07-07). `armor`, `max_armor`, and
+`_dodge_streak` are transient combat state and are not saved.
+
 ---
 
 ## PlayerClassData Resource

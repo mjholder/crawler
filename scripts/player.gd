@@ -31,6 +31,10 @@ signal learned_spells_changed(spells: Array)
 signal prepared_spells_changed(spells: Array)
 signal prep_slots_changed(new_size: int)
 signal dodged
+## Per-round armor buffer (DEF-derived) changed — current/maximum. UI listens to draw it.
+signal armor_changed(current: float, maximum: float)
+## A hit was (partly or wholly) soaked by the armor buffer. Drives combat-log feedback.
+signal armor_absorbed(absorbed: float)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -64,6 +68,12 @@ enum Hand { MAINHAND, OFFHAND }
 var _state: State = State.IDLE
 var max_health: float = 0.0
 var health: float = 0.0
+# Per-round armor buffer: absorbs incoming damage before HP, refreshed to effective DEF at
+# the start of each round (begin_turn). Transient combat state — not saved.
+var armor: float = 0.0
+var max_armor: float = 0.0
+# Successful dodges so far this round; dodge chance halves per prior dodge (see _roll_dodge).
+var _dodge_streak: int = 0
 var max_mana: float = 0.0
 var mana: float = 0.0
 var prep_slots: int = 0
@@ -206,6 +216,9 @@ func reset_run_state() -> void:
 	_mainhand_used = false
 	_offhand_used = false
 	_action_resolving = false
+	armor = 0.0
+	max_armor = 0.0
+	_dodge_streak = 0
 	_attack_animation_pending = false
 	_cast_animation_pending = false
 	is_dead = false
@@ -348,6 +361,16 @@ func begin_turn() -> void:
 	_mainhand_used = false
 	_offhand_used = _offhand_has_no_action()
 	_action_resolving = false
+	# Round start: full dodge chance and a fresh armor buffer for the round ahead.
+	_dodge_streak = 0
+	refresh_armor()
+
+
+## Refills the armor buffer to the current effective DEF. Called at the start of each round.
+func refresh_armor() -> void:
+	max_armor = get_effective_stat(Enums.Stat.DEFENSE)
+	armor = max_armor
+	armor_changed.emit(armor, max_armor)
 
 
 ## Explicitly ends the player's turn. The End Turn button and the stun path both call
@@ -534,6 +557,11 @@ func take_damage(amount: float) -> void:
 		dodged.emit()
 		return
 	var net_amount: float = _apply_defense(amount)
+	var absorbed := amount - net_amount
+	if absorbed > 0.0:
+		armor_absorbed.emit(absorbed)
+	if net_amount <= 0.0:
+		return  # the armor buffer soaked the whole hit — no HP loss, no hurt feedback
 	health = maxf(health - net_amount, 0.0)
 	print("  Player HP: %.0f / %.0f" % [health, max_health])
 	damaged.emit(net_amount)
@@ -560,14 +588,26 @@ func _die() -> void:
 	died.emit()
 
 
+## Dodge chance is (effective AGI as a percent) halved once per successful dodge already
+## made this round — a high-AGI build can't variance-dodge an entire multi-attack round.
+## Only a *successful* dodge decays the chance; the streak resets at round start.
 func _roll_dodge() -> bool:
 	var eff_agi := get_effective_stat(Enums.Stat.AGILITY)
-	return randf() < minf(eff_agi / 100.0, 1.0)
+	var chance := minf(eff_agi / 100.0, 1.0) / pow(2.0, _dodge_streak)
+	if randf() < chance:
+		_dodge_streak += 1
+		return true
+	return false
 
 
+## The armor buffer soaks incoming damage before HP; only the overflow bleeds through. A hit
+## bigger than the remaining buffer pierces to HP, so immunity is impossible by construction.
 func _apply_defense(amount: float) -> float:
-	var eff_def := get_effective_stat(Enums.Stat.DEFENSE)
-	return maxf(amount * (1.0 - minf(eff_def / 100.0, 1.0)), 1.0)
+	var absorbed := minf(armor, amount)
+	armor -= absorbed
+	if absorbed > 0.0:
+		armor_changed.emit(armor, max_armor)
+	return amount - absorbed
 
 
 # --- Equipment ---

@@ -19,6 +19,59 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## DEF is a refreshing per-round armor buffer; AGI dodge decays within a round
+
+**Decision:** Replace the flat-percentage defense and dodge formulas (below, 2026-05-19 —
+now **superseded**) on both `Player` and `Enemy`.
+
+- **DEF → armor buffer.** `_apply_defense()` no longer scales damage by `1 - DEF/100`.
+  Instead each combatant carries an `armor` buffer (`max_armor` = effective DEF) that
+  absorbs incoming damage before HP; only the overflow bleeds through. The buffer refreshes
+  to full at the **start of each round** — `player.begin_turn()` for the player;
+  `CombatEvent._on_round_started()` (subscribed to `game.player_turn_started`) for every
+  living enemy, since enemies take damage during the player's turn. Immunity is impossible
+  by construction: a single hit larger than the remaining buffer pierces straight to HP, no
+  matter how high DEF climbs. The old 1-damage floor is gone — a fully-absorbed hit deals 0
+  and produces no hurt flash/SFX (`armor_absorbed` fires a combat-log line instead).
+- **AGI → decaying dodge.** `_roll_dodge()` still reads dodge chance as `AGI/100`, but that
+  chance halves once per successful dodge already made **this round** (`_dodge_streak`,
+  reset in `begin_turn()`). Only a *successful* dodge decays it, so an unrelated miss (a
+  future blind/accuracy debuff) won't. Stops a high-AGI build variance-dodging an entire
+  multi-attack round.
+
+New signals: `Player.armor_changed` / `Player.armor_absorbed`, `Enemy.armor_changed`, drawn
+by the GUI (`update_player_armor`, `update_enemy_armor`; a `PlayerArmorBar` and an `Armor`
+overlay sprite on the enemy `HealthBar`). `armor` / `max_armor` / `_dodge_streak` are
+transient combat state and are **not** saved.
+
+**Date:** 2026-07-07
+**Daily:** [[daily/2026-07-07]]
+**Context:** The flat-percentage formula was legible but degenerate at the ceiling — every
+DEF point is a flat 1% with no soft cap, so DEF 100 = literal immunity, and the planned
+Sentinel is explicitly a DEF-stacking class. Dodge had a parallel problem: uncapped flat
+chance let a high-AGI build occasionally no-sell a whole multi-attack round through variance,
+undercutting the 5–8-turn attrition pacing. See [[ideas.md]] — "DEF as refreshing ward"
+(2026-07-06) and "Consecutive-attack dodge decay" (2026-07-05).
+**Alternatives considered:** Keep percentage but hand out less DEF in loot (holds the average
+down but not the Sentinel's ceiling — tuning, not structure). A diminishing-returns curve
+(soft cap but illegible — already shelved once). For dodge, a hard cap on chance (blunter,
+less legible than per-round decay).
+**Rationale:** The armor buffer soft-gates structurally instead of by tuning, stays
+board-game legible ("50 armor eats 50 damage a round, then I bleed"), and auto-scales across
+acts for free (a fixed buffer is huge vs Act 1 numbers, a rounding error vs Act 3 nukes).
+It also makes DEF and AGI *complementary* rather than redundant: armor soaks flurries of
+small hits and is weak to one big nuke; dodge is strong vs few big hits and decays under
+flurries — two near-opposite enemy-design axes. Applied to enemies too for symmetry and to
+give the same legible model to the whole combat surface.
+**Trade-offs / risks:** If the buffer ever exceeds a round's *total* incoming, chip is fully
+nullified for that round — immunity in a new coat. Self-correcting: multi-enemy rounds stack
+past the buffer and the act scale-down erodes it, but base armor must stay modest enough to
+*blunt* attrition, not erase it. Enemies have no clean per-round hook of their own, so their
+refresh is driven externally from `CombatEvent`. Gear/enemy DEF values tuned for the old
+percentage will need a balance pass.
+
+---
+
 ## Per-hand weapon restriction, offhand moveset, and animated offhand weapons
 
 **Decision:** Weapons declare where they may be equipped via `WeaponData.hand_restriction`
@@ -179,6 +232,11 @@ guard that cancels a dangling selection if the panel closes.
 
 **Date:** 2026-05-19
 **Daily:** [[daily/2026-05-19]]
+
+> **Superseded (2026-07-07)** by "DEF is a refreshing per-round armor buffer; AGI dodge
+> decays within a round" (above). DEF is no longer a percentage — it's an armor buffer that
+> absorbs damage before HP and refreshes each round; dodge chance now decays per successful
+> dodge within a round. The legibility goal below still holds; only the formulas changed.
 
 **Decision:** `DEF` and `AGI` are both direct percentages. `DEF = 50` means 50% damage resistance. `AGI = 15` means 15% dodge chance. No scaling constants.
 

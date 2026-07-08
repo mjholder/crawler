@@ -32,6 +32,8 @@ signal continue_requested
 @onready var _player_hud: Control = $PlayerHUD
 @onready var _player_health_label: Label = $PlayerHUD/PlayerHealthLabel
 @onready var _player_health_bar: ProgressBar = $PlayerHUD/PlayerHealthBar
+@onready var _player_armor_bar: ProgressBar = get_node_or_null("PlayerHUD/PlayerArmorBar")
+@onready var _player_armor_label: Label = get_node_or_null("PlayerHUD/PlayerArmorLabel")
 @onready var _player_gold_label: Label = $PlayerHUD/PlayerGoldLabel
 @onready var _player_xp_label: Label = $PlayerHUD/PlayerXPLabel
 @onready var _combat_hud: Control = $CombatHUD
@@ -297,6 +299,19 @@ func update_player_health(current: float, maximum: float) -> void:
 	_player_health_bar.value = current
 
 
+## Draws the per-round armor buffer below the health bar. Hidden entirely for a no-DEF
+## build (maximum <= 0) so it only shows up when the player actually has armor.
+func update_player_armor(current: float, maximum: float) -> void:
+	var has_armor := maximum > 0.0
+	if _player_armor_bar != null:
+		_player_armor_bar.visible = has_armor
+		_player_armor_bar.max_value = maximum
+		_player_armor_bar.value = current
+	if _player_armor_label != null:
+		_player_armor_label.visible = has_armor
+		_player_armor_label.text = "Armor %d/%d" % [int(current), int(maximum)]
+
+
 func update_player_mana(current: float, maximum: float) -> void:
 	if _player_mana_label == null or _player_mana_bar == null:
 		return
@@ -334,6 +349,7 @@ func add_enemy_health_bar(enemy: Enemy) -> void:
 	var bar = _health_bar_scene.instantiate()
 	bar.set_max_health(enemy.max_health)
 	bar.set_current_health(enemy.health)
+	bar.set_armor(enemy.armor, enemy.max_armor)
 	var screen_pos: Vector2 = get_viewport().get_canvas_transform() * enemy.global_position
 	bar.position = screen_pos + enemy_health_bar_offset
 	_enemy_hud.add_child(bar)
@@ -352,6 +368,12 @@ func update_enemy_health_bar(enemy: Enemy, current: float) -> void:
 	if not _enemy_bars.has(enemy):
 		return
 	_enemy_bars[enemy].set_current_health(current)
+
+
+func update_enemy_armor(enemy: Enemy, current: float, maximum: float) -> void:
+	if not _enemy_bars.has(enemy):
+		return
+	_enemy_bars[enemy].set_armor(current, maximum)
 
 
 func add_enemy_status_label(enemy: Enemy) -> void:

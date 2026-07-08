@@ -8,6 +8,8 @@ signal death_finished
 signal turn_ended
 signal attack(damage: float)
 signal move_performed(move: EnemyMoveData)
+## Per-round armor buffer (DEF-derived) changed — current/maximum. UI listens to draw it.
+signal armor_changed(current: float, maximum: float)
 
 # --- Stats ---
 @export var enemy_name: String = "Enemy"
@@ -21,6 +23,10 @@ signal move_performed(move: EnemyMoveData)
 
 # --- State ---
 var health: float
+# Per-round armor buffer: absorbs incoming damage before HP. Refreshed to effective DEF each
+# round by CombatEvent (enemies take damage during the player's turn, so refresh at round start).
+var armor: float = 0.0
+var max_armor: float = 0.0
 var is_dead: bool = false
 var _turn_pending: bool = false
 var _death_finished_emitted: bool = false
@@ -96,9 +102,20 @@ func take_damage(amount: float) -> void:
 		_die()
 
 
+## The armor buffer soaks incoming damage before HP; only the overflow bleeds through.
 func _apply_defense(amount: float) -> float:
-	var eff_def := get_effective_stat(Enums.Stat.DEFENSE)
-	return maxf(amount * (1.0 - minf(eff_def / 100.0, 1.0)), 0.0)
+	var absorbed := minf(armor, amount)
+	armor -= absorbed
+	if absorbed > 0.0:
+		armor_changed.emit(armor, max_armor)
+	return amount - absorbed
+
+
+## Refills the armor buffer to the current effective DEF. Called at each round start.
+func refresh_armor() -> void:
+	max_armor = get_effective_stat(Enums.Stat.DEFENSE)
+	armor = max_armor
+	armor_changed.emit(armor, max_armor)
 
 
 func _get_base_stat(stat: Enums.Stat) -> float:
@@ -131,6 +148,7 @@ func _emit_death_finished() -> void:
 
 func _on_ready() -> void:
 	health = max_health
+	refresh_armor()  # full armor before the player can hit it on the spawn turn
 
 
 
