@@ -367,7 +367,10 @@ func begin_turn() -> void:
 
 
 ## Refills the armor buffer to the current effective DEF. Called at the start of each round.
+## Shatter: skipped while a suppressing status is active, so the buffer stays depleted.
 func refresh_armor() -> void:
+	if has_armor_refresh_suppressed():
+		return
 	max_armor = get_effective_stat(Enums.Stat.DEFENSE)
 	armor = max_armor
 	armor_changed.emit(armor, max_armor)
@@ -550,13 +553,13 @@ func _add_to_base_stat(stat: Enums.Stat, amount: float) -> void:
 
 # --- Combat ---
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, pierce: float = 0.0) -> void:
 	if is_dead:
 		return
 	if _roll_dodge():
 		dodged.emit()
 		return
-	var net_amount: float = _apply_defense(amount)
+	var net_amount: float = _apply_defense(amount, pierce)
 	var absorbed := amount - net_amount
 	if absorbed > 0.0:
 		armor_absorbed.emit(absorbed)
@@ -602,8 +605,11 @@ func _roll_dodge() -> bool:
 
 ## The armor buffer soaks incoming damage before HP; only the overflow bleeds through. A hit
 ## bigger than the remaining buffer pierces to HP, so immunity is impossible by construction.
-func _apply_defense(amount: float) -> float:
-	var absorbed := minf(armor, amount)
+## `pierce` reduces how much of the buffer can absorb THIS hit; the pierced-past armor is left
+## intact for later hits (pierce bypasses one hit, it doesn't drain the buffer).
+func _apply_defense(amount: float, pierce: float = 0.0) -> float:
+	var effective_armor := maxf(armor - pierce, 0.0)
+	var absorbed := minf(effective_armor, amount)
 	armor -= absorbed
 	if absorbed > 0.0:
 		armor_changed.emit(armor, max_armor)

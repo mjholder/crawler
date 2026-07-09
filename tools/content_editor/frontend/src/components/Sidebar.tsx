@@ -82,10 +82,12 @@ export function Sidebar({ selectedType, onSelectType, selectedPath, onSelectPath
     let createCls = cls;
     if (cls === "DamageEffect") {
       const pick = window.prompt(
-        "Effect type:\n1 DamageEffect\n2 HealEffect\n3 BuffEffect\n4 StatusEffect\n\nEnter number:"
+        "Effect type:\n1 DamageEffect\n2 HealEffect\n3 BuffEffect\n4 StatusEffect\n" +
+          "5 BurstDamageEffect\n6 ChainDamageEffect\n7 GatedBleedEffect\n8 BraceEffect\n\nEnter number:"
       );
       const map: Record<string, string> = {
         "1": "DamageEffect", "2": "HealEffect", "3": "BuffEffect", "4": "StatusEffect",
+        "5": "BurstDamageEffect", "6": "ChainDamageEffect", "7": "GatedBleedEffect", "8": "BraceEffect",
       };
       createCls = map[pick?.trim() ?? ""] ?? "DamageEffect";
     }

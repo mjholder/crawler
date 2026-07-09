@@ -90,10 +90,10 @@ func _emit_attack() -> void:
 
 # --- Combat ---
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, pierce: float = 0.0) -> void:
 	if is_dead:
 		return
-	var net_amount: float = _apply_defense(amount)
+	var net_amount: float = _apply_defense(amount, pierce)
 	health -= net_amount
 	print("  %s HP: %.0f / %.0f" % [enemy_name, health, max_health])
 	damaged.emit(net_amount)
@@ -103,8 +103,10 @@ func take_damage(amount: float) -> void:
 
 
 ## The armor buffer soaks incoming damage before HP; only the overflow bleeds through.
-func _apply_defense(amount: float) -> float:
-	var absorbed := minf(armor, amount)
+## `pierce` reduces how much of the buffer can absorb THIS hit (leaves the rest intact).
+func _apply_defense(amount: float, pierce: float = 0.0) -> float:
+	var effective_armor := maxf(armor - pierce, 0.0)
+	var absorbed := minf(effective_armor, amount)
 	armor -= absorbed
 	if absorbed > 0.0:
 		armor_changed.emit(armor, max_armor)
@@ -112,7 +114,10 @@ func _apply_defense(amount: float) -> float:
 
 
 ## Refills the armor buffer to the current effective DEF. Called at each round start.
+## Shatter: skipped while a suppressing status is active, so the buffer stays depleted.
 func refresh_armor() -> void:
+	if has_armor_refresh_suppressed():
+		return
 	max_armor = get_effective_stat(Enums.Stat.DEFENSE)
 	armor = max_armor
 	armor_changed.emit(armor, max_armor)

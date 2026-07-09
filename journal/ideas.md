@@ -29,7 +29,8 @@ backlog lean. Ideas with a foundation shipped but real work left stay here as `p
 **Lightning** — chains to one random adjacent enemy at half damage. "Adjacent" = array-index-adjacent in the wave's enemy list (no real battlefield-position system exists, so this is the pragmatic placeholder — revisit only if a real formation system ever gets built). Can't be authored as two independent list effects, since `Effect.apply(source, target)` has no way to see the rest of the enemy roster — needs a self-contained effect that resolves the primary hit and internally reaches into the current `CombatEvent`'s enemy list to find and half-damage a neighbor. Small new plumbing (an Effect needing roster access, which nothing today requires), not a targeting-system change — the player still picks one target through the existing single-target flow.
 
 **Ice / Frost** — merged into one element, chill dropped. The signature mechanic is just armor-pierce — no separate DoT/debuff needed. Pierce is a damage-shape property, not an inherently magical one, so it's not locked to a caster kit — mundane weapons can carry it too. Frost-as-caster-flavor can still exist later purely for itemization around the same generic pierce tag, without pierce being exclusive to it. Simplifies what the still-deferred magic-type roster pass has to account for.
-**Status:** `worth exploring`
+**Status:** `partially done`
+**Shipped (2026-07-09):** the *systems*, ready for `.tres` authoring (no content authored yet). Fire → `BurstDamageEffect` (scales by `turns_remaining` via the new `Effect.apply_tick` hook). Lightning → `ChainDamageEffect` (arcs to the array-adjacent enemy via the scene tree). Frost → armor `pierce` threaded through `take_damage`/`_apply_defense` + `DamageEffect.pierce_expression`. Poison already worked (`STACK`). See [[design.md]] "Elemental & martial status-verb systems" and [[daily/2026-07-09]]. **Remaining:** author the actual element `.tres` (burst burn, chain bolt, pierce weapons/spells) + balance.
 
 ---
 
@@ -46,7 +47,8 @@ backlog lean. Ideas with a foundation shipped but real work left stay here as `p
 **Shatter** — suppresses armor refresh for X rounds. `refresh_armor()` is only called from two places (`player.begin_turn()`, `CombatEvent._on_round_started()`), so a suppression flag just needs those two sites to check it first. Symmetric — usable by the player against armored enemies or by enemies against the player. Structural sibling to pierce (pierce bypasses one hit; Shatter denies the safety net for a stretch) — burst-through vs. lockout, not a duplicate. Pairs with a "shatter brute" sparring archetype as the DEF-stacking counter-test.
 
 **Brace** — a one-round armor bonus. Adds flat armor directly to current armor (clamped to max) and raises `max_armor` for that round, touching those fields directly rather than routing through a stat buff or `refresh_armor()`. Works as a bonus on a normal refresh, and as a way to claw back armor when Shatter has suppressed the round's refresh — giving Brace and Shatter a legible counter-relationship.
-**Status:** `worth exploring`
+**Status:** `partially done`
+**Shipped (2026-07-09):** the *systems*, ready for `.tres` authoring (no content authored yet). Bleed → `GatedBleedEffect` (deals damage, applies its status only if HP actually dropped; combos with `pierce`). Shatter → `StatusData.suppresses_armor_refresh` gating `refresh_armor()` (symmetric player/enemy). Brace → `BraceEffect` (raises `max_armor`/`armor` directly, resets on next refresh). Bleed's status reuses `duration:-1` + `persistence:COMBAT`. See [[design.md]] "Elemental & martial status-verb systems" and [[daily/2026-07-09]]. **Remaining:** author the `.tres` (bleed weapon/status, shatter status + shield-bash, brace stance), Sentinel shield-kit pass, Bleed cure path, balance.
 
 ---
 

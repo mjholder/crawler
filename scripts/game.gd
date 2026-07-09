@@ -376,6 +376,7 @@ func _on_continue_requested() -> void:
 func set_player(p: Player) -> void:
 	player = p
 	player._game = self
+	player._status_bus = self
 	player.turn_ended.connect(_on_player_turn_ended)
 	player.died.connect(_on_player_died)
 	player.damaged.connect(_on_player_damaged)
@@ -876,6 +877,7 @@ func _on_gui_town_travel_requested() -> void:
 
 
 func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
+	enemy._status_bus = self
 	var index := (current_event as CombatEvent)._enemies.size() - 1
 	enemy.position = _calculate_enemy_position(index, total_expected)
 	_scale_sprite_to_viewport(enemy.get_node("Sprite"))

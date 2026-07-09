@@ -133,6 +133,20 @@
 			],
 			"script": "res://scripts/boss_event_data.gd"
 		},
+		"BraceEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"name": "amount_expression",
+					"type": "String"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/brace_effect.gd"
+		},
 		"BuffEffect": {
 			"extends": "Effect",
 			"properties": [
@@ -162,6 +176,46 @@
 				}
 			],
 			"script": "res://scripts/buff_effect.gd"
+		},
+		"BurstDamageEffect": {
+			"extends": "DamageEffect",
+			"properties": [
+				{
+					"name": "damage_expression",
+					"type": "String"
+				},
+				{
+					"name": "pierce_expression",
+					"type": "String"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/burst_damage_effect.gd"
+		},
+		"ChainDamageEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"name": "damage_expression",
+					"type": "String"
+				},
+				{
+					"name": "pierce_expression",
+					"type": "String"
+				},
+				{
+					"name": "chain_multiplier",
+					"type": "float"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/chain_damage_effect.gd"
 		},
 		"CombatEventData": {
 			"extends": "",
@@ -347,6 +401,10 @@
 			"properties": [
 				{
 					"name": "damage_expression",
+					"type": "String"
+				},
+				{
+					"name": "pierce_expression",
 					"type": "String"
 				},
 				{
@@ -626,6 +684,29 @@
 				}
 			],
 			"script": "res://scripts/floor_slot.gd"
+		},
+		"GatedBleedEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"name": "damage_expression",
+					"type": "String"
+				},
+				{
+					"name": "pierce_expression",
+					"type": "String"
+				},
+				{
+					"name": "status_data",
+					"resource_type": "StatusData",
+					"type": "Resource"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/gated_bleed_effect.gd"
 		},
 		"HealEffect": {
 			"extends": "Effect",
@@ -955,6 +1036,16 @@
 					},
 					"name": "persistence",
 					"type": "enum"
+				},
+				{
+					"name": "suppresses_armor_refresh",
+					"type": "bool"
+				},
+				{
+					"key_type": "StringName",
+					"name": "subscriptions",
+					"type": "Dictionary",
+					"value_type": "Effect"
 				}
 			],
 			"script": "res://scripts/status_data.gd"

@@ -62,6 +62,10 @@
     "stat_modifiers": { "key_type": "Enums.Stat", "value_type": "float" },
     "on_apply": { "resource_type": "Effect" },
     "on_tick": { "resource_type": "Effect" },
-    "on_expire": { "resource_type": "Effect" }
+    "on_expire": { "resource_type": "Effect" },
+    "subscriptions": { "key_type": "StringName", "value_type": "Effect" }
+  },
+  "GatedBleedEffect": {
+    "status_data": { "resource_type": "StatusData" }
   }
 }

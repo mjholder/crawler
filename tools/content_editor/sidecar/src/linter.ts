@@ -24,6 +24,7 @@ const EXPRESSION_FIELDS = new Set([
   "amount_expression",
   "chance_expression",
   "guard_expression",
+  "pierce_expression",
 ]);
 
 export interface LintError {

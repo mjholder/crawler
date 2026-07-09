@@ -19,6 +19,68 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Elemental & martial status-verb systems (hybrid: bus subscriptions + per-verb plumbing)
+
+**Date:** 2026-07-09
+**Daily:** [[daily/2026-07-09]]
+
+**Decision:** Land the *systems* for the two top [[ideas.md]] entries — elemental signatures
+(Poison/Fire/Lightning/Frost) and martial verbs (Bleed/Shatter/Brace) — as plumbing only, ready
+for `.tres` authoring next. No content authored yet; every new field/behavior defaults to a
+no-op, so in-game behavior is unchanged until resources exist. Each mechanism uses the tool that
+fits it (**hybrid**), rather than forcing everything through one channel:
+
+- **Status `subscriptions` (bus).** `StatusData.subscriptions: Dictionary` (signal-name → Effect),
+  wired to the `game.gd` lifecycle bus on `apply_status` and disconnected on removal / combat-end
+  clear / expiry — mirroring `BlessingData.subscriptions` and reusing the `Subscription` helper.
+  The bus ref is injected into `Combatant._status_bus` (Player at `set_player`, Enemy at
+  `_on_combat_enemy_added`). This is the forward-looking foundation for *reactive* statuses
+  (on-damaged, on-kill); none of the six verbs below centrally need it, but it's the requested
+  home for future status content and keeps statuses consistent with procs/blessings.
+- **Fire — burst DoT** via a new `Effect.apply_tick(source, target, instance)` hook (defaults to
+  `apply`, so existing tick effects are untouched). `_tick_statuses` calls it with the owning
+  `StatusInstance`; `BurstDamageEffect` reads `instance.turns_remaining` (tick fires *before* the
+  decrement, so a `duration:3` burn sees 3→2→1).
+- **Frost — armor pierce.** `take_damage(amount, pierce)` / `_apply_defense(amount, pierce)` on
+  Player and Enemy; `effective_armor = max(armor - pierce, 0)`. Pierce reduces only *this* hit's
+  absorption, leaving the buffer otherwise intact. `DamageEffect` gains `pierce_expression`.
+- **Lightning — chain.** `ChainDamageEffect` reaches the array-adjacent enemy via
+  `target.get_parent().get_children()` (siblings under `CombatEvent/$Enemies`).
+- **Bleed — gated application.** `GatedBleedEffect` deals damage, compares `target.health`
+  before/after, and applies its status only if HP actually dropped. Self-contained.
+- **Shatter — suppress refresh.** `StatusData.suppresses_armor_refresh`; a guard at the top of
+  both `refresh_armor()` bodies covers all three call sites at once.
+- **Brace — one-round armor bump.** `BraceEffect` raises `max_armor` and adds to `armor` directly
+  (clamped), resetting naturally on the next `refresh_armor`.
+
+**Context:** The status-clear groundwork (2026-07-08) unblocked authoring a wave of status verbs.
+The open question was *how effects receive combat context* they don't get from `apply(source,
+target)` — Fire needs its own `turns_remaining`, Lightning needs the roster. The user's steer was
+to lean on the existing lifecycle signal bus (as procs/blessings already do) rather than widen the
+`Effect.apply` contract.
+
+**Alternatives considered:**
+
+- **Widen `Effect.apply(source, target, context)`.** Rejected: churns every effect subclass and
+  call site, and changes a documented contract, to serve two narrow needs.
+- **Route everything through the bus (bus-first).** Rejected for these six: the global bus fires
+  once per round regardless of bearer, so a bus-driven Fire tick desyncs enemy-borne burns from
+  their own countdown; and instant attack-effect logic (Bleed's gated hit, Lightning's roster
+  reach, Brace) has no natural signal to subscribe to. Kept the bus where it fits (reactive
+  statuses) and used the fitting mechanism elsewhere.
+- **Skip the subscription capability entirely.** Rejected: reactive statuses are coming, and the
+  bus pattern already exists for procs/blessings; building the status counterpart now keeps the
+  three consistent and gives authors a ready channel.
+
+**Trade-offs / risks:** The one place this refines the bus steer is Fire's `apply_tick` — a
+per-bearer tick belongs on the bearer's own tick loop, not a global signal. Adds four small
+`Effect` subclasses and two `StatusData` fields; the subscription infra ships unused by these
+verbs (justified as foundation). Save/load wires subscriptions on `apply_status_save_array`, but
+`StatusInstance.source` is null post-load, so a reactive effect that reads its source stats sees
+zeros — acceptable while authored reactive statuses target the bearer.
+
+---
+
 ## Combat-inflicted statuses clear at combat end
 
 **Date:** 2026-07-08
@@ -376,6 +438,8 @@ _roll_dodge:    randf() < clamp(AGI / 100.0, 0, 1)
    - `on_apply: Effect`, `on_tick: Effect`, `on_expire: Effect` — any may be null
    - `stack_policy: enum { REFRESH, STACK, MAX_DURATION }` — default `REFRESH`
    - `persistence: enum { COMBAT, PERSISTENT }` — default `COMBAT`; whether the status survives a fight (added 2026-07-08, see "Combat-inflicted statuses clear at combat end" above)
+   - `suppresses_armor_refresh: bool` — default `false`; while any active status has this set, the bearer's `refresh_armor()` is skipped (Shatter). Added 2026-07-09, see "Elemental & martial status-verb systems" above
+   - `subscriptions: Dictionary` — signal-name → Effect, wired to the lifecycle bus on apply and disconnected on removal/clear, mirroring `BlessingData.subscriptions`. For *reactive* statuses; per-turn ticks stay on `on_tick`. Added 2026-07-09
 
    New `StatusEffect extends Effect` applies a `StatusData` via `target.apply_status(data, source)`. The existing `BuffEffect` becomes a thin wrapper that constructs an inline `StatusData` carrying only `stat_modifiers` and `duration`, so all existing `.tres` files load unchanged.
 

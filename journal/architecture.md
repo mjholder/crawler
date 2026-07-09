@@ -348,9 +348,27 @@ classDiagram
     class Effect {
         <<Resource>>
         +apply(source, target)
+        +apply_tick(source, target, instance)
     }
     class DamageEffect {
         +String damage_expression
+        +String pierce_expression
+    }
+    class BurstDamageEffect {
+        +apply_tick() scales by turns_remaining
+    }
+    class ChainDamageEffect {
+        +String damage_expression
+        +String pierce_expression
+        +float chain_multiplier
+    }
+    class GatedBleedEffect {
+        +String damage_expression
+        +String pierce_expression
+        +StatusData status_data
+    }
+    class BraceEffect {
+        +String amount_expression
     }
     class HealEffect {
         +String heal_expression
@@ -466,8 +484,13 @@ classDiagram
     Effect <|-- HealEffect
     Effect <|-- BuffEffect
     Effect <|-- StatusEffect
+    Effect <|-- ChainDamageEffect
+    Effect <|-- GatedBleedEffect
+    Effect <|-- BraceEffect
+    DamageEffect <|-- BurstDamageEffect
     StatusEffect o-- StatusData
-    StatusData o-- Effect : on_apply/on_tick/on_expire
+    GatedBleedEffect o-- StatusData : status_data
+    StatusData o-- Effect : on_apply/on_tick/on_expire/subscriptions
 ```
 
 ---
@@ -475,6 +498,8 @@ classDiagram
 ## 5. Combatant class hierarchy
 
 `Combatant` is a `Node2D`-extending base class shared by `Player` and `Enemy`. It owns the status system (`_active_statuses`, `apply_status`, `remove_status`, `_tick_statuses`) and a virtual `_get_base_stat`. `get_effective_stat` on `Combatant` computes base + active-status stat_modifiers; `Player` overrides to also sum equipment modifiers. `BuffEffect` and `StatusEffect` both call `target.apply_status()` — valid for both combatants. `Player._on_stat_modifiers_changed()` calls `_recalculate_max_health()` so CON statuses update max HP immediately. See [[design.md]] — Effect System v2 (2026-05-02).
+
+Status statuses can also carry `subscriptions` (signal name → Effect): `apply_status` wires them to the `game.gd` lifecycle bus via `Subscription` (bus injected into `_status_bus` — Player at `set_player`, Enemy at `_on_combat_enemy_added`) and `remove_status`/`clear_combat_statuses`/expiry unwire them, mirroring blessings. `_tick_statuses` invokes `on_tick` via `Effect.apply_tick(source, target, instance)` (defaults to `apply`) so a tick effect can read `instance.turns_remaining` — used by `BurstDamageEffect` (Fire). `has_armor_refresh_suppressed()` gates `refresh_armor()` for Shatter. `take_damage`/`_apply_defense` on both subclasses take an optional `pierce` that reduces this hit's armor absorption (Frost). See [[design.md]] — Elemental & martial status-verb systems (2026-07-09).
 
 `Player.reset_run_state()` is the single owner of per-run teardown (equipment teardown, blessing/status clear, spell roster clear, inventory dungeon-lock reset). Both `initialize()` and `apply_save_dict()` call it first; both game entry points (`_on_character_created`, `_on_continue_requested`) call `Game._reset_run_state()` before touching the player. See [[design.md]] — Run-state reset pattern (2026-05-08).
 
@@ -485,6 +510,7 @@ classDiagram
         +StatusData data
         +int turns_remaining
         +Node source
+        +Subscription _subscription
     }
     class Combatant {
         <<Node2D>>
@@ -492,10 +518,13 @@ classDiagram
         +signal status_ticked(data, turns_remaining)
         +signal status_expired(data)
         -Array~StatusInstance~ _active_statuses
+        -Node _status_bus
         +get_effective_stat(stat) float
         +apply_status(data, source)
         +remove_status(tag)
+        +clear_combat_statuses()
         +has_preventing_status() bool
+        +has_armor_refresh_suppressed() bool
         +get_active_statuses() Array
         +_tick_statuses()
         #_on_stat_modifiers_changed()
