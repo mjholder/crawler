@@ -947,6 +947,14 @@
 					},
 					"name": "stack_policy",
 					"type": "enum"
+				},
+				{
+					"enum_values": {
+						"Combat": 0,
+						"Persistent": 1
+					},
+					"name": "persistence",
+					"type": "enum"
 				}
 			],
 			"script": "res://scripts/status_data.gd"
@@ -1337,6 +1345,10 @@
 			"NO_TURN": 0,
 			"PLAYER_TURN": 1,
 			"VICTORY": 6
+		},
+		"StatusData.Persistence": {
+			"COMBAT": 0,
+			"PERSISTENT": 1
 		},
 		"StatusData.StackPolicy": {
 			"MAX_DURATION": 2,

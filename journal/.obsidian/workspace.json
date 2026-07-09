@@ -11,10 +11,14 @@
             "id": "c125f276b97323a8",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "ideas.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "ideas"
             }
           }
         ]
@@ -181,17 +185,20 @@
   },
   "active": "c125f276b97323a8",
   "lastOpenFiles": [
-    "daily/2026-07-03.md.tmp.38221.f5885c819ba6",
-    "daily/2026-07-03.md.tmp.38221.aa3b5d435405",
-    "daily/2026-07-03.md.tmp.83163.fc145eac7ec9",
-    "daily/2026-07-03.md.tmp.38221.b6462437cab7",
-    "daily/2026-07-03.md.tmp.38221.f0d6965fef38",
-    "daily/2026-07-03.md.tmp.38221.b5d5e316a1a2",
-    "architecture.md.tmp.38221.bb6048777237",
-    "architecture.md.tmp.38221.8c32673270aa",
-    "architecture.md.tmp.38221.ac1cf05df1eb",
-    "architecture.md.tmp.38221.f0993c1dc859",
-    "architecture.md.tmp.38221.d3d33f0fa0ba",
+    "ideas.md.tmp.38221.22f2acbaac04",
+    "daily/2026-07-08.md",
+    "daily/2026-07-08.md.tmp.38221.c8908c04ed5a",
+    "ideas.md.tmp.38221.d85856be7eda",
+    "design.md.tmp.38221.5345d7e1c99e",
+    "design.md.tmp.38221.1199ef0aba28",
+    "ideas.md.tmp.7038.5e5ce0dc8ca7",
+    "daily/2026-07-07.md.tmp.38221.c2353f99745f",
+    "architecture.md.tmp.38221.faa00c018960",
+    "architecture.md.tmp.38221.1e6cde1c7742",
+    "detailed/character.md.tmp.38221.4fe2ac7790d3",
+    "ideas.md.tmp.38221.ef1a9e8321df",
+    "daily/2026-07-07.md",
+    "daily/2026-07-05.md",
     "daily/2026-07-03.md",
     "canvas/Untitled 2.canvas",
     "detailed/event-system.md",
@@ -216,9 +223,6 @@
     "daily/2026-05-03.md",
     "daily/2026-05-02.md",
     "canvas/Untitled 1.canvas",
-    "design.md",
-    "daily/2026-04-20.md",
-    "daily/2026-05-01.md",
     "canvas/Untitled.canvas",
     "Untitled.canvas"
   ]

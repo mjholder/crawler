@@ -71,6 +71,7 @@ func _on_exit(game: Node) -> void:
 	game.player_turn_started.disconnect(_on_round_started)
 	for enemy in _enemies:
 		game._gui.remove_enemy_health_bar(enemy)
+	game.player.clear_combat_statuses()
 	game._gui.set_sheathed(true)
 	game.player.set_weapon_visible(false)
 

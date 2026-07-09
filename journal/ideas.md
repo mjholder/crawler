@@ -18,6 +18,55 @@ backlog lean. Ideas with a foundation shipped but real work left stay here as `p
 
 ---
 
+**Idea:** Elemental signature identities — Poison, Fire, Lightning, Frost
+**Added:** 2026-07-08
+**Notes:** Refines the signature-status column of the "Elemental caster kits" matrix above with concrete mechanics for four elements, settling several open questions from that entry.
+
+**Poison** — classic stacking DoT. No changes needed: `stack_policy: STACK` already spawns independent ticking instances, so multiple applications naturally stack as several simultaneous flat ticks. Blight already leans on this.
+
+**Fire (burn)** — burst DoT, replaces the shipped flat-tick version. Front-loaded damage that decays as the status runs out rather than a flat number every turn: at 3 stacks it hits for 3, decays to 2 and hits for 2, decays to 1 and hits for 1, then expires. Needs `on_tick`'s damage expression to read the status's own `turns_remaining` (not currently exposed to `StatExprEval` — today's `DamageEffect` only sees stat values + `max_health`/`health`). Once exposed, this is pure authoring: `duration: 3`, `on_tick: DamageEffect("turns_remaining")`, `stack_policy: REFRESH` (reapplying mid-burn re-ignites back to 3, correct "refresh" behavior). Sharpens the existing Fire-is-burst / Blight-is-attrition split already implicit in the matrix rather than introducing a new axis. To verify at implementation: whether `on_tick` reads `turns_remaining` before or after that turn's decrement (the first tick needs to see 3, not 2).
+
+**Lightning** — chains to one random adjacent enemy at half damage. "Adjacent" = array-index-adjacent in the wave's enemy list (no real battlefield-position system exists, so this is the pragmatic placeholder — revisit only if a real formation system ever gets built). Can't be authored as two independent list effects, since `Effect.apply(source, target)` has no way to see the rest of the enemy roster — needs a self-contained effect that resolves the primary hit and internally reaches into the current `CombatEvent`'s enemy list to find and half-damage a neighbor. Small new plumbing (an Effect needing roster access, which nothing today requires), not a targeting-system change — the player still picks one target through the existing single-target flow.
+
+**Ice / Frost** — merged into one element, chill dropped. The signature mechanic is just armor-pierce — no separate DoT/debuff needed. Pierce is a damage-shape property, not an inherently magical one, so it's not locked to a caster kit — mundane weapons can carry it too. Frost-as-caster-flavor can still exist later purely for itemization around the same generic pierce tag, without pierce being exclusive to it. Simplifies what the still-deferred magic-type roster pass has to account for.
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Martial utility verbs — Bleed, Shatter, Brace
+**Added:** 2026-07-08
+**Notes:** Non-magic counterpart to the elemental caster matrix — same discipline (a small repeatable verb set, tuned once, reused across weapon types/classes) applied to martial classes instead of casters. Natural home for the still-open Sentinel shield-kit design pass (shield bash inflicting Shatter, Brace as the Sentinel's signature stance).
+
+**Bleed** — deliberately built to feel different from Poison, not a reskin:
+- *Gated application.* Only applies if the triggering hit actually reduces HP — fully-absorbed hits don't bleed; overflow past armor, or an explicit pierce, does. Can't be authored as a `DamageEffect` + `StatusEffect` side by side in an attack's effects list (no shared awareness between them today) — needs a single composite effect that deals damage, checks HP before/after, and only then applies the status. Same check makes "big/piercing hits still bleed" fall out for free, and creates a combo lever — pierce + bleed on one attack reliably bleeds a fully-armored target a normal hit couldn't touch.
+- *Doesn't tick down.* Reuses the existing `duration: -1` (permanent) convention already used internally for on-equip statuses — likely free, assuming `_tick_statuses()` treats `-1` the same regardless of source. Traded against the harder application gate.
+- *Weaker from enemies.* Pure balance/authoring — enemy moves already can't scale off STR (enemies only expose DEFENSE as a real stat), so enemy numbers are hand-tuned literals already. No new mechanism.
+- *Cure path.* Needs a way off since it doesn't expire — a dedicated cure consumable, or folding `remove_status` onto an existing heal item. Decide per-item later.
+
+**Shatter** — suppresses armor refresh for X rounds. `refresh_armor()` is only called from two places (`player.begin_turn()`, `CombatEvent._on_round_started()`), so a suppression flag just needs those two sites to check it first. Symmetric — usable by the player against armored enemies or by enemies against the player. Structural sibling to pierce (pierce bypasses one hit; Shatter denies the safety net for a stretch) — burst-through vs. lockout, not a duplicate. Pairs with a "shatter brute" sparring archetype as the DEF-stacking counter-test.
+
+**Brace** — a one-round armor bonus. Adds flat armor directly to current armor (clamped to max) and raises `max_armor` for that round, touching those fields directly rather than routing through a stat buff or `refresh_armor()`. Works as a bonus on a normal refresh, and as a way to claw back armor when Shatter has suppressed the round's refresh — giving Brace and Shatter a legible counter-relationship.
+**Status:** `worth exploring`
+
+---
+
+**Idea:** Status effects clear at combat end (equipment/background effects excluded)
+**Added:** 2026-07-08
+**Notes:** All combat-inflicted statuses (poison, bleed, burn, stun, buffs) should wipe when a fight ends — nothing does this today; enemies get it for free by being deleted at combat end, but the player's `_active_statuses` has no equivalent clear. A blanket clear-everything would also strip legitimate on-equip permanent statuses (`duration: -1` statuses granted by worn gear/backgrounds, meant to persist across the whole run, including through non-combat events like dialogue), so the clear needs to tell combat-inflicted statuses apart from equipment-granted ones. Proposed: a `source` flag on `StatusData` (`COMBAT` vs `EQUIPMENT`), defaulting to `COMBAT`; the exit hook only sweeps `COMBAT`-flagged instances. Likely lives in the same combat-exit lifecycle that already tears down enemy health bars, so it fires uniformly regardless of how the fight ended.
+
+Also settled alongside this: `on_tick` stays combat-turn-scoped only — no synthetic "turn" for non-combat events just to make ticking generic. Anything that needs to fire outside combat (e.g. a gold-generating background passive) should be authored as a `ProcDef` off the lifecycle bus instead, which already fires for every event type — flat stat modifiers and proc-based passives already work everywhere with no changes needed; only `on_tick`-shaped effects are combat-only by design.
+**Status:** `partially done`
+**Shipped (2026-07-08):** the clear-at-combat-end groundwork. The category landed as
+`persistence: { COMBAT, PERSISTENT }` on `StatusData` (default `COMBAT`) — renamed from the
+proposed `source: { COMBAT, EQUIPMENT }` to avoid colliding with `StatusInstance.source: Node`
+and to cover background/blessing-granted statuses, not just gear. `Combatant.clear_combat_statuses()`
+sweeps `COMBAT` instances from the player at `CombatEvent._on_exit()` (the single exit choke point
+covering victory and death); `on_expire` intentionally not fired on the forced clear. See
+[[design.md]] "Combat-inflicted statuses clear at combat end" and [[daily/2026-07-08]].
+**Remaining:** the actual status entries this unblocks (Bleed, burst-Burn, Shatter/Brace, elemental signatures).
+
+---
+
 **Idea:** DEF as refreshing ward (replace percentage reduction)
 **Added:** 2026-07-06
 **Notes:** Replaces the linear `1 - DEF/100` mitigation. DEF becomes a per-round ward: a buffer equal to (roughly) the DEF value that absorbs incoming damage before it reaches HP, refreshing at the *start of each round*. Damage beyond the remaining ward bleeds through to HP.
@@ -220,9 +269,15 @@ Enemy authoring isn't in the content editor yet (see "Content editor — enemy a
 
 ---
 
-**Idea:** Attack & weapon clarity (tooltips + equipment descriptions)
+**Idea:** Player-facing information & combat legibility (tooltips, descriptions, feedback)
 **Added:** 2026-06-21
-**Notes:** There's currently no way to learn what an attack does without already knowing it from the code — picking "Assassinate" off the action list doesn't say what it does or who it targets. Two related UI surfaces: (1) in-combat tooltips on action buttons, showing effect and target type before committing to a turn; (2) a weapon description in the inventory/equip screen listing the attacks it grants, so gear choices are informed by actual combat behavior, not just stat deltas. Both point at the same underlying gap: attacks and weapons need a player-facing description, not just internal effect data.
+**Notes:** There's currently no way to learn what an attack does without already knowing it from the code — picking "Assassinate" off the action list doesn't say what it does or who it targets. Related UI surfaces, all one underlying gap (attacks/weapons/statuses need player-facing descriptions, not just internal effect data):
+1. *In-combat action tooltips* — on action buttons, showing effect and target type before committing to a turn.
+2. *Weapon/equipment descriptions* — in the inventory/equip screen, listing the attacks a weapon grants **and its passive procs / on-equip effects / self-costs**, so gear choices are informed by actual combat behavior, not just stat deltas.
+3. *Passive-proc visibility* — the motivating case (2026-07-08): the Assassin's starting **Vorpal Blade** deals `max(5, 25 - agility*0.4)` recoil self-damage on every hit (`player_attack_hit` proc, `apply_to_owner`), which reads as unexplained "5 armor damage when I attack." The player has no surface anywhere — not the weapon screen, not combat — telling them the weapon bites back. Procs, on-equip effects, and self-damage are entirely invisible today.
+4. *In-combat damage-source feedback* — the combat log/HUD should name **where** damage came from (recoil, poison tick, enemy X's move), not just show numbers. `game.gd` already logs "Your armor absorbs N damage" but not the cause; statuses tick silently. This is also the natural payoff surface for the status work (poison/bleed/burn ticks should announce themselves).
+
+**Priority:** flagged as the **next thing to tackle after the status-effect groundwork** (user, 2026-07-08). The recoil confusion made it concrete — the game hides too much of its own math from the player, which fights the "readable enemies/state, surprise through mechanics not hidden numbers" goal in **Combat Feel & Pacing**.
 **Status:** `worth exploring`
 
 ---

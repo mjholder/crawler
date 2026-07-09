@@ -54,6 +54,26 @@ func remove_status(tag: StringName) -> void:
 			return
 
 
+func clear_combat_statuses() -> void:
+	# Sweep combat-inflicted statuses (poison, bleed, burn, buffs) when a fight ends;
+	# PERSISTENT statuses (gear/background-granted) survive across the run. on_expire is
+	# deliberately not fired — a forced clear is not a natural expiry.
+	var cleared: Array[StatusInstance] = []
+	for instance in _active_statuses:
+		if instance.data.persistence == StatusData.Persistence.COMBAT:
+			cleared.append(instance)
+	if cleared.is_empty():
+		return
+	var stats_changed := false
+	for instance in cleared:
+		_active_statuses.erase(instance)
+		if not instance.data.stat_modifiers.is_empty():
+			stats_changed = true
+		status_expired.emit(instance.data)
+	if stats_changed:
+		_on_stat_modifiers_changed()
+
+
 func has_preventing_status() -> bool:
 	for instance in _active_statuses:
 		if instance.data.prevents_action:

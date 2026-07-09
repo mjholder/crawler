@@ -19,6 +19,47 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Combat-inflicted statuses clear at combat end
+
+**Date:** 2026-07-08
+**Daily:** [[daily/2026-07-08]]
+
+**Decision:** `StatusData` gains a `persistence: enum { COMBAT, PERSISTENT }` field (default
+`COMBAT`). When any combat ends, the player's `COMBAT`-persistence statuses are swept from
+`_active_statuses`; `PERSISTENT` ones survive. The sweep is a new `Combatant.clear_combat_statuses()`,
+called from `CombatEvent._on_exit()` — the single choke point every combat exit (victory and
+player-death) already funnels through to tear down enemy health bars. Enemies need no sweep;
+their nodes are freed with the event. The sweep emits `status_expired` per removed instance (so
+the HUD status row clears) and recalcs stats once, but deliberately does **not** fire `on_expire`
+— a forced clear is not a natural expiry, and firing arbitrary expire effects into a just-ended
+combat is a footgun; this mirrors the existing full-clear paths (`apply_status_save_array`,
+`player.reset_run_state`).
+
+**Context:** Combat-inflicted statuses (poison, bleed, burn, stun, buffs) leaked past the fight
+that applied them — enemies escaped the bug for free (freed at teardown) but the player's
+`_active_statuses` was never swept, so e.g. a lingering poison kept ticking into the next event.
+Groundwork for a wave of upcoming status work (Bleed, burst-Burn, Shatter/Brace, elemental
+signatures — see [[ideas.md]]), all of which need a clean rule for what survives a fight.
+
+**Alternatives considered:**
+
+- **(a) Blanket clear all statuses at combat end.** Rejected: strips legitimate run-permanent
+  statuses granted by gear/backgrounds (meant to persist through non-combat events too).
+- **(b) Key the clear off `duration == -1`.** Rejected: conflates two independent axes. A planned
+  combat status (Bleed) is *also* `duration: -1` (never ticks down) yet must clear at combat end.
+  "Does it tick down" and "does it survive combat" are different questions; persistence must be
+  explicit and independent of duration.
+- **(c) The idea doc's `source: { COMBAT, EQUIPMENT }` naming.** Rejected: `StatusInstance`
+  already has an unrelated `source: Node` (the applying node), so `instance.data.source` beside
+  `instance.source` is a readability trap; and `EQUIPMENT` under-describes background/blessing
+  sources. `persistence`/`PERSISTENT` names the behavioral property and avoids both.
+
+**Trade-offs / risks:** `on_expire` not firing on the forced clear means a status relying on an
+expire effect for cleanup won't get it at combat end — acceptable, as combat statuses currently
+carry no `on_expire`, and combat-end teardown already resets the relevant context.
+
+---
+
 ## DEF is a refreshing per-round armor buffer; AGI dodge decays within a round
 
 **Decision:** Replace the flat-percentage defense and dodge formulas (below, 2026-05-19 —
@@ -329,11 +370,12 @@ _roll_dodge:    randf() < clamp(AGI / 100.0, 0, 1)
 3. **Status as a tagged, Effect-driven entity.** A new `StatusData` resource holds:
    - `tag: StringName` — e.g. `"poison"`, `"bleed"`, `"stun"`, `"regen"`, `"burn"`
    - `display_name: String`, `icon: Texture2D`
-   - `duration: int` — turns; `-1` = permanent (used internally by on-equip statuses)
+   - `duration: int` — turns; `-1` = never ticks down (does **not** by itself imply run-permanence — see `persistence`)
    - `stat_modifiers: Dictionary` — optional flat stat layer while active
    - `prevents_action: bool` — combatant skips its turn
    - `on_apply: Effect`, `on_tick: Effect`, `on_expire: Effect` — any may be null
    - `stack_policy: enum { REFRESH, STACK, MAX_DURATION }` — default `REFRESH`
+   - `persistence: enum { COMBAT, PERSISTENT }` — default `COMBAT`; whether the status survives a fight (added 2026-07-08, see "Combat-inflicted statuses clear at combat end" above)
 
    New `StatusEffect extends Effect` applies a `StatusData` via `target.apply_status(data, source)`. The existing `BuffEffect` becomes a thin wrapper that constructs an inline `StatusData` carrying only `stat_modifiers` and `duration`, so all existing `.tres` files load unchanged.
 
