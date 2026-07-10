@@ -1,7 +1,7 @@
 # GUI Implementation Design
 
-**Date:** 2026-03-13 (consolidated 2026-04-18)
-**Status:** Mostly implemented — GameOverPanel and VictoryPanel planned (see banners)
+**Date:** 2026-03-13 (consolidated 2026-04-18; audited against code 2026-07-09)
+**Status:** Implemented. All panels below exist and are wired (GameOverPanel and VictoryPanel included). RestPanel, ShrinePanel, and TownPanel were added after the original consolidation.
 
 Merged from: `gui-design.md`, panel node trees from `dialogue-system.md`, `skill-check-system.md`, `event-scene-design.md § ShopPanel`, and `player-classes-and-leveling.md § LevelUpPanel`
 
@@ -21,47 +21,62 @@ Establishes the node structure, `gui.gd` API, and signal wiring for the entire G
 GUI  (CanvasLayer, layer 4)  [gui.gd]
 ├── MainMenu  (Control)
 │   ├── Title  (Label)
-│   ├── StartButton  (Button)
-│   ├── StartDialogueButton  (Button)      # debug entry point
-│   ├── StartSkillCheckButton  (Button)    # debug entry point
+│   ├── StartButton  (Button)              # new run (confirms first if a save exists)
+│   ├── ContinueButton  (Button)           # loads save; disabled when none exists
 │   └── QuitButton  (Button)
 │
-├── WorldMap  (WorldMap)                   [world_map.gd] hidden by default; shown after start
+├── NewRunConfirmDialog  (ConfirmationDialog)   # "overwrite existing save?" gate on StartButton
 │
 ├── PlayerHUD  (Control)                   # persistent — visible during all non-menu states
-│   ├── PlayerHealthLabel  (Label)         # "80 / 100"
+│   ├── PlayerHealthLabel  (Label)         # "80/100"
 │   ├── PlayerHealthBar  (ProgressBar)
+│   ├── PlayerArmorLabel  (Label)          # "Armor 12/12" — hidden when max armor is 0
+│   ├── PlayerArmorBar  (ProgressBar)
 │   ├── PlayerGoldLabel  (Label)           # "Gold: 0"
-│   └── PlayerXPLabel  (Label)            # "XP: 0"
+│   ├── PlayerXPLabel  (Label)             # "XP: 0"
+│   ├── InventoryButton  (Button)          # toggles InventoryPanel
+│   ├── PlayerManaBar  (ProgressBar)       # created at runtime in gui.gd _ready()
+│   ├── PlayerManaLabel  (Label)           # created at runtime
+│   └── PlayerStatusLabel  (Label)         # created at runtime; active-status readout + transient messages
 │
+├── DialoguePanel  (Control)               [dialogue_panel.gd] hidden by default
+├── SkillCheckPanel  (Control)             [skill_check_panel.gd] hidden by default
+├── RestPanel  (Control)                   [rest_panel.gd] hidden by default
+├── ShrinePanel  (Control)                 [shrine_panel.gd] hidden by default — patron-saint ascension
+├── TownPanel  (Control)                   [town_panel.gd] hidden by default — end-of-act hub
+├── CharacterCreationPanel  (Control)      [character_creation_panel.gd] hidden by default
+├── ShopPanel  (Control)                   [shop_panel.gd] hidden by default
+│
+├── CombatHUD  (Control)                   # shown during any event via show_event_hud()
+│   ├── EnemyHUD  (Control)                # health_bar.tscn instance per living enemy
+│   ├── ActionMenu  (Control)
+│   │   ├── MainhandActions  (HBoxContainer)   # one button per mainhand attack/spell
+│   │   ├── OffhandActions   (HBoxContainer)   # one button per offhand attack/spell; hidden when empty
+│   │   └── EndTurnButton     (Button)         # explicit turn end
+│   └── CombatLog  (RichTextLabel)         # append-only; cleared on show_event_hud()
+│
+├── ConsumableBelt  (HFlowContainer)       [consumable_belt_ui.gd]  # GUI-level child, NOT under CombatHUD
+│   └── ConsumableButton  (Button)         # template button, cloned per belt slot
+│
+├── WorldMap  (WorldMap)                   [world_map.gd] hidden by default; swapped per act via swap_world_map()
+├── InventoryPanel  (Control)              [inventory_panel.gd] hidden by default; toggled by InventoryButton
+├── LevelUpPanel  (Control)                [level_up_panel.gd] hidden by default
 ├── PauseMenu  (Control)
 │   ├── Overlay  (ColorRect)
 │   ├── ResumeButton  (Button)
 │   └── QuitToMainButton  (Button)
 │
-├── CombatHUD  (Control)                   # shown only during CombatEvent
-│   ├── EnemyHUD  (Control)
-│   ├── ActionMenu  (Control)
-│   │   ├── AttackButton  (Button)
-│   │   └── ConsumableBelt  (HBoxContainer)   [consumable_belt_ui.gd]
-│   └── CombatLog  (RichTextLabel)
-│
-├── DialoguePanel  (Control)               [dialogue_panel.gd] hidden by default
-├── SkillCheckPanel  (Control)             [skill_check_panel.gd] hidden by default
-├── ShopPanel  (Control)                   [shop_panel.gd] hidden by default
-├── LevelUpPanel  (Control)                [level_up_panel.gd] hidden by default
-├── CharacterCreation  (Control)           [character_creation.gd] hidden by default
-│
-├── GameOverPanel  (Control)               [game_over_panel.gd] (planned) hidden by default
-└── VictoryPanel  (Control)                [victory_panel.gd] (planned) hidden by default
+├── GameOverPanel  (Control)               [game_over_panel.gd] hidden by default
+└── VictoryPanel  (Control)                [victory_panel.gd] hidden by default
 ```
-
-> **Planned:** `GameOverPanel` and `VictoryPanel` are not yet built. See [[daily/2026-04-17]].
 
 **Notes:**
 - `PlayerHUD` is a sibling of `CombatHUD`, not a child. It persists across world map, combat, dialogue, skill check — only hidden on the main menu.
-- `EnemyHUD` children are spawned/freed at runtime — one `health_bar.tscn` instance per living enemy.
-- `CombatLog` lives inside `CombatHUD` and clears when a new combat starts.
+- **Mana bar/label and the status label are created in code** (`gui.gd._ready()`), not authored in `game.tscn`. The armor bar/label *are* in the scene but `gui.gd` fetches them with `get_node_or_null` so an un-updated scene still runs.
+- `EnemyHUD` children are spawned/freed at runtime — one `health_bar.tscn` instance per living enemy; each carries its own armor readout and a runtime status `Label`.
+- `CombatLog` lives inside `CombatHUD` and clears on `show_event_hud()` (start of every event).
+- `ConsumableBelt` is a **direct child of GUI**, not of `CombatHUD` — so it can be shown both during combat and while the InventoryPanel is open (management mode). See the ConsumableBelt section.
+- **Action bar is built from the scene when present**, but `gui.gd._ensure_action_nodes()` synthesizes `MainhandActions`/`OffhandActions`/`EndTurnButton` as a fallback if the scene lacks them.
 
 ---
 
@@ -72,10 +87,13 @@ Shown at game start. Hidden when the game begins.
 | Node | Type | Role |
 |---|---|---|
 | `Title` | Label | Game title |
-| `StartButton` | Button | Shows character creation screen |
-| `QuitButton` | Button | `Application.quit()` — wired in `gui.gd` directly |
+| `StartButton` | Button | Starts a new run |
+| `ContinueButton` | Button | Loads the save (`continue_requested`); `disabled` when `SaveManager.has_save()` is false |
+| `QuitButton` | Button | `get_tree().quit()` — wired in `gui.gd` directly |
 
-`StartButton.pressed` → `_on_start_button_pressed()` shows `CharacterCreation` (does **not** emit `start_requested` — that signal is removed).
+`StartButton.pressed` → `_on_start_button_pressed()`: if a save exists it pops `NewRunConfirmDialog` (whose `confirmed` clears the save and then shows character creation); otherwise it calls `show_character_creation()` directly. It does **not** emit `start_requested` — that signal was removed.
+
+`ContinueButton.pressed` → `_on_continue_button_pressed()` emits `continue_requested`, which `game.gd` handles by loading the save.
 
 ### PauseMenu
 
@@ -91,51 +109,71 @@ Shown over any game state when ESC is pressed. `game.gd` calls `gui.handle_esc()
 
 | Node | Type | Role |
 |---|---|---|
-| `PlayerHealthLabel` | Label | "80 / 100" |
-| `PlayerHealthBar` | ProgressBar | `value` and `max_value` set via `update_player_health()` |
+| `PlayerHealthLabel` | Label | "80/100" |
+| `PlayerHealthBar` | ProgressBar | `value` / `max_value` via `update_player_health()` |
+| `PlayerArmorLabel` | Label | "Armor 12/12"; hidden when max armor ≤ 0 |
+| `PlayerArmorBar` | ProgressBar | per-round armor buffer via `update_player_armor()`; hidden for no-DEF builds |
 | `PlayerGoldLabel` | Label | "Gold: 0" |
 | `PlayerXPLabel` | Label | "XP: 0" |
+| `InventoryButton` | Button | toggles InventoryPanel (`toggle_inventory`) |
+| `PlayerManaBar` | ProgressBar | **runtime-created**; "MP" buffer via `update_player_mana()` |
+| `PlayerManaLabel` | Label | **runtime-created**; "MP 40/40" |
+| `PlayerStatusLabel` | Label | **runtime-created**; active-status readout (`refresh_player_statuses`) and transient messages (`show_status`, e.g. "Not enough mana") |
 
 ### CombatHUD
 
+`CombatHUD` is shown by `show_event_hud()` for **every** event type (combat, dialogue, skill check, rest…), not only combat — it's the general in-event HUD. The action bar simply has no buttons outside combat.
+
 | Node | Type | Role |
 |---|---|---|
-| `EnemyHUD` | Control | Container; `health_bar.tscn` instances per enemy |
-| `ActionMenu` | Control | Player action buttons; enabled on player turn |
-| `AttackButton` | Button | Turn-ending attack action |
-| `ConsumableBelt` | HBoxContainer | Per-slot consumable-use buttons. Icon from equipped `ConsumableData.sprite_frames`; disabled when slot empty or state disallows use. |
-| `CombatLog` | RichTextLabel | Append-only log; cleared on new combat |
+| `EnemyHUD` | Control | Container; `health_bar.tscn` instance per living enemy (health + armor + runtime status `Label`) |
+| `ActionMenu` | Control | Container for the dual-hand action bar |
+| `MainhandActions` | HBoxContainer | One button per mainhand attack/spell; rebuilt by `rebuild_action_buttons()` |
+| `OffhandActions` | HBoxContainer | One button per offhand attack/spell; hidden entirely when the hand offers nothing |
+| `EndTurnButton` | Button | Explicit turn end (`end_turn_requested`); an action never ends the turn on its own |
+| `CombatLog` | RichTextLabel | Append-only log; cleared on `show_event_hud()` |
+
+#### Dual-hand action bar
+
+Combat is two independently-gated hands (see the Combat UI checklist below and `player.gd`). `game.gd` calls `rebuild_action_buttons(mainhand_attacks, mainhand_spells, offhand_attacks, offhand_spells, current_mana, mainhand_used, offhand_used, offhand_locked)` whenever a hand's repertoire or spent-state changes. Each hand row is repopulated with one `Button` per attack/spell; spell buttons show `"Name (cost)"` and store `hand` / `action` / `cost` as metadata.
+
+- Pressing a button emits `attack_requested(hand: int, action_name: String)`.
+- `set_targeting_action(hand, action_name)` highlights the active button and drops focus on the others while the player picks a target; `""` clears targeting.
+- `_apply_action_states()` recomputes every button's `disabled` from the gates: player's turn, weapons not sheathed (`set_sheathed`), that hand not spent, and — for spells — affordable against `current_mana`.
 
 #### ConsumableBelt
 
 ```
-ConsumableBelt      HBoxContainer       scripts/consumable_belt_ui.gd
-└── [Button nodes instantiated at runtime, one per belt slot]
+ConsumableBelt      HFlowContainer      scripts/consumable_belt_ui.gd  (class ConsumableBeltUI)
+├── ConsumableButton   Button           template button (hidden), cloned per slot
+└── [cloned Button nodes at runtime, one per belt slot]
 ```
 
-Built at runtime from `Inventory.belt_size`. Subscribes to `Inventory.consumable_belt_changed` and `Inventory.belt_size_changed`; rebuilds its button row when belt size changes.
+`ConsumableBelt` is a **direct child of GUI**, not of `CombatHUD`. Built at runtime from `Inventory.belt_size`; subscribes to the inventory's belt-change and belt-size signals and rebuilds its row as needed.
 
 Each button:
-- Indexed by belt position, stored on the button as a metadata key.
-- Shows the equipped `ConsumableData.sprite_frames` idle frame as its icon; when the slot is empty, shows an empty-slot placeholder and sets `disabled = true`.
-- `pressed` → emits `consumable_use_requested(index: int)` upward.
-- Enabled/disabled as a group via `set_can_use(value: bool)`.
+- Indexed by belt position (stored as button metadata).
+- Shows the equipped `ConsumableData` icon; empty slots show a placeholder and are disabled.
+- `pressed` → emits `consumable_pressed(index: int)` upward.
+
+**Management mode.** The belt has two modes, toggled by `set_management_mode(bool)`:
+- **Use mode** (default, in combat) — `gui.gd` routes `consumable_pressed` to `consumable_use_requested(index)` → `game.gd` uses the consumable.
+- **Management mode** (while InventoryPanel is open) — `gui.gd` routes the same press to `_inventory_panel.unequip_belt_slot(index)` instead.
+
+`gui.toggle_inventory()` flips the belt into management mode and shows it; closing the inventory outside combat hides it again.
 
 ```gdscript
-signal consumable_use_requested(index: int)
-
-var _inventory: Inventory
+signal consumable_pressed(index: int)
 
 func setup(inventory: Inventory) -> void
 func set_can_use(value: bool) -> void
-
-func _on_consumable_belt_changed(index: int, new_data: ConsumableData, old_data: ConsumableData) -> void
-func _on_belt_size_changed(new_size: int) -> void
+func set_management_mode(value: bool) -> void
+func is_management_mode() -> bool
 ```
 
-`ConsumableBelt` receives the `Inventory` reference at setup (passed by `gui.gd` when the player is set) — it does not read `Player` or `game.gd`. That keeps the component's dependencies to just `Inventory` state.
+`ConsumableBelt` receives the `Inventory` reference at `setup()` (from `gui.setup_consumable_belt()`, called in `game.gd` when the player is set) — it does not read `Player` or `game.gd`.
 
-**Enable gate:** `set_player_turn(false)` no longer disables `ConsumableBelt` — usage is allowed during `NO_TURN` and `DIALOGUE` too. `game.gd` flips `gui.set_consumables_enabled(enabled)` based on state: enabled when `state in {PLAYER_TURN, NO_TURN, DIALOGUE}`, disabled otherwise.
+**Enable gate:** `game.gd` flips `gui.set_consumables_enabled(enabled)` (→ `set_can_use`) by state — enabled during player turn / `NO_TURN` / dialogue, disabled otherwise. This is independent of the management-mode toggle.
 
 **Dungeon lock is independent.** The belt's buttons are for *using* consumables, not for equipping them. `Inventory.consume()` bypasses the dungeon lock, so the belt works normally inside a dungeon. The dungeon lock only affects **equipping/unequipping** flows (InventoryPanel belt row, bag→belt drags), never use.
 
@@ -159,7 +197,7 @@ Choice buttons are created fresh on each node load and freed when the node chang
 ### `dialogue_panel.gd`
 
 ```gdscript
-signal dialogue_complete
+signal dialogue_complete(terminal_node_id: String)
 
 var _data: Dictionary
 var _consequences: DialogueConsequences
@@ -189,17 +227,16 @@ func _on_continue_pressed() -> void:
 ### gui.gd Relay
 
 ```gdscript
-signal dialogue_complete
+signal dialogue_complete(terminal_node_id: String)
 
 func show_dialogue(data: Dictionary, consequences: DialogueConsequences) -> void
-    # calls $DialoguePanel.load_dialogue(data, consequences), makes panel visible
-    # connects $DialoguePanel.dialogue_complete → _on_dialogue_panel_complete (one-shot)
+    # calls _dialogue_panel.load_dialogue(data, consequences), shows the panel
 
-func _on_dialogue_panel_complete() -> void
-    # hides DialoguePanel, emits dialogue_complete
+func _on_dialogue_complete(terminal_node_id: String) -> void
+    # hides DialoguePanel, re-emits dialogue_complete(terminal_node_id)
 ```
 
-`game.gd` connects `_gui.dialogue_complete` → `_on_dialogue_complete` during setup. The panel is an implementation detail — `game.gd` never references it directly.
+The panel's `dialogue_complete` is connected to `gui._on_dialogue_complete` once in `gui.gd._ready()` (not one-shot). `game.gd` connects `_gui.dialogue_complete` → `_on_gui_dialogue_complete`. The terminal node id is carried through so `game.gd` can branch on which ending the player reached. The panel is an implementation detail — `game.gd` never references it directly.
 
 ---
 
@@ -228,13 +265,13 @@ signal skill_check_complete(success: bool)
 
 var _stat_value: float
 
-func setup(stat_name: String, label: String, stat_value: float) -> void:
-    # Populate labels, store _stat_value
+func setup(stat_name: String, label: String, stat_value: float, threshold: float) -> void:
+    # stat_value is displayed only; the roll is compared against threshold
     # Reset: re-enable RollButton, hide RollResultLabel and ContinueButton
 
 func _on_roll_button_pressed() -> void:
     var roll: int = randi_range(1, 100)
-    var success: bool = roll <= int(_stat_value)
+    var success: bool = roll <= int(_threshold)
     # Show result text, disable RollButton, show ContinueButton
 
 func _on_continue_pressed() -> void:
@@ -248,12 +285,59 @@ func _on_continue_pressed() -> void:
 ```gdscript
 signal skill_check_complete(success: bool)
 
-func show_skill_check(stat_name: String, label: String, stat_value: float) -> void
-    # calls $SkillCheckPanel.setup(...), shows panel
+func show_skill_check(stat_name: String, label: String, stat_value: float, threshold: float) -> void
+    # calls _skill_check_panel.setup(...), shows panel
 
-func _on_skill_check_panel_complete(success: bool) -> void
+func _on_skill_check_complete(success: bool) -> void
     # hides SkillCheckPanel, emits skill_check_complete(success)
 ```
+
+`game.gd` supplies the threshold when it calls `show_skill_check(...)` (`gui.show_skill_check(Enums.Stat.keys()[stat], label, stat_value, threshold)`).
+
+---
+
+## RestPanel
+
+Node `RestPanel`, script `rest_panel.gd`. Shown for a rest event; offers to heal.
+
+```gdscript
+signal rest_requested     # player chose to rest — game.gd applies the heal
+signal rest_complete      # player leaves the rest node
+
+func setup(heal_amount: float) -> void
+```
+
+`gui.show_rest_panel(heal_amount)` / `hide_rest_panel()`. Both signals relay through `gui.gd` under the same names to `game.gd` (`_on_gui_rest_requested` / `_on_gui_rest_complete`).
+
+---
+
+## ShrinePanel
+
+Node `ShrinePanel`, script `shrine_panel.gd`. Patron-saint ascension hub (spend gold to advance the active saint to its next tier). Shown from the end-of-act flow.
+
+```gdscript
+signal ascend_requested    # relayed as gui.shrine_ascend_requested
+signal leave_requested     # relayed as gui.shrine_leave_requested
+
+func setup(saint_name: String, has_next: bool, next_tier_name: String,
+           next_tier_desc: String, next_stat_mods: Dictionary,
+           cost: int, player_gold: int) -> void
+```
+
+`gui.show_shrine_panel(saint_name, has_next, next_tier_name, next_tier_desc, next_stat_mods, cost, player_gold)` / `hide_shrine_panel()`. `game.gd` reads the next tier off `player.get_next_tier()` and passes cost/gold in; when the player has no further tier it calls `setup(..., has_next=false, ...)`.
+
+---
+
+## TownPanel
+
+Node `TownPanel`, script `town_panel.gd`. End-of-act hub with two exits.
+
+```gdscript
+signal temple_requested    # relayed as gui.town_temple_requested → opens ShrinePanel
+signal travel_requested    # relayed as gui.town_travel_requested → advances the act
+```
+
+`gui.show_town_panel()` / `hide_town_panel()`. The temple button routes to the ShrinePanel; travel advances to the next act (which triggers `swap_world_map`).
 
 ---
 
@@ -359,53 +443,44 @@ LevelUpPanel        Control             scripts/level_up_panel.gd
 ```gdscript
 signal level_up_complete
 
-func show_level_up(level: int, stat_points: int, stats: Dictionary) -> void
+func show_level_up(player: Player) -> void   # panel reads pending points/stats off the player
 func hide_level_up() -> void
 
-func _on_level_up_panel_complete() -> void
+func _on_level_up_confirmed() -> void
     # hides LevelUpPanel, emits level_up_complete
 ```
+
+The panel is handed the `Player` directly (`_level_up_panel.setup(player)`) and reads `pending_stat_points` / current stats off it, rather than receiving them as loose args. Its internal `level_up_confirmed` signal is relayed by `gui.gd` as `level_up_complete`.
 
 ---
 
 ## CharacterCreationPanel
 
-Shown when the player presses Start on MainMenu. Replaced the direct `start_requested` flow.
+Node `CharacterCreationPanel`, script `character_creation_panel.gd`. Shown when the player starts a new run (from `StartButton`, after the `NewRunConfirmDialog` gate if a save exists). Replaced the direct `start_requested` flow.
 
-```
-CharacterCreation   Control             scripts/character_creation.gd
-├── Background      ColorRect           dim overlay
-└── PanelContainer  PanelContainer      centered card
-    └── VBoxContainer
-        ├── TitleLabel          Label   "Choose Your Class"
-        ├── NameInput           LineEdit
-        ├── ClassList           VBoxContainer   rows built at runtime, one per PlayerClassData
-        │   └── [ClassButton per class — shows name + short description]
-        ├── ClassDescription    Label   full description of selected class, autowrap on
-        ├── ClassStatsLabel     Label   starting stats and growth rates, autowrap on
-        └── ContinueButton      Button  disabled until a class is selected and name entered
-```
+It is a **hand-built multi-step wizard**, not a single class picker: **Class → Background → Patron Saint → Confirm** (see [[CLAUDE.md]] and the character-creation data resources). Each step selects one resource — `PlayerClassData`, then `BackgroundData` ("who you were"), then `PatronSaintData` ("what watches over you") — with description/stat panels per step. The panel's node tree is intentionally not mirrored here in full; it is built and rewired frequently. `gui.gd` treats it as a black box behind `show_character_creation()` and the confirm signal.
 
-**Rendering notes:** `custom_minimum_size` + `size_flags_vertical = 3` on ClassList (same fix as ShopPanel). Store direct references to class row buttons.
+**Rendering note:** list containers use `custom_minimum_size` + `size_flags_vertical = 3` (same fix as ShopPanel); runtime row buttons are stored by direct reference.
 
 ### gui.gd Relay
 
-```gdscript
-signal character_created(player_name: String, class_data: PlayerClassData)
+The panel emits `character_confirmed(player_name, class_data, background, patron)` on Confirm; `gui.gd` relays it as `character_created` with the same four args.
 
-func show_character_creation() -> void
-func hide_character_creation() -> void
+```gdscript
+signal character_created(player_name: String, class_data: PlayerClassData, background: BackgroundData, patron: PatronSaintData)
+
+func show_character_creation() -> void      # hides MainMenu, resets and shows the wizard
+func _on_character_confirmed(p_name, class_data, background, patron) -> void
+    # hides the panel, re-emits character_created(...)
 ```
 
-`_on_start_button_pressed()` in `gui.gd` calls `show_character_creation()`. CharacterCreation panel's `Continue` button fires `character_created`. `gui.gd` relays it.
+`game.gd` connects `_gui.character_created` → `_on_character_created`, which builds the player from all four layers.
 
 ---
 
 ## GameOverPanel
 
-**Date:** 2026-04-17
-
-> **Status: Planned — not yet implemented.**
+**Date:** 2026-04-17 (implemented since)
 
 Shown when the player dies. Fullscreen overlay, single action.
 
@@ -437,9 +512,7 @@ func hide_game_over() -> void
 
 ## VictoryPanel
 
-**Date:** 2026-04-17
-
-> **Status: Planned — not yet implemented.**
+**Date:** 2026-04-17 (implemented since)
 
 Shown when a `BossEvent` is defeated. Same shape as `GameOverPanel`.
 
@@ -474,47 +547,92 @@ Both `GameOverPanel.main_menu_requested` and `VictoryPanel.main_menu_requested` 
 ## `gui.gd` Full API
 
 ```gdscript
+# --- Outbound signals (all connected in game.gd unless noted) ---
+signal character_created(player_name: String, class_data: PlayerClassData, background: BackgroundData, patron: PatronSaintData)
+signal level_up_complete
+signal quit_to_main_requested
+signal attack_requested(hand: int, attack_name: String)
+signal end_turn_requested
+signal dialogue_complete(terminal_node_id: String)
+signal skill_check_complete(success: bool)
+signal rest_requested
+signal rest_complete
+signal node_selected(node: WorldMapNode)
+signal shop_buy_requested(item: EquipmentData)
+signal shop_sell_requested(item: EquipmentData)
+signal shop_leave_requested
+signal shrine_ascend_requested
+signal shrine_leave_requested
+signal town_temple_requested
+signal town_travel_requested
+signal consumable_use_requested(index: int)
+signal continue_requested
+
 # --- Navigation ---
 func show_main_menu() -> void
 func start_game() -> void
-func handle_esc() -> void
+func handle_esc() -> void            # toggles PauseMenu
 func return_to_main_menu() -> void
 
 # --- Character Creation ---
 func show_character_creation() -> void
-func hide_character_creation() -> void
+
+# --- Player HUD ---
+func update_player_health(current: float, maximum: float) -> void
+func update_player_armor(current: float, maximum: float) -> void   # hidden when maximum <= 0
+func update_player_mana(current: float, maximum: float) -> void
+func update_player_stats(stats: Dictionary) -> void
+func update_player_gold(new_total: int) -> void
+func update_player_xp(new_total: int) -> void
+func show_status(message: String) -> void                          # PlayerStatusLabel transient text
+func refresh_player_statuses(statuses: Array) -> void
+
+# --- Event / Combat HUD ---
+func show_event_hud() -> void        # shows CombatHUD + belt, clears CombatLog, sheathes
+func hide_event_hud() -> void        # frees enemy bars, hides CombatHUD (+ belt if inventory closed)
+func set_sheathed(sheathed: bool) -> void
+func set_player_turn(is_player_turn: bool) -> void
+func log_message(text: String) -> void
+func rebuild_action_buttons(mainhand_attacks, mainhand_spells, offhand_attacks, offhand_spells, current_mana: float, mainhand_used: bool, offhand_used: bool, offhand_locked: bool) -> void
+func set_targeting_action(hand: int, action_name: String) -> void
+
+# --- Enemy bars ---
+func add_enemy_health_bar(enemy: Enemy) -> void
+func remove_enemy_health_bar(enemy: Enemy) -> void
+func update_enemy_health_bar(enemy: Enemy, current: float) -> void
+func update_enemy_armor(enemy: Enemy, current: float, maximum: float) -> void
+func add_enemy_status_label(enemy: Enemy) -> void
+func refresh_enemy_statuses(enemy: Enemy, statuses: Array) -> void
+
+# --- Inventory ---
+func setup_inventory(inventory: Inventory) -> void
+func setup_spell_prep(player: Player) -> void
+func toggle_inventory(can_equip: bool = true) -> void
+func is_inventory_open() -> bool
+func set_dungeon_locked(locked: bool) -> void   # disables all equip/unequip/swap in InventoryPanel
+
+# --- Consumables ---
+func setup_consumable_belt(inventory: Inventory) -> void
+func set_consumables_enabled(enabled: bool) -> void
 
 # --- World Map ---
+func get_world_map() -> WorldMap
+func swap_world_map(scene: PackedScene) -> void   # per-act; keeps the "WorldMap" node name
 func show_world_map() -> void
 func hide_world_map() -> void
 func world_map_on_dungeon_complete(completed_node: WorldMapNode) -> void
 
-# --- Player HUD ---
-func update_player_health(current: float, maximum: float) -> void
-func update_player_gold(new_total: int) -> void
-func update_player_xp(new_total: int) -> void
-
-# --- Combat HUD ---
-func show_combat_hud() -> void
-func hide_combat_hud() -> void
-func add_enemy_health_bar(enemy: Enemy) -> void
-func remove_enemy_health_bar(enemy: Enemy) -> void
-func set_player_turn(is_player_turn: bool) -> void
-func log_message(text: String) -> void
-
-# --- Consumables ---
-signal consumable_use_requested(index: int)
-func set_consumables_enabled(enabled: bool) -> void   # flips ConsumableBelt.set_can_use
-func setup_consumable_belt(inventory: Inventory) -> void   # called from game.gd on set_player
-
-# --- Inventory lock (bag sealed during dungeons) ---
-func set_dungeon_locked(locked: bool) -> void   # disables all equip/unequip/swap in InventoryPanel
-
-# --- Dialogue ---
+# --- Dialogue / Skill Check ---
 func show_dialogue(data: Dictionary, consequences: DialogueConsequences) -> void
+func show_skill_check(stat_name: String, label: String, stat_value: float, threshold: float) -> void
 
-# --- Skill Check ---
-func show_skill_check(stat_name: String, label: String, stat_value: float) -> void
+# --- Rest / Shrine / Town ---
+func show_rest_panel(heal_amount: float) -> void
+func hide_rest_panel() -> void
+func show_shrine_panel(saint_name: String, has_next: bool, next_tier_name: String, next_tier_desc: String, next_stat_mods: Dictionary, cost: int, player_gold: int) -> void
+func hide_shrine_panel() -> void
+func show_town_panel() -> void
+func hide_town_panel() -> void
 
 # --- Shop Panel ---
 func show_shop(shop_name: String, stock: Array[EquipmentData], bag: Array[EquipmentData], gold: int, buy_mult: float, sell_mult: float, bag_full: bool) -> void
@@ -525,10 +643,10 @@ func refresh_shop_gold(gold: int) -> void
 func show_shop_status(msg: String) -> void
 
 # --- Level Up ---
-func show_level_up(level: int, stat_points: int, stats: Dictionary) -> void
+func show_level_up(player: Player) -> void
 func hide_level_up() -> void
 
-# --- Game End (planned) ---
+# --- Game End ---
 func show_game_over() -> void
 func hide_game_over() -> void
 func show_victory() -> void
@@ -539,38 +657,82 @@ func hide_victory() -> void
 
 ## Signal Connections
 
-All connections wired in `game.gd`. GUI emits nothing outbound except through its relay signals below.
+Two layers of wiring:
+- **Panel/WorldMap → `gui.gd`** relays are connected inside `gui.gd._ready()`. Each inbound panel signal is re-emitted as a `gui.gd` signal (or handled internally).
+- **`gui.gd` outbound + Player/Enemy → `game.gd`** handlers are connected in `game.gd` (`_ready()` for GUI, `set_player()` for the player, per-enemy in the combat-add helper).
 
-| Source | Signal | Wired to | Where connected |
-|---|---|---|---|
-| `player` | `damaged(amount)` | `gui.update_player_health()` | `game.gd: set_player()` |
-| `player` | `gold_changed` | `gui.update_player_gold()` | `game.gd: set_player()` |
-| `player` | `experience_changed` | `gui.update_player_xp()` | `game.gd: set_player()` |
-| `enemy` (per instance) | `damaged` | update health bar | `game.gd: start_event()` |
-| `enemy` (per instance) | `died` | `gui.remove_enemy_health_bar()` | `game.gd: start_event()` |
-| `WorldMap` | `node_selected(node)` | `game.gd: _on_world_node_selected()` | `gui.gd: _ready()` → relayed |
-| `DialoguePanel` | `dialogue_complete` | `game.gd: _on_gui_dialogue_complete()` | `gui.gd: _ready()` → relayed |
-| `SkillCheckPanel` | `skill_check_complete(success)` | `game.gd: _on_gui_skill_check_complete()` | `gui.gd: _ready()` → relayed |
-| `ShopPanel` | `buy_requested(item)` | `game.gd: _on_gui_shop_buy_requested()` | `gui.gd: _ready()` → relayed |
-| `ShopPanel` | `sell_requested(item)` | `game.gd: _on_gui_shop_sell_requested()` | `gui.gd: _ready()` → relayed |
-| `ShopPanel` | `leave_requested` | `game.gd: _on_gui_shop_leave_requested()` | `gui.gd: _ready()` → relayed |
-| `LevelUpPanel` | `level_up_complete` | `game.gd: _on_level_up_complete()` | `gui.gd: _ready()` → relayed |
-| `CharacterCreation` | `character_created(name, class_data)` | `game.gd: _on_character_created()` | `gui.gd: _ready()` → relayed |
-| `ConsumableBelt` | `consumable_use_requested(index)` | `game.gd: _on_consumable_use_requested()` | `gui.gd: _ready()` → relayed |
-| `Inventory` | `consumable_belt_changed` | `ConsumableBelt._on_consumable_belt_changed()` | `gui.setup_consumable_belt()` (direct, no relay) |
-| `Inventory` | `belt_size_changed` | `ConsumableBelt._on_belt_size_changed()` | `gui.setup_consumable_belt()` (direct, no relay) |
-| `MainMenu/StartButton` | `pressed` | show character creation | `game.gd: _ready()` |
-| `PauseMenu/QuitToMainButton` | `pressed` | `game.gd: quit_to_main()` | `game.gd: _ready()` |
-| `GameOverPanel` *(planned)* | `main_menu_requested` | `gui.quit_to_main_requested` → `game.gd: quit_to_main()` | `gui.gd: _ready()` |
-| `VictoryPanel` *(planned)* | `main_menu_requested` | `gui.quit_to_main_requested` → `game.gd: quit_to_main()` | `gui.gd: _ready()` |
-| `BossEvent` *(planned)* | `boss_defeated` | `game.gd: _on_boss_defeated()` | `game.gd: start_event()` (one-shot) |
-| `Player` | `died` | `game.gd: _on_player_died()` | `game.gd: set_player()` |
+The GUI emits nothing outbound except through its relay signals; `game.gd` never references panels directly.
 
-**Not wired to GUI directly:**
-- `player.attack` — routed through `CombatEvent`
-- `CombatEvent.player_attacked` — `game.gd` applies damage; GUI sees result via `player.damaged`
-- `player.turn_ended` / `CombatEvent.enemy_turns_complete` — `game.gd` calls `gui.set_player_turn()` at each transition
-- `player.consumable_used` / `player.buff_applied` / `player.buff_expired` — `game.gd` observes and pushes to `gui.log_message()`; the belt UI itself rebuilds from `Inventory` signals, not from `Player`
+### `gui.gd` outbound → `game.gd` (wired in `game.gd._ready()`)
+
+| gui.gd signal | game.gd handler |
+|---|---|
+| `character_created(name, class, background, patron)` | `_on_character_created()` |
+| `continue_requested` | `_on_continue_requested()` |
+| `level_up_complete` | `_on_level_up_complete()` |
+| `quit_to_main_requested` | `quit_to_main()` |
+| `attack_requested(hand, action_name)` | `_on_action_requested()` |
+| `end_turn_requested` | `_on_end_turn_requested()` |
+| `consumable_use_requested(index)` | `_on_consumable_use_requested()` |
+| `dialogue_complete(terminal_node_id)` | `_on_gui_dialogue_complete()` |
+| `skill_check_complete(success)` | `_on_gui_skill_check_complete()` |
+| `rest_requested` / `rest_complete` | `_on_gui_rest_requested()` / `_on_gui_rest_complete()` |
+| `node_selected(node)` | `_on_world_node_selected()` |
+| `shop_buy_requested` / `shop_sell_requested` / `shop_leave_requested` | `_on_gui_shop_*()` |
+| `shrine_ascend_requested` / `shrine_leave_requested` | `_on_gui_shrine_*()` |
+| `town_temple_requested` / `town_travel_requested` | `_on_gui_town_*()` |
+
+### Player → `game.gd` → GUI (wired in `game.gd.set_player()`)
+
+| Player signal | Drives |
+|---|---|
+| `damaged` / `healed` | `gui.update_player_health()` |
+| `armor_changed` | `gui.update_player_armor()` |
+| `armor_absorbed` | `gui.log_message("Your armor absorbs …")` |
+| `mana_spent` / `mana_restored` | `gui.update_player_mana()` |
+| `dodged` | `gui.log_message("You dodged…")` |
+| `stats_changed` | `gui.update_player_stats()` (+ health) |
+| `gold_changed` / `experience_changed` | `gui.update_player_gold()` / `update_player_xp()` |
+| `status_applied` / `status_ticked` / `status_expired` | `gui.refresh_player_statuses()` |
+| `hand_actions_changed` | `gui.rebuild_action_buttons(...)` |
+| `action_resolved` / `turn_ended` | turn/action-bar bookkeeping in `game.gd` |
+| `died` | `_on_player_died()` → `gui.show_game_over()` |
+
+### Enemy (per instance) → `game.gd` → GUI (wired when the enemy is added to combat)
+
+| Enemy signal | Drives |
+|---|---|
+| `damaged` | `gui.update_enemy_health_bar()` |
+| `armor_changed` | `gui.update_enemy_armor()` |
+| `status_applied` / `ticked` / `expired` | `gui.refresh_enemy_statuses()` |
+| `died` | `gui.remove_enemy_health_bar()` |
+| `attack(damage)` | `game.gd` applies damage to the player |
+
+### Panel / WorldMap → `gui.gd` (wired in `gui.gd._ready()`)
+
+| Source | Signal | Relayed as / handled by |
+|---|---|---|
+| `MainMenu/StartButton` | `pressed` | `_on_start_button_pressed()` (save-gate → creation) |
+| `MainMenu/ContinueButton` | `pressed` | `continue_requested` |
+| `MainMenu/QuitButton` | `pressed` | `get_tree().quit()` |
+| `NewRunConfirmDialog` | `confirmed` | clears save, shows creation |
+| `PauseMenu/ResumeButton` | `pressed` | `handle_esc()` |
+| `PauseMenu/QuitToMainButton` | `pressed` | `quit_to_main_requested` |
+| `CharacterCreationPanel` | `character_confirmed(...)` | `character_created(...)` |
+| `DialoguePanel` | `dialogue_complete(id)` | `dialogue_complete(id)` |
+| `SkillCheckPanel` | `skill_check_complete(ok)` | `skill_check_complete(ok)` |
+| `RestPanel` | `rest_requested` / `rest_complete` | same names |
+| `ShrinePanel` | `ascend_requested` / `leave_requested` | `shrine_ascend_requested` / `shrine_leave_requested` |
+| `TownPanel` | `temple_requested` / `travel_requested` | `town_temple_requested` / `town_travel_requested` |
+| `ShopPanel` | `buy_requested` / `sell_requested` / `leave_requested` | `shop_*_requested` |
+| `LevelUpPanel` | `level_up_confirmed` | `level_up_complete` |
+| `ConsumableBelt` | `consumable_pressed(index)` | use-or-manage split (see ConsumableBelt) |
+| `GameOverPanel` / `VictoryPanel` | `main_menu_requested` | `quit_to_main_requested` |
+| `WorldMap` | `node_selected(node)` | `node_selected(node)` (map hidden first) |
+
+**Direct, no relay:** `Inventory.consumable_belt_changed` / `belt_size_changed` → `ConsumableBelt` internals (wired in `gui.setup_consumable_belt()`); the belt rebuilds from `Inventory`, never from `Player`.
+
+**Not wired to GUI directly:** `player.attack_hit` / `cast_hit` resolve in `game.gd`/`CombatEvent`; GUI sees only the resulting `damaged` / `armor_changed` / health updates.
 
 ---
 
@@ -624,12 +786,12 @@ Wiring signal (planned): `PickupChoicePanel.choice_made(choice, target_index, di
 
 ## Open Questions
 
-- **ActionMenu shape** — Single attack button now. May grow to vertical list (Attack / Spell / Item / Flee) or grid.
-- **Enemy health bar layout** — Stacked vertically in `EnemyHUD` or positioned near each enemy sprite?
-- **Enemy health bar identity** — Show enemy names? Distinguish two skeletons?
-- **CombatLog persistence** — Clear on each new combat, or accumulate across the run?
+- ~~**ActionMenu shape**~~ — Resolved: dual-hand rows (`MainhandActions` / `OffhandActions`) plus an explicit `EndTurnButton`, built by `rebuild_action_buttons()`. See the dual-hand action bar section.
+- **Enemy health bar layout** — Positioned near each enemy sprite (screen-projected from `enemy.global_position + enemy_health_bar_offset`). Open: behavior when enemies overlap or crowd.
+- **Enemy health bar identity** — Still open. Bars now carry an armor readout and a status `Label`, but no name/label to distinguish two identical enemies (e.g. two skeletons).
+- ~~**CombatLog persistence**~~ — Resolved: cleared per event in `show_event_hud()`, not accumulated across the run.
 - **PauseMenu contents** — Resume and quit are the minimum. Settings, controls, save/load may follow.
-- **ConsumableBelt scope** — Belt buttons live inside `CombatHUD` today, so they're only visible while fighting. Since usage is permitted during `NO_TURN` and `DIALOGUE`, a later pass may surface the belt outside combat (world-map overlay or persistent HUD element). MVP keeps it combat-only.
+- ~~**ConsumableBelt scope**~~ — Resolved: the belt is a **GUI-level child**, shown during combat *and* while the InventoryPanel is open (management mode). It is no longer trapped inside `CombatHUD`.
 - **PickupChoicePanel shape** — Listed inline in `game.gd._on_consumable_pickup()` flow, but the panel scene and layout are not yet designed. Open questions: modal vs inline, single-screen with all choices vs two-step (choice → displaced-item destination for swaps), how the displaced-item choice is surfaced visually (two extra buttons or a secondary prompt).
 - **Dungeon-lock feedback** — InventoryPanel needs to communicate *why* controls are disabled when locked ("Bag sealed — the bad air keeps you moving", or a padlock icon, or the whole panel shaded). MVP probably a single status label; revisit when lore copy is being written.
 - **Equipment pickup UX outside dungeons** — When the player is on the world map / rest / shop and picks up an item, the pickup flow has more options than the two-choice dungeon prompt. Need to decide whether to route those to the same `PickupChoicePanel` with an expanded choice set, or let the InventoryPanel be the primary handling path and skip the pickup prompt entirely in safe contexts.
@@ -725,7 +887,7 @@ Fallback for everything bars can't show (`CombatLog` RichTextLabel):
 
 ### 10. Combat entry / exit
 
-- **Victory** and **Game Over** panels (both still planned) + the level-up flow that interposes when `pending_stat_points > 0`.
+- **Victory** and **Game Over** panels (both implemented) + the level-up flow that interposes when `pending_stat_points > 0`.
 - **Rewards** surfaced on win (XP / gold / stock mutations).
 - **Combat-status cleanup** — COMBAT statuses vanish on exit; the disappearance should feel intended.
 
