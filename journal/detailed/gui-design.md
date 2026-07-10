@@ -633,3 +633,103 @@ Wiring signal (planned): `PickupChoicePanel.choice_made(choice, target_index, di
 - **PickupChoicePanel shape** — Listed inline in `game.gd._on_consumable_pickup()` flow, but the panel scene and layout are not yet designed. Open questions: modal vs inline, single-screen with all choices vs two-step (choice → displaced-item destination for swaps), how the displaced-item choice is surfaced visually (two extra buttons or a secondary prompt).
 - **Dungeon-lock feedback** — InventoryPanel needs to communicate *why* controls are disabled when locked ("Bag sealed — the bad air keeps you moving", or a padlock icon, or the whole panel shaded). MVP probably a single status label; revisit when lore copy is being written.
 - **Equipment pickup UX outside dungeons** — When the player is on the world map / rest / shop and picks up an item, the pickup flow has more options than the two-choice dungeon prompt. Need to decide whether to route those to the same `PickupChoicePanel` with an expanded choice set, or let the InventoryPanel be the primary handling path and skip the pickup prompt entirely in safe contexts.
+
+---
+
+## Combat UI — Information Inventory (design-sketch checklist)
+
+**Date:** 2026-07-09
+**Status:** Design sketch — pre-implementation. Enumerates everything combat must surface so a layout can be drawn against it. Grounded in the systems as they exist in `player.gd`, `enemy.gd`, `combatant.gd`, and the status/verb work of [[daily/2026-07-08]] / [[daily/2026-07-09]]. Items marked **(invisible today)** are the player-legibility gaps this pass targets.
+
+Several existing [Open Questions](#open-questions) overlap here — ActionMenu shape (→ §2), enemy health bar layout/identity (→ §4), CombatLog persistence (→ §7).
+
+### 1. Player vitals
+
+- **Health** — current / max; damage-taken and heal feedback (`damaged`, `healed`).
+- **Armor buffer** — *distinct from HP*, per-round, DEF-derived, refills at round start, soaks damage before HP (`armor_changed`, `armor_absorbed`). Needs its own bar/pip layer, not folded into the health bar. Show depletion mid-round.
+- **Mana** — current / max; spend + restore feedback (`mana_spent`, `mana_restored`).
+- **Dodge** — AGI-driven; chance *halves per successful dodge this round* (`_dodge_streak`). Dodge event (`dodged`) must read clearly; the decaying chance should be legible so a dodge build understands why later hits land. **(partly invisible today)**
+- **Level / XP / Gold** — already in PlayerHUD; decide whether they stay visible or collapse during combat.
+
+### 2. Dual-hand action model
+
+Combat is two independently-gated hands, not one attack button.
+
+- **Mainhand + offhand as separate action slots**, each with its own attack list and spell list.
+- **Per-hand spent/unspent state** this turn (`_mainhand_used` / `_offhand_used`) — UI must show which hands remain available.
+- **Two-handed weapons lock the offhand** (`is_offhand_locked`), sometimes granting `locked_offhand_attacks` — offhand slot needs distinct locked / empty-punch / has-actions appearances.
+- **Action-in-flight state** (`_action_resolving`) — one action animates before the second is allowed; buttons need a disabled/pending look during resolution.
+- **End Turn is explicit and separate** — never fired by an attack; its own prominent control, and the thing to press when you don't want to spend a hand.
+- Offhand actions animate the offhand weapon separately (mirrored) — leave stage room for two acting sources.
+
+### 3. Per-action information (per button)
+
+Decide what shows on the button face vs. on hover:
+
+- Name, and **which hand** it belongs to.
+- **Spell mana cost — effective, not raw.** `compute_spell_cost()` multiplies by equipment; show the computed cost and grey out when unaffordable.
+- **Target mode** — SELF vs single vs (planned) AOE/multi; shown before committing.
+- **Elemental signature / martial verb** (Fire/Frost/Lightning/Poison, Bleed/Shatter/Brace). **(invisible today)**
+- **Self-cost & procs** — self-damage, HP costs, proc chances (`proc_def.gd`). **(invisible today)**
+- **Consumable belt** — per-slot icons, disabled when empty or state disallows (spec'd in `consumable_belt_ui`).
+
+### 4. Enemies
+
+- **Per-enemy health bar** (spawned per living enemy) + the same **armor buffer** the player has (`enemy.armor` / `max_armor`).
+- **Identity** — the "two skeletons" problem: names or numbering.
+- **Enemy statuses** — same status-row treatment as the player.
+- **Move telegraph** — `peek_next_move()` exists for this; show the enemy's *upcoming* move (`EnemyMoveData`) so the player can react. Already code-supported.
+- **Positioning / array order** — enemies are an ordered array and *adjacency matters* (chain lightning jumps to the array-adjacent enemy). Layout should reflect adjacency or chain effects feel random.
+- **Death** — removal timing (`death_finished`) and bar clear.
+
+### 5. Targeting
+
+- **Target selection** — `target_indicator` exists. Click enemy, or select-action-then-target?
+- **Hit preview for multi-target** — AOE and chain must show which enemies will be hit before confirming (given adjacency rules).
+- **Self-targeted actions** (Brace, buffs, heals) — visually distinct from offensive ones.
+
+### 6. Status effects (display layer)
+
+- **Status row** per combatant — icon, **turns remaining** (`status_ticked`), stacking (`stack_policy`: STACK / REFRESH / MAX_DURATION).
+- **Persistence marker** — COMBAT statuses clear at fight end; PERSISTENT (gear/background) ones don't. Distinguish so players don't expect a buff to linger.
+- **Rule-changing statuses that need explicit signposting:**
+  - **Shatter** — suppresses armor refresh, so the armor bar *stays empty* next round; without an indicator this looks like a bug.
+  - **Brace** — bumps max armor / armor.
+  - **Stun / `prevents_action`** — combatant skips its turn; needs a clear "stunned, turn skipped" read.
+  - **Regen / poison / burn / bleed** — ticking each turn.
+- **Application feedback** — status landing vs. resisted/gated. Bleed only applies on real HP loss (`GatedBleedEffect`); the gated no-op needs feedback so it doesn't look broken. **(invisible today)**
+
+### 7. Combat log
+
+Fallback for everything bars can't show (`CombatLog` RichTextLabel):
+
+- Damage dealt/taken **with source** (which attack, which enemy).
+- **Armor absorbed** vs. HP lost (`armor_absorbed`) — answers "why did that big hit do nothing."
+- Dodges, misses.
+- Status applied / ticked / expired.
+- Proc fired / crit / elemental-verb triggers (burst tick, chain jump, pierce, shatter).
+- Open question: clear per-combat vs. accumulate across the run.
+
+### 8. Turn & round flow
+
+- **Whose turn** (`set_player_turn`) — clear player-turn vs enemy-turn state; lock controls during enemy turn.
+- **Round boundary** — armor refreshes and dodge streak resets *per round*; without a round indicator those mechanics are opaque.
+- **Resolution pacing** — weapon attack / cast / hit-landed / hurt-overlay / enemy death animations gate the next input; UI must reflect "busy, wait."
+
+### 9. Combat scene composition (the stage)
+
+- **Player paper-doll** (body/armor/arms) + weapon scene with attack/cast animations — reserve stage space.
+- **Enemy sprites** laid out to reflect targeting/adjacency.
+- **Hurt overlay** flash, hit VFX, floating damage numbers (decide yes/no — they'd offload the combat log).
+- **Backdrop / framing** relative to the persistent PlayerHUD and CombatHUD.
+
+### 10. Combat entry / exit
+
+- **Victory** and **Game Over** panels (both still planned) + the level-up flow that interposes when `pending_stat_points > 0`.
+- **Rewards** surfaced on win (XP / gold / stock mutations).
+- **Combat-status cleanup** — COMBAT statuses vanish on exit; the disappearance should feel intended.
+
+### Cross-cutting decisions to make first
+
+1. **Effective vs. base stats.** Everything the player sees in combat (DEF→armor, AGI→dodge, SPI→mana, damage) is computed by stacking equipment + blessings + background + statuses on base. The UI should show *effective* values, with the breakdown on hover — this is the core of the legibility pass.
+2. **Space budget** for two hands + N enemies + status rows + a log. The dual-hand model fights a single action bar; decide early whether hands are side-by-side, stacked, or context-switched.
