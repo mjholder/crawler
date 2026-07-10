@@ -4,21 +4,23 @@
     "type": "split",
     "children": [
       {
-        "id": "3691e1b5da5fb1ac",
+        "id": "9f00f69c1acb0f7d",
         "type": "tabs",
         "children": [
           {
-            "id": "c125f276b97323a8",
+            "id": "a0611322424ae1bd",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "kanban",
               "state": {
-                "file": "ideas.md",
-                "mode": "source",
-                "source": false
+                "file": "ideas-board.md",
+                "kanbanViewState": {
+                  "kanban-plugin": "board",
+                  "list-collapse": []
+                }
               },
-              "icon": "lucide-file",
-              "title": "ideas"
+              "icon": "lucide-trello",
+              "title": "ideas-board"
             }
           }
         ]
@@ -180,23 +182,31 @@
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false
+      "bases:Create new base": false,
+      "obsidian-kanban:Create new board": false
     }
   },
-  "active": "c125f276b97323a8",
+  "active": "a0611322424ae1bd",
   "lastOpenFiles": [
-    "ideas.md.tmp.38221.22f2acbaac04",
+    "ideas/example-idea.md",
+    "detailed/kanban-workflow.md.tmp.38221.7f6ad33a7e5e",
+    "detailed/kanban-workflow.md.tmp.38221.fbbe7e694e0a",
+    "ideas-board.md",
+    "README.md.tmp.38221.5bc06e996d5f",
+    "README.md.tmp.38221.ff0e0687f89c",
+    "detailed/kanban-workflow.md.tmp.38221.9bd07a124486",
+    "detailed/kanban-workflow.md",
+    "detailed/kanban-workflow.md.tmp.38221.ac206c9a95d6",
+    "ideas/example-idea.md.tmp.38221.1366a835ef29",
+    "ideas/TEMPLATE.md",
+    "ideas/TEMPLATE.md.tmp.38221.9edc964d664e",
+    "ideas-board.md.tmp.38221.3cfa537c400c",
+    "ideas",
+    "Untitled Kanban.md",
+    "detailed/gui-design.md",
+    "daily/2026-07-09.md",
+    "ideas.md",
     "daily/2026-07-08.md",
-    "daily/2026-07-08.md.tmp.38221.c8908c04ed5a",
-    "ideas.md.tmp.38221.d85856be7eda",
-    "design.md.tmp.38221.5345d7e1c99e",
-    "design.md.tmp.38221.1199ef0aba28",
-    "ideas.md.tmp.7038.5e5ce0dc8ca7",
-    "daily/2026-07-07.md.tmp.38221.c2353f99745f",
-    "architecture.md.tmp.38221.faa00c018960",
-    "architecture.md.tmp.38221.1e6cde1c7742",
-    "detailed/character.md.tmp.38221.4fe2ac7790d3",
-    "ideas.md.tmp.38221.ef1a9e8321df",
     "daily/2026-07-07.md",
     "daily/2026-07-05.md",
     "daily/2026-07-03.md",
@@ -204,7 +214,6 @@
     "detailed/event-system.md",
     "detailed/character.md",
     "daily/2026-07-02.md",
-    "ideas.md",
     "daily/2026-07-01.md",
     "daily/2026-06-28.md",
     "daily/2026-06-27.md",
@@ -215,13 +224,6 @@
     "daily/2026-05-22.md",
     "daily/2026-05-21.md",
     "daily/2026-05-20.md",
-    "daily/2026-05-19.md",
-    "daily/2026-05-09.md",
-    "README.md",
-    "daily/2026-05-08.md",
-    "daily/2026-05-05.md",
-    "daily/2026-05-03.md",
-    "daily/2026-05-02.md",
     "canvas/Untitled 1.canvas",
     "canvas/Untitled.canvas",
     "Untitled.canvas"
