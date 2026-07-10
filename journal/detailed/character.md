@@ -308,7 +308,7 @@ func is_dungeon_locked() -> bool:
 
 No signal fires on a blocked call — the operation is simply a no-op. UI code (InventoryPanel) is responsible for disabling controls up-front via `gui.set_dungeon_locked(true)` rather than relying on silent method failure.
 
-> **Lore pointer:** see [[ideas.md]] entries **Equipment locked in dungeons ("bad air")** and **Consumable handling mid-dungeon ("only the dead remain still")** for the fiction behind this rule.
+> **Lore pointer:** see the [[ideas/equipment-locked-in-dungeons]] and [[ideas/consumable-handling-mid-dungeon]] idea docs for the fiction behind this rule.
 
 ### Named Slot API
 
@@ -1067,11 +1067,11 @@ Loot interaction selects item (data)
 - **Level cap:** Not defined — can be added as an export var when content scope is clearer.
 - **Respec:** Not planned.
 - **XP display:** HUD should show progress toward next level ("XP: 45/115") once leveling lands in the UI.
-- **Consumable belt growth:** MVP ships with a fixed `starting_consumable_slots` per class and the `set_belt_size()` helper. No equipment-driven or level-driven growth mechanic exists yet — see [[ideas.md]].
+- **Consumable belt growth:** MVP ships with a fixed `starting_consumable_slots` per class and the `set_belt_size()` helper. No equipment-driven or level-driven growth mechanic exists yet — see [[ideas/consumable-belt-growth]].
 - **Combat-only consumables:** No flag distinguishes combat-only from universal items. `DAMAGE_ALL` no-ops outside combat; other effects work anywhere allowed by the state gate. A future `combat_only: bool` on `ConsumableData` could disable buttons when out of scope rather than silently failing.
 - **Buff stacking:** Additive with independent decrements; no caps, no diminishing returns, no per-stat merging. Two `+5 STR, 3 turns` buffs stack to `+10 STR` and both tick down separately.
 - **`use_sfx` playback channel:** Unresolved whether to reuse `SFX/AttackPlayer`, add a dedicated `SFX/ConsumePlayer` on the Player, or let the dispatcher play it on a one-shot node. Flag at implementation time.
-- **Dungeon lock boundaries:** `game.gd` drives `Inventory.set_dungeon_locked()`. The exact world-map → dungeon transition hook is not yet defined — current turn-state machine has no `IN_DUNGEON` phase. May derive from `current_event` type (e.g. `CombatEvent` / `LootEvent` / `RoleplaysEvent` imply dungeon) vs `ShopEvent` / `RestEvent` (imply safe node). Revisit when dungeon-run structure ([[ideas.md]] § Roguelike Run Structure) is formalized.
+- **Dungeon lock boundaries:** `game.gd` drives `Inventory.set_dungeon_locked()`. The exact world-map → dungeon transition hook is not yet defined — current turn-state machine has no `IN_DUNGEON` phase. May derive from `current_event` type (e.g. `CombatEvent` / `LootEvent` / `RoleplaysEvent` imply dungeon) vs `ShopEvent` / `RestEvent` (imply safe node). Revisit when dungeon-run structure ([[ideas/roguelike-run-structure]] § Roguelike Run Structure) is formalized.
 - **Shrine / safe room unlock:** Planned longer-dungeon feature that temporarily unlocks the inventory mid-dungeon. Not yet in scope. When built, it toggles `set_dungeon_locked(false)` on entry and `true` on exit.
 - **Full-belt-plus-full-bag pickup:** If the belt is full AND the bag is full, the player's only remaining choices are Swap+Drop (displaced item lost) or Drop (new item lost). Acceptable but harsh; may want to surface this clearly in the pickup UI.
 - **Pre-dungeon preparation UX:** Leaving belt slots empty before descending is a valid strategy (room for pickups). The UI may want to signal this as a deliberate choice rather than an oversight, e.g. a subtle "Empty — ready for pickup" label rather than a warning indicator.

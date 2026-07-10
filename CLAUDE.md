@@ -39,8 +39,8 @@ journal/   # Developer docs (design decisions, ideas, daily logs)
 | `scripts/character_creation_panel.gd` | Hand-built wizard UI: Class → Background → Patron Saint → Confirm |
 | `journal/design.md` | Architectural decisions with rationale — read before changing structure |
 | `journal/architecture.md` | Mermaid architecture map — high-level graph, event hierarchy, signal flow, equipment model |
-| `journal/ideas-board.md` | Kanban backlog (Obsidian Kanban plugin); cards link to per-idea docs in `journal/ideas/`. See `journal/detailed/kanban-workflow.md` |
-| `journal/ideas.md` | Legacy flat backlog — being migrated onto the board; still canonical for existing entries |
+| `journal/ideas-board.md` | Kanban backlog (Obsidian Kanban plugin) — **the** backlog; cards link to per-idea docs in `journal/ideas/`. See `journal/detailed/kanban-workflow.md`. (The old flat `ideas.md` was migrated onto the board 2026-07-10 and removed.) |
+| `journal/ideas-archive.md` | Resolved ideas (shipped / dropped), kept for history |
 | `journal/daily/` | Session logs |
 
 ## Established Architecture

@@ -24,7 +24,7 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 **Date:** 2026-07-09
 **Daily:** [[daily/2026-07-09]]
 
-**Decision:** Land the *systems* for the two top [[ideas.md]] entries — elemental signatures
+**Decision:** Land the *systems* for the two top [[ideas/elemental-signature-identities]] entries — elemental signatures
 (Poison/Fire/Lightning/Frost) and martial verbs (Bleed/Shatter/Brace) — as plumbing only, ready
 for `.tres` authoring next. No content authored yet; every new field/behavior defaults to a
 no-op, so in-game behavior is unchanged until resources exist. Each mechanism uses the tool that
@@ -101,7 +101,7 @@ combat is a footgun; this mirrors the existing full-clear paths (`apply_status_s
 that applied them — enemies escaped the bug for free (freed at teardown) but the player's
 `_active_statuses` was never swept, so e.g. a lingering poison kept ticking into the next event.
 Groundwork for a wave of upcoming status work (Bleed, burst-Burn, Shatter/Brace, elemental
-signatures — see [[ideas.md]]), all of which need a clean rule for what survives a fight.
+signatures — see [[ideas/elemental-signature-identities]]), all of which need a clean rule for what survives a fight.
 
 **Alternatives considered:**
 
@@ -153,7 +153,7 @@ transient combat state and are **not** saved.
 DEF point is a flat 1% with no soft cap, so DEF 100 = literal immunity, and the planned
 Sentinel is explicitly a DEF-stacking class. Dodge had a parallel problem: uncapped flat
 chance let a high-AGI build occasionally no-sell a whole multi-attack round through variance,
-undercutting the 5–8-turn attrition pacing. See [[ideas.md]] — "DEF as refreshing ward"
+undercutting the 5–8-turn attrition pacing. See [[ideas/def-refreshing-ward]] — "DEF as refreshing ward"
 (2026-07-06) and "Consecutive-attack dodge decay" (2026-07-05).
 **Alternatives considered:** Keep percentage but hand out less DEF in loot (holds the average
 down but not the Sentinel's ceiling — tuning, not structure). A diminishing-returns curve
@@ -196,7 +196,7 @@ on its own actions); `_do_attack`/`_do_cast` defer the offhand hit until the off
 **Date:** 2026-07-03
 **Daily:** [[daily/2026-07-03]]
 **Context:** A weapon was hard-bound to the mainhand by `EquipmentData.slot`; there was no way to
-author an off-hand-capable weapon nor for the player to choose a hand. Scoped in [[ideas.md]]
+author an off-hand-capable weapon nor for the player to choose a hand. Scoped in [[ideas/per-hand-weapon-restriction]]
 ("Per-Hand Weapon Restriction + Offhand Moveset"). This also retired the v1 limitation that only the
 mainhand weapon animated (see the dual-action-combat entry below).
 **Alternatives considered:**
@@ -230,7 +230,7 @@ guard that cancels a dangling selection if the panel closes.
 **Decision:** The player turn splits into two independently-gated action slots — **mainhand** (WEAPON slot) and **offhand** (OFFHAND slot). `Player` replaces its single `_actions` registry with per-hand registries (`_hand_actions[Hand]`, plus `_hand_attacks`/`_hand_spells` source lists) and `_mainhand_used`/`_offhand_used` flags reset by `begin_turn()`. `execute_action(hand, name)` no longer ends the turn: it runs the action and sets `_action_resolving`; `_process` clears that on resolve, marks the hand used, and emits `action_resolved(hand)`. **The turn ends only via the explicit `end_turn()`** (End Turn button or stun `pass_turn()`), which is now the sole place `_tick_statuses()` + `turn_ended` fire. A hand's action set is derived in `_rebuild_hand_actions()` from the item it holds: its `attacks`, plus the prepared repertoire iff the item is a **focus** (`grants_casting`), else a weapon's `innate_spells`; an empty hand falls back to a shared unarmed `Punch`. A two-handed weapon locks the offhand but supplies its supporting action(s) via `offhand_attacks`. Data model: `attacks` + `grants_casting` promoted from `WeaponData` to `EquipmentData`; `offhand_attacks` added to `WeaponData`. v1 keeps offhand actions **non-animating** (only the mainhand WEAPON scene animates).
 **Date:** 2026-07-02
 **Daily:** [[daily/2026-07-02]]
-**Context:** Combat gave one action per turn — `execute_action` set `_turn_pending` and `_process` emitted `turn_ended` the moment it resolved, so turns were one click. [[ideas.md]] ("Dual-Action Combat", 2026-06-30) spec'd two per-hand slots as the player-side counterpart to enemy attack patterns. Spellcasting was an ungated free action independent of equipment; the user asked to fold it into the hand system so it, too, costs a hand.
+**Context:** Combat gave one action per turn — `execute_action` set `_turn_pending` and `_process` emitted `turn_ended` the moment it resolved, so turns were one click. [[ideas/dual-action-combat]] ("Dual-Action Combat", 2026-06-30) spec'd two per-hand slots as the player-side counterpart to enemy attack patterns. Spellcasting was an ungated free action independent of equipment; the user asked to fold it into the hand system so it, too, costs a hand.
 **Alternatives considered:**
 - *One flat action registry keyed by name, with a parallel hand map* — smaller diff, but a mainhand and offhand sharing an action name (two "Punch"es) collide in one dict. Rejected for per-hand registries, which make collisions impossible and hand-gating natural.
 - *Auto-end the turn when both hands are spent* — fewer clicks, but the user chose **explicit End Turn always** (turn never auto-ends) for full control and to allow declining a hand.
@@ -245,7 +245,7 @@ guard that cancels a dangling selection if the panel closes.
 **Decision:** Enemies gain an optional, looping **fixed-sequence** move pattern. New `EnemyMoveData` (name, description, `Target` enum `PLAYER`/`SELF`, `effects: Array[Effect]`, icon, sound) and `EnemyPatternData` (`moves: Array[EnemyMoveData]`) resources. `Enemy` carries an optional `pattern` export and a per-instance `_pattern_index` cursor; `_emit_attack()` is made pattern-aware — with a pattern it emits `move_performed(move)` and advances the cursor (wrapping), otherwise it keeps the legacy `attack(attack_damage)` behavior. Effect resolution lives in `game._on_enemy_move_performed()` (via a `CombatEvent.enemy_move_performed` relay), mirroring `_on_player_attack_hit`: it applies each effect with `source = enemy`, `target = player` (or the enemy itself for `SELF` moves).
 **Date:** 2026-07-01
 **Daily:** [[daily/2026-07-01]]
-**Context:** Every enemy had exactly one hardcoded behavior via `_perform_action()`; there was no turn-to-turn variety and no way for an enemy to apply a status/self-buff/heal — only flat damage. [[ideas.md]] ("Enemy Attack Patterns", 2026-06-30) spec'd a fixed sequence as the enemy-side counterpart to dual-action combat, chosen over weighted/reactive selection because a fixed order makes honest telegraphing trivial (peek the cursor).
+**Context:** Every enemy had exactly one hardcoded behavior via `_perform_action()`; there was no turn-to-turn variety and no way for an enemy to apply a status/self-buff/heal — only flat damage. [[ideas/enemy-attack-patterns]] ("Enemy Attack Patterns", 2026-06-30) spec'd a fixed sequence as the enemy-side counterpart to dual-action combat, chosen over weighted/reactive selection because a fixed order makes honest telegraphing trivial (peek the cursor).
 **Alternatives considered:**
 - *Reuse `AttackData` as the move type* (literal reading of ideas.md) — zero new class, but its `TargetMode` (`SINGLE_ENEMY`/`ALL_ENEMIES`) reads backwards from the enemy's side. Rejected for a dedicated `EnemyMoveData` with enemy-centric `PLAYER`/`SELF` targeting, which also future-proofs enemy authoring.
 - *Weighted / reactive (HP- or player-state-driven) selection* — more organic but harder to telegraph honestly; deferred to a later extension per ideas.md.
@@ -260,7 +260,7 @@ guard that cancels a dangling selection if the panel closes.
 **Decision:** The terminal `ShrineMapNode` is renamed to `EndActMapNode` (event `ShrineEvent` → `EndActEvent`) and reframed as an end-of-act **town hub**. Reaching it opens a `TownPanel` whose services are **Temple** (the existing `ShrinePanel` ascension) and **Travel Onward**. Travelling onward swaps the live `WorldMap` scene for the node's `next_act_scene` (a new act), or — when that export is empty — wins the run. **Run-ending victory moves off the boss** onto the final act's end-act node.
 **Date:** 2026-06-27
 **Daily:** [[daily/2026-06-27]]
-**Context:** The run is designed as three acts ([[ideas.md]]) but the code had one hand-authored map and no act machinery; the shrine sat as an unreachable terminal node after the boss, which itself hard-ended the run on `_on_boss_defeated`. We wanted the end of an act to actually load the next act, and the shrine to grow into the planned town hub.
+**Context:** The run is designed as three acts ([[ideas/run-structure-and-act-progression]]) but the code had one hand-authored map and no act machinery; the shrine sat as an unreachable terminal node after the boss, which itself hard-ended the run on `_on_boss_defeated`. We wanted the end of an act to actually load the next act, and the shrine to grow into the planned town hub.
 **Alternatives considered:**
 - *One big map with act "regions"* — no scene swap, but can't reset node graphs per act and bloats a single hand-authored scene. Rejected.
 - *Data-driven `ActData` resource selecting a generic map* — more uniform, but each act's graph (positions/connections/node types) is hand-authored, so a reusable parametric map needs procedural generation we don't have. Deferred.
@@ -273,7 +273,7 @@ guard that cancels a dangling selection if the panel closes.
 **Decision:** Patron-saint tier ascension is delivered by a generic `ShrineEvent` reached through a hand-placed `ShrineMapNode`, where the player pays a gold tithe to `ascend_patron()` (replace, never stack) or leaves keeping gold and tier.
 **Date:** 2026-06-21
 **Daily:** [[daily/2026-06-21]]
-**Context:** Phase 1 shipped saints at tier 1 with `ascend_patron()`/`_patron_tier_index` already in place but no in-world trigger. Phase 2 needed the event, the choice UI, and a way for shrines to appear — the original spec ([[ideas.md]]) also wanted an "act" concept the codebase lacks.
+**Context:** Phase 1 shipped saints at tier 1 with `ascend_patron()`/`_patron_tier_index` already in place but no in-world trigger. Phase 2 needed the event, the choice UI, and a way for shrines to appear — the original spec ([[ideas/character-creation-layers]]) also wanted an "act" concept the codebase lacks.
 **Alternatives considered:**
 - *Shrine as a random `FloorEventPool` slot* (like combat/rest) — data-driven placement, but unpredictable and would force an "act"/depth concept to decide which tier/when. Rejected for now.
 - *Per-saint authored shrine resources* — custom flavor per saint, but multiplies content authoring; rejected in favor of one generic shrine.
@@ -348,7 +348,7 @@ _apply_defense: damage * (1.0 - clamp(DEF / 100.0, 0, 1))  — floor 1 (player),
 _roll_dodge:    randf() < clamp(AGI / 100.0, 0, 1)
 ```
 
-**Context:** The prior formula (`DEF / (DEF + 100)`) was a diminishing-returns curve — not legible without a graph. Players couldn't reason about what their DEF stat actually meant. The dodge formula used a separate `DODGE_AGI_FACTOR` constant for the same reason. See [[ideas.md]] — "Defense & Dodge Formula" (2026-05-15).
+**Context:** The prior formula (`DEF / (DEF + 100)`) was a diminishing-returns curve — not legible without a graph. Players couldn't reason about what their DEF stat actually meant. The dodge formula used a separate `DODGE_AGI_FACTOR` constant for the same reason. See [[ideas-archive.md]] — "Defense & Dodge Formula" (2026-05-15).
 
 **Alternatives considered:** Diminishing-returns formula (`DEF / (DEF + SCALING)`) — already implemented and shelved. Offers a natural soft-cap without explicit clamping, but the relationship between stat and outcome is opaque.
 

@@ -14,13 +14,13 @@ journal/
 ├── ideas-board.md     # Kanban backlog (Obsidian Kanban plugin)
 ├── ideas/             # Per-idea docs, one file per card
 │   └── TEMPLATE.md
-└── ideas.md           # Legacy backlog — being migrated to the board
+└── ideas-archive.md   # Resolved ideas (shipped / dropped), kept for history
 ```
 
 The active backlog is the [[ideas-board.md]] Kanban board plus the `ideas/` docs it
-links to; see [[detailed/kanban-workflow.md]] for the format and conventions.
-[[ideas.md]] / [[ideas-archive.md]] remain the source of truth for existing entries
-until they're migrated onto the board.
+links to; see [[detailed/kanban-workflow.md]] for the format and conventions. The old
+flat `ideas.md` was fully migrated onto the board (2026-07-10) and removed;
+[[ideas-archive.md]] holds resolved ideas for history.
 
 ## Workflow
 

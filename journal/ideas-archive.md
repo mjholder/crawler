@@ -1,10 +1,11 @@
 # Ideas & Backlog — Archive
 
 Ideas that have been **resolved** — either shipped (`completed`) or dropped (`abandoned`).
-Moved out of [[ideas.md]] to keep the live backlog lean. Kept here for history: the
+Moved off the active backlog to keep it lean. Kept here for history: the
 original framing, plus a resolution note pointing at where it landed.
 
-Active and partially-done ideas live in [[ideas.md]].
+Active and partially-done ideas live on the [[ideas-board.md]] Kanban board (backed by the
+`ideas/` docs).
 
 ---
 
@@ -21,7 +22,7 @@ Active and partially-done ideas live in [[ideas.md]].
 **Idea:** External content authoring tool
 **Added:** 2026-05-20
 **Resolved:** `completed` (v1)
-**Outcome:** Built as `tools/content_editor` — Vite/React frontend plus a Node sidecar with a native TS `.tres` parser (no Godot on the hot path). Schema-driven forms plus table views for the content types, where-used index, and round-trip-safe writes. The v1 goal — unblock balance iteration outside Godot's inspector — is met. The dialogue-graph (v2), inline sub-resource creation, enemy authoring, and modding-wrap follow-ons are tracked as their own entries in [[ideas.md]] / this archive.
+**Outcome:** Built as `tools/content_editor` — Vite/React frontend plus a Node sidecar with a native TS `.tres` parser (no Godot on the hot path). Schema-driven forms plus table views for the content types, where-used index, and round-trip-safe writes. The v1 goal — unblock balance iteration outside Godot's inspector — is met. The dialogue-graph (v2), inline sub-resource creation, enemy authoring, and modding-wrap follow-ons are tracked as their own entries on [[ideas-board.md]] / this archive.
 **Original notes:** A standalone app for authoring game content as concepts rather than files. The motivating pain isn't any one resource being hard to edit — it's that a single conceptual unit (a weapon, a class, a dialogue tree) is spread across multiple .tres and .json files with no view of the relationships and no validation until runtime.
 Why now: The game's balance is currently rough and needs real iteration — change a number, playtest, change another. Each iteration cycle is gated by multi-file editing through Godot's inspector, and the friction is high enough that balance work isn't happening. The tool's primary job, framed honestly, is unblocking design iteration on a game that's too barebones to evaluate without faster content authoring.
 Long-term vision: If the game ever ships and finds players, this tool is the natural seed of a modding interface — players use the same forms and tables to author their own weapons, classes, dialogue. That vision shapes architecture but not v1 scope. Concretely it means: schema exported from Godot rather than hardcoded, output is plain text in known locations, no assumptions about project layout beyond Godot's. Get those right in v1 and the path to a mod tool is mostly packaging and polish later.

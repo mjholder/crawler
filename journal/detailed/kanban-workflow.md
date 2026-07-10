@@ -7,9 +7,9 @@
 
 The backlog lives on an Obsidian Kanban board, [[ideas-board.md]] (plugin
 `obsidian-kanban` v2.0.51), backed by a directory of per-idea docs in `journal/ideas/`.
-This replaces the single-file [[ideas.md]] over time. **[[ideas.md]] and
-[[ideas-archive.md]] are still canonical until a later migration pass** — nothing has
-been moved yet.
+This **replaced** the single-file `ideas.md`, which was fully migrated onto the board on
+2026-07-10 and removed. [[ideas-archive.md]] holds resolved (shipped / dropped) ideas for
+history.
 
 The board is plain markdown that the plugin re-reads and re-serializes, so both the
 Obsidian UI and hand-edits (by a human or Claude) are valid ways to change it, as long
@@ -36,9 +36,11 @@ Four lanes, left to right:
 | `In Review` | Foundation shipped, awaiting verification / balance / content authoring. |
 | `Done` | Shipped and closed. (Marked as the plugin's "complete" lane.) |
 
-### Status mapping (for the later ideas.md migration)
+### Status mapping (used for the 2026-07-10 ideas.md migration)
 
-The old [[ideas.md]] `**Status:**` vocabulary maps onto lanes:
+The old `ideas.md` `**Status:**` vocabulary mapped onto lanes as follows (kept as a
+record of how the migration was reconciled — each entry's lane was verified against its
+actual shipped state, not just its stale status line):
 
 - `raw`, `worth exploring` → **Backlog**
 - `moved to plan`, actively building → **In Progress**
