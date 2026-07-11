@@ -9,7 +9,7 @@ extends DamageEffect
 ##
 ## `damage_expression` is the per-remaining-turn amount (evaluated against source stats): author
 ## a flat "1" for a clean 3/2/1 curve, or "spirit * 0.1" to scale the whole burst by a stat.
-## Inherits `pierce_expression` from DamageEffect.
+## Inherits `pierce_expression` from DamageEffect. The whole burst also scales by stack count.
 
 
 func apply_tick(source: Node, target: Node, instance: StatusInstance) -> void:
@@ -17,4 +17,4 @@ func apply_tick(source: Node, target: Node, instance: StatusInstance) -> void:
 		return
 	var per_turn := _eval.evaluate(damage_expression, source)
 	var pierce := _eval.evaluate(pierce_expression, source)
-	target.take_damage(per_turn * float(instance.turns_remaining), pierce)
+	target.take_damage(per_turn * float(instance.turns_remaining) * float(instance.stacks), pierce)

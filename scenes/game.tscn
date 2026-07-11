@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://nuxeodotj3dc"]
 
 [ext_resource type="Script" uid="uid://drgdsu6ayfhxl" path="res://scripts/game.gd" id="1_uwrxv"]
-[ext_resource type="Texture2D" uid="uid://cothgiwt7aclq" path="res://assets/sprites/ui/background.jpg" id="2_yqjtg"]
+[ext_resource type="Texture2D" uid="uid://dwf078w6efs4m" path="res://assets/sprites/ui/background.jpg" id="2_yqjtg"]
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="Script" uid="uid://5dudvo0rnvqu" path="res://scripts/dialogue_consequences.gd" id="5_dinhu"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
@@ -34,6 +34,10 @@ font = ExtResource("6_p57ef")
 font_size = 24
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
+font = ExtResource("6_p57ef")
+font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_suyxu"]
 font = ExtResource("6_p57ef")
 font_size = 32
 
@@ -146,18 +150,19 @@ mouse_filter = 2
 [node name="PlayerGold" type="PanelContainer" parent="GUI/PlayerHUD" unique_id=50661420]
 layout_mode = 0
 offset_left = 168.0
-offset_top = 160.0
+offset_top = 224.0
 offset_right = 328.0
-offset_bottom = 208.0
+offset_bottom = 272.0
 
 [node name="PlayerGoldLabel" type="Label" parent="GUI/PlayerHUD/PlayerGold" unique_id=1470941939]
 layout_mode = 2
-text = "Gold: 000"
+text = "Gold: 150"
 label_settings = SubResource("LabelSettings_sww3w")
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PlayerHealth" type="Control" parent="GUI/PlayerHUD" unique_id=82371538]
+layout_mode = 1
 anchors_preset = 0
 offset_left = 32.0
 offset_top = 32.0
@@ -169,7 +174,8 @@ modulate = Color(0.9192808, 4.47616e-06, 1.1551381e-06, 1)
 layout_mode = 1
 offset_right = 480.0
 offset_bottom = 48.0
-value = 50.0
+max_value = 100.0
+value = 70.0
 show_percentage = false
 
 [node name="PlayerHealthLabel" type="Label" parent="GUI/PlayerHUD/PlayerHealth" unique_id=2034464028]
@@ -179,12 +185,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "50/100"
+text = "70/100"
 label_settings = SubResource("LabelSettings_u5sy4")
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="PlayerArmor" type="Control" parent="GUI/PlayerHUD" unique_id=1497939842]
+layout_mode = 1
 anchors_preset = 0
 offset_left = 32.0
 offset_top = 96.0
@@ -196,7 +203,8 @@ modulate = Color(0.6, 0.72, 0.9, 1)
 layout_mode = 1
 offset_right = 480.0
 offset_bottom = 48.0
-value = 50.0
+max_value = 40.0
+value = 30.0
 show_percentage = false
 
 [node name="PlayerArmorLabel" type="Label" parent="GUI/PlayerHUD/PlayerArmor" unique_id=100000011]
@@ -206,7 +214,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "50/100"
+text = "30/40"
 label_settings = SubResource("LabelSettings_u5sy4")
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -214,9 +222,9 @@ vertical_alignment = 1
 [node name="InventoryButton" type="Button" parent="GUI/PlayerHUD" unique_id=300000009]
 layout_mode = 1
 offset_left = 32.0
-offset_top = 160.0
+offset_top = 224.0
 offset_right = 152.0
-offset_bottom = 208.0
+offset_bottom = 272.0
 theme_override_fonts/font = ExtResource("6_p57ef")
 theme_override_font_sizes/font_size = 24
 text = "Bag"
@@ -239,7 +247,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-value = 50.0
+max_value = 300.0
+value = 120.0
 show_percentage = false
 
 [node name="PlayerXPLabel" type="Label" parent="GUI/PlayerHUD/PlayerXP" unique_id=856153206]
@@ -249,8 +258,41 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "50/100"
+text = "120/300"
 label_settings = SubResource("LabelSettings_u5sy4")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PlayerMagic" type="Control" parent="GUI/PlayerHUD" unique_id=430688246]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 160.0
+offset_right = 512.0
+offset_bottom = 208.0
+
+[node name="PlayerMagicBar" type="ProgressBar" parent="GUI/PlayerHUD/PlayerMagic" unique_id=1363297900]
+modulate = Color(0, 0.36862746, 0.78431374, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+max_value = 60.0
+value = 45.0
+show_percentage = false
+
+[node name="PlayerMagicLabel" type="Label" parent="GUI/PlayerHUD/PlayerMagic" unique_id=51665426]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 32
+text = "45/60"
+label_settings = SubResource("LabelSettings_suyxu")
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -869,6 +911,26 @@ anchors_preset = 0
 offset_left = 1.0
 offset_right = 1.0
 
+[node name="DummyEnemyBar1" parent="GUI/CombatHUD/EnemyHUD" instance=ExtResource("9_hbar")]
+position = Vector2(760, 260)
+
+[node name="CurrentHealth" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar1" index="1"]
+scale = Vector2(64, 1)
+
+[node name="Armor" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar1" index="2"]
+visible = true
+scale = Vector2(40, 1)
+
+[node name="DummyEnemyBar2" parent="GUI/CombatHUD/EnemyHUD" instance=ExtResource("9_hbar")]
+position = Vector2(1160, 260)
+
+[node name="CurrentHealth" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar2" index="1"]
+scale = Vector2(38, 1)
+
+[node name="Armor" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar2" index="2"]
+visible = true
+scale = Vector2(20, 1)
+
 [node name="ActionMenu" type="Control" parent="GUI/CombatHUD" unique_id=2111488421]
 layout_mode = 1
 anchors_preset = 15
@@ -889,6 +951,18 @@ offset_right = 660.0
 offset_bottom = -68.0
 grow_vertical = 0
 
+[node name="DummyMainAction1" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+layout_mode = 2
+text = "Slash"
+
+[node name="DummyMainAction2" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+layout_mode = 2
+text = "Stab"
+
+[node name="DummyMainAction3" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+layout_mode = 2
+text = "Cleave"
+
 [node name="OffhandActions" type="HBoxContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=1176052192]
 layout_mode = 1
 anchors_preset = 3
@@ -902,6 +976,18 @@ offset_right = -47.0
 offset_bottom = -71.0
 grow_horizontal = 0
 grow_vertical = 0
+
+[node name="DummyOffAction1" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+layout_mode = 2
+text = "Brace"
+
+[node name="DummyOffAction2" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+layout_mode = 2
+text = "Chop"
+
+[node name="DummyOffAction3" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+layout_mode = 2
+text = "Flail"
 
 [node name="EndTurnButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=359829558]
 layout_mode = 1

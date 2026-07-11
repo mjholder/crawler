@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
 [ext_resource type="Resource" path="res://resources/effects/flail_damage.tres" id="2_dmg"]
-[ext_resource type="Resource" path="res://resources/effects/apply_minor_poison.tres" id="3_apply_minor_poison"]
+[ext_resource type="Resource" path="res://resources/effects/apply_poison.tres" id="3_apply_poison"]
 
 [resource]
 script = ExtResource("1_script")
 attack_name = "Flail"
-description = "A wild spin that strikes all enemies and disperses minor poison"
+description = "A wild spin that strikes all enemies and disperses poison"
 target_mode = 1
-effects = Array[Resource]([ExtResource("2_dmg"), ExtResource("3_apply_minor_poison")])
+effects = Array[Resource]([ExtResource("2_dmg"), ExtResource("3_apply_poison")])

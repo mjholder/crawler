@@ -23,6 +23,7 @@ kanban-plugin: board
 - [ ] Consumable belt growth mechanics — Grow the consumable belt past its per-class starting size via equipment slots or level-up milestones. [[ideas/consumable-belt-growth]]
 - [ ] Status-effect consumables (cure / remove) — A cure/remove-status consumable, now unblocked by Effect System v2 — authored as an Effect .tres calling remove_status. [[ideas/status-effect-consumables]]
 - [ ] Group dialogue UI components in a shared container — Wrap dialogue UI nodes in a shared layout container so they scale together. [[ideas/group-dialogue-ui-container]]
+- [ ] Reusable combat-UI widget scenes — Extract code-built combat-UI widgets (attack buttons, consumable belt slots, status icons) into reusable .tscn scenes with their own scripts, following the health_bar.tscn pattern. [[ideas/combat-ui-widget-scenes]]
 
 
 ## In Progress

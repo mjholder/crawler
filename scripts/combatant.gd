@@ -27,16 +27,25 @@ func apply_status(data: StatusData, source: Node) -> void:
 	if data == null:
 		return
 	for instance in _active_statuses:
-		if instance.data.tag == data.tag and data.stack_policy != StatusData.StackPolicy.STACK:
+		if instance.data.tag == data.tag:
 			match data.stack_policy:
 				StatusData.StackPolicy.REFRESH:
 					instance.turns_remaining = data.duration
 				StatusData.StackPolicy.MAX_DURATION:
 					instance.turns_remaining = maxi(instance.turns_remaining, data.duration)
+				StatusData.StackPolicy.STACK:
+					# One instance per tag: bump intensity and refresh duration rather than
+					# adding a parallel instance. on_tick damage scales by stacks.
+					instance.stacks += 1
+					instance.turns_remaining = data.duration
+			if not data.stat_modifiers.is_empty():
+				_on_stat_modifiers_changed()
+			status_applied.emit(data)
 			return
 	var entry := StatusInstance.new()
 	entry.data = data
 	entry.turns_remaining = data.duration
+	entry.stacks = 1
 	entry.source = source
 	_active_statuses.append(entry)
 	_wire_status_subscriptions(entry)
@@ -127,7 +136,7 @@ func to_status_save_array() -> Array[Dictionary]:
 	for instance in _active_statuses:
 		if instance.data == null or instance.data.resource_path.is_empty():
 			continue
-		result.append({"data_path": instance.data.resource_path, "turns_remaining": instance.turns_remaining})
+		result.append({"data_path": instance.data.resource_path, "turns_remaining": instance.turns_remaining, "stacks": instance.stacks})
 	return result
 
 
@@ -141,6 +150,7 @@ func apply_status_save_array(arr: Array) -> void:
 		var instance := StatusInstance.new()
 		instance.data = data
 		instance.turns_remaining = entry["turns_remaining"]
+		instance.stacks = entry.get("stacks", 1)
 		_active_statuses.append(instance)
 		_wire_status_subscriptions(instance)
 	if not _active_statuses.is_empty():

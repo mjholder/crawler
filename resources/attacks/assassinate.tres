@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
 [ext_resource type="Resource" path="res://resources/effects/assassinate_damage.tres" id="2_dmg"]
-[ext_resource type="Resource" path="res://resources/effects/apply_strong_poison.tres" id="3_apply_strong_poison"]
+[ext_resource type="Resource" path="res://resources/effects/apply_poison.tres" id="3_apply_poison"]
 
 [resource]
 script = ExtResource("1_script")
 attack_name = "Assassinate"
 description = "A low-damage strike that saturates the target with powerful poison"
-effects = Array[Resource]([ExtResource("2_dmg"), ExtResource("3_apply_strong_poison")])
+effects = Array[Resource]([ExtResource("2_dmg"), ExtResource("3_apply_poison"), ExtResource("3_apply_poison"), ExtResource("3_apply_poison")])

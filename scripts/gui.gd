@@ -30,12 +30,13 @@ signal continue_requested
 @onready var _new_run_confirm_dialog: ConfirmationDialog = $NewRunConfirmDialog
 @onready var _pause_menu: Control = $PauseMenu
 @onready var _player_hud: Control = $PlayerHUD
-@onready var _player_health_label: Label = $PlayerHUD/PlayerHealthLabel
-@onready var _player_health_bar: ProgressBar = $PlayerHUD/PlayerHealthBar
-@onready var _player_armor_bar: ProgressBar = get_node_or_null("PlayerHUD/PlayerArmorBar")
-@onready var _player_armor_label: Label = get_node_or_null("PlayerHUD/PlayerArmorLabel")
-@onready var _player_gold_label: Label = $PlayerHUD/PlayerGoldLabel
-@onready var _player_xp_label: Label = $PlayerHUD/PlayerXPLabel
+@onready var _player_health_label: Label = $PlayerHUD/PlayerHealth/PlayerHealthLabel
+@onready var _player_health_bar: ProgressBar = $PlayerHUD/PlayerHealth/PlayerHealthBar
+@onready var _player_armor_bar: ProgressBar = get_node_or_null("PlayerHUD/PlayerArmor/PlayerArmorBar")
+@onready var _player_armor_label: Label = get_node_or_null("PlayerHUD/PlayerArmor/PlayerArmorLabel")
+@onready var _player_gold_label: Label = $PlayerHUD/PlayerGold/PlayerGoldLabel
+@onready var _player_xp_bar: ProgressBar = $PlayerHUD/PlayerXP/PlayerXPBar
+@onready var _player_xp_label: Label = $PlayerHUD/PlayerXP/PlayerXPLabel
 @onready var _combat_hud: Control = $CombatHUD
 @onready var _enemy_hud: Control = $CombatHUD/EnemyHUD
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
@@ -47,6 +48,9 @@ signal continue_requested
 @onready var _end_turn_button: Button = get_node_or_null("CombatHUD/ActionMenu/EndTurnButton")
 @onready var _consumable_belt: ConsumableBeltUI = $ConsumableBelt
 @onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
+@onready var _player_mana_bar: ProgressBar = $PlayerHUD/PlayerMagic/PlayerMagicBar
+@onready var _player_mana_label: Label = $PlayerHUD/PlayerMagic/PlayerMagicLabel
+@onready var _status_container: HBoxContainer = $CombatHUD/PlayerStatusEffects/StatusContainer
 @onready var _dialogue_panel: DialoguePanel = $DialoguePanel
 @onready var _skill_check_panel: SkillCheckPanel = $SkillCheckPanel
 @onready var _rest_panel: RestPanel = $RestPanel
@@ -72,8 +76,6 @@ var _oh_used: bool = false
 var _oh_locked: bool = false
 var _action_mana: float = 0.0
 var _player_status_label: Label = null
-var _player_mana_label: Label = null
-var _player_mana_bar: ProgressBar = null
 var _enemy_status_labels: Dictionary = {}
 
 
@@ -117,31 +119,16 @@ func _ready() -> void:
 	_game_over_panel.main_menu_requested.connect(func() -> void: quit_to_main_requested.emit())
 	_victory_panel.hide()
 	_victory_panel.main_menu_requested.connect(func() -> void: quit_to_main_requested.emit())
+	# Transient message toast (e.g. "Not enough mana"). Positioned below the HUD's
+	# left column, which now runs down to ~y208 (health/armor/magic + Bag/Gold row).
 	_player_status_label = Label.new()
 	_player_status_label.name = "PlayerStatusLabel"
 	_player_status_label.layout_mode = 1
 	_player_status_label.offset_left = 38.0
-	_player_status_label.offset_top = 175.0
+	_player_status_label.offset_top = 220.0
 	_player_status_label.offset_right = 400.0
-	_player_status_label.offset_bottom = 210.0
+	_player_status_label.offset_bottom = 255.0
 	_player_hud.add_child(_player_status_label)
-	_player_mana_bar = ProgressBar.new()
-	_player_mana_bar.name = "PlayerManaBar"
-	_player_mana_bar.layout_mode = 1
-	_player_mana_bar.offset_left = 38.0
-	_player_mana_bar.offset_top = 50.0
-	_player_mana_bar.offset_right = 190.0
-	_player_mana_bar.offset_bottom = 68.0
-	_player_mana_bar.modulate = Color(0.3, 0.5, 1.0)
-	_player_hud.add_child(_player_mana_bar)
-	_player_mana_label = Label.new()
-	_player_mana_label.name = "PlayerManaLabel"
-	_player_mana_label.layout_mode = 1
-	_player_mana_label.offset_left = 38.0
-	_player_mana_label.offset_top = 68.0
-	_player_mana_label.offset_right = 190.0
-	_player_mana_label.offset_bottom = 86.0
-	_player_hud.add_child(_player_mana_label)
 	_ensure_action_nodes()
 	if _end_turn_button != null:
 		_end_turn_button.pressed.connect(func() -> void: end_turn_requested.emit())
@@ -299,24 +286,21 @@ func update_player_health(current: float, maximum: float) -> void:
 	_player_health_bar.value = current
 
 
-## Draws the per-round armor buffer below the health bar. Hidden entirely for a no-DEF
-## build (maximum <= 0) so it only shows up when the player actually has armor.
+## Draws the per-round armor buffer below the health bar. Stays visible even for a
+## no-DEF build (shows 0/0) so the HUD layout is stable across classes.
 func update_player_armor(current: float, maximum: float) -> void:
-	var has_armor := maximum > 0.0
 	if _player_armor_bar != null:
-		_player_armor_bar.visible = has_armor
-		_player_armor_bar.max_value = maximum
+		_player_armor_bar.max_value = maxf(maximum, 1.0)
 		_player_armor_bar.value = current
 	if _player_armor_label != null:
-		_player_armor_label.visible = has_armor
-		_player_armor_label.text = "Armor %d/%d" % [int(current), int(maximum)]
+		_player_armor_label.text = "%d/%d" % [int(current), int(maximum)]
 
 
 func update_player_mana(current: float, maximum: float) -> void:
 	if _player_mana_label == null or _player_mana_bar == null:
 		return
-	_player_mana_label.text = "MP %d/%d" % [int(current), int(maximum)]
-	_player_mana_bar.max_value = maximum
+	_player_mana_label.text = "%d/%d" % [int(current), int(maximum)]
+	_player_mana_bar.max_value = maxf(maximum, 1.0)
 	_player_mana_bar.value = current
 
 
@@ -329,8 +313,10 @@ func update_player_gold(new_total: int) -> void:
 	_player_gold_label.text = "Gold: %d" % new_total
 
 
-func update_player_xp(new_total: int) -> void:
-	_player_xp_label.text = "XP: %d" % new_total
+func update_player_xp(current: int, to_next: int) -> void:
+	_player_xp_bar.max_value = maxf(float(to_next), 1.0)
+	_player_xp_bar.value = current
+	_player_xp_label.text = "%d/%d" % [current, to_next]
 
 
 func update_player_stats(stats: Dictionary) -> void:
@@ -398,14 +384,42 @@ func refresh_enemy_statuses(enemy: Enemy, statuses: Array) -> void:
 	_enemy_status_labels[enemy].text = " ".join(parts)
 
 
+## Rebuilds the player's active-status icon strip from the current status list.
+## Each active status is one atlas icon (its StatusData.icon). Stacking statuses show
+## their stack count as a small corner number; single stacks show none. Full detail
+## (name, stacks, remaining turns) is in the hover tooltip.
 func refresh_player_statuses(statuses: Array) -> void:
-	var parts: PackedStringArray = []
+	for child in _status_container.get_children():
+		child.queue_free()
 	for s in statuses:
-		if s.data.duration == -1:
-			parts.append(s.data.display_name)
-		else:
-			parts.append("%s(%d)" % [s.data.display_name, s.turns_remaining])
-	_player_status_label.text = " ".join(parts)
+		_status_container.add_child(_make_status_icon(s))
+
+
+func _make_status_icon(s: StatusInstance) -> Control:
+	var icon := TextureRect.new()
+	icon.texture = s.data.icon
+	icon.custom_minimum_size = Vector2(32.0, 32.0)
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.tooltip_text = _status_tooltip(s)
+	if s.stacks > 1:
+		var count := Label.new()
+		count.name = "StackCount"
+		count.text = str(s.stacks)
+		count.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+		count.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+		count.grow_vertical = Control.GROW_DIRECTION_BEGIN
+		count.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.add_child(count)
+	return icon
+
+
+func _status_tooltip(s: StatusInstance) -> String:
+	var text := s.data.display_name
+	if s.stacks > 1:
+		text += " x%d" % s.stacks
+	if s.data.duration != -1:
+		text += " (%d)" % s.turns_remaining
+	return text
 
 
 func rebuild_action_buttons(

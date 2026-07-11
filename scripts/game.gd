@@ -433,7 +433,7 @@ func _on_player_gold_changed(new_total: int) -> void:
 
 
 func _on_player_experience_changed(new_total: int) -> void:
-	_gui.update_player_xp(new_total)
+	_gui.update_player_xp(new_total, player.xp_to_next_level())
 
 
 func _on_player_stats_changed(stats: Dictionary) -> void:
@@ -562,7 +562,11 @@ func _enter_world_map(completed_node: WorldMapNode = null) -> void:
 	_gui.update_player_health(player.health, player.max_health)
 	_gui.update_player_stats(player.build_stats_dict())
 	_gui.update_player_gold(player.gold)
-	_gui.update_player_xp(player.experience)
+	# Fill the armor buffer to the player's (now fully-equipped) DEF so the bar reads its
+	# resting value on the map, rather than staying 0/0 until the first combat round.
+	player.refresh_armor()
+	_gui.update_player_armor(player.armor, player.max_armor)
+	_gui.update_player_xp(player.experience, player.xp_to_next_level())
 
 
 func _exit_world_map() -> void:

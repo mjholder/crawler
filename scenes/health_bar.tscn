@@ -19,8 +19,7 @@ scale = Vector2(64, 1)
 texture = ExtResource("3_5oo0i")
 
 [node name="Armor" type="Sprite2D" parent="." unique_id=1179928120]
-visible = false
+modulate = Color(0.6, 0.72, 0.9, 1)
 position = Vector2(0, -6)
 scale = Vector2(64, 1)
-modulate = Color(0.6, 0.72, 0.9, 1)
 texture = ExtResource("3_5oo0i")

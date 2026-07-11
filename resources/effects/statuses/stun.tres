@@ -1,11 +1,16 @@
-[gd_resource type="Resource" script_class="StatusData" format=3]
+[gd_resource type="Resource" script_class="StatusData" format=3 uid="uid://cjqau54oi33vq"]
 
-[ext_resource type="Script" path="res://scripts/status_data.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cq4lntsy45th0" path="res://assets/sprites/ui/status-sheet.png" id="1_r2tta"]
+[ext_resource type="Script" uid="uid://b6e1sgjh81xns" path="res://scripts/status_data.gd" id="1_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fjwwu"]
+atlas = ExtResource("1_r2tta")
+region = Rect2(160, 0, 32, 32)
 
 [resource]
 script = ExtResource("1_script")
 tag = &"stun"
 display_name = "Stun"
+icon = SubResource("AtlasTexture_fjwwu")
 duration = 1
 prevents_action = true
-stack_policy = 0
