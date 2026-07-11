@@ -904,17 +904,47 @@ grow_horizontal = 0
 grow_vertical = 0
 
 [node name="EndTurnButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=359829558]
-layout_mode = 0
-offset_left = 848.0
-offset_top = 916.0
-offset_right = 1088.0
-offset_bottom = 980.0
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -120.0
+offset_top = -96.0
+offset_right = 120.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 0
 theme_override_fonts/font = ExtResource("6_p57ef")
 theme_override_font_sizes/font_size = 32
 text = "End"
 
 [node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
 layout_mode = 0
+
+[node name="PlayerStatusEffects" type="Control" parent="GUI/CombatHUD" unique_id=2024602087]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -350.0
+offset_top = -176.0
+offset_right = 350.0
+offset_bottom = -112.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="StatusContainer" type="HBoxContainer" parent="GUI/CombatHUD/PlayerStatusEffects" unique_id=378839314]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
 
 [node name="ConsumableBelt" type="HFlowContainer" parent="GUI" unique_id=1764667387 node_paths=PackedStringArray("template_button")]
 anchors_preset = 3
