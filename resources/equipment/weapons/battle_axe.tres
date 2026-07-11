@@ -1,14 +1,14 @@
 [gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://b2df62wmsyqmd"]
 
 [ext_resource type="Script" uid="uid://bkgb8ckvvwyft" path="res://scripts/weapon_data.gd" id="1_84utr"]
-[ext_resource type="Texture2D" uid="uid://drbota0c0gcff" path="res://assets/sprites/weapons/battle_axe/windup.png" id="2_ra6pu"]
+[ext_resource type="Texture2D" uid="uid://brol25r3hv8f0" path="res://assets/sprites/weapons/battle_axe/windup.png" id="2_ra6pu"]
 [ext_resource type="Resource" uid="uid://dmyt0yvxnjrft" path="res://resources/attacks/brace.tres" id="3_mvkcj"]
-[ext_resource type="Texture2D" uid="uid://dbv4prm15qp3l" path="res://assets/sprites/weapons/battle_axe/swing.png" id="3_o157q"]
-[ext_resource type="Texture2D" uid="uid://bx8qgjpp08r0n" path="res://assets/sprites/weapons/battle_axe/idle.png" id="4_sggdg"]
+[ext_resource type="Texture2D" uid="uid://dh0n2tp81y2iv" path="res://assets/sprites/weapons/battle_axe/swing.png" id="3_o157q"]
+[ext_resource type="Texture2D" uid="uid://cv3bof7txj2rx" path="res://assets/sprites/weapons/battle_axe/idle.png" id="4_sggdg"]
 [ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="5_weapon"]
 [ext_resource type="Resource" path="res://resources/attacks/slash.tres" id="6_slash"]
 [ext_resource type="Resource" path="res://resources/attacks/cleave.tres" id="7_cleave"]
-[ext_resource type="Texture2D" uid="uid://bj083b7w7egw7" path="res://assets/sprites/weapons/battle_axe/icon.png" id="8_pdf"]
+[ext_resource type="Texture2D" uid="uid://w3xbooqu3pnk" path="res://assets/sprites/weapons/battle_axe/icon.png" id="8_pdf"]
 [ext_resource type="Script" uid="uid://bhd611piw5n14" path="res://scripts/proc_def.gd" id="9_procd"]
 [ext_resource type="Resource" path="res://resources/effects/apply_poison.tres" id="10_apply_poison"]
 
@@ -51,7 +51,6 @@ animations = [{
 
 [resource]
 script = ExtResource("1_84utr")
-attacks = Array[Resource]([ExtResource("6_slash"), ExtResource("7_cleave"), ExtResource("3_mvkcj")])
 item_name = "Battle Axe"
 description = "One Handed axe"
 sprite_frames = SubResource("SpriteFrames_p4cbs")
@@ -61,4 +60,5 @@ stat_modifiers = {
 }
 scene = ExtResource("5_weapon")
 price = 80
+attacks = Array[Resource]([ExtResource("6_slash"), ExtResource("7_cleave"), ExtResource("3_mvkcj")])
 proc_effects = Array[Resource]([SubResource("ProcDef_poison_on_hit")])

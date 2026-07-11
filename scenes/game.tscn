@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://nuxeodotj3dc"]
 
 [ext_resource type="Script" uid="uid://drgdsu6ayfhxl" path="res://scripts/game.gd" id="1_uwrxv"]
-[ext_resource type="Texture2D" uid="uid://dwf078w6efs4m" path="res://assets/sprites/ui/background.jpg" id="2_yqjtg"]
+[ext_resource type="Texture2D" uid="uid://cothgiwt7aclq" path="res://assets/sprites/ui/background.jpg" id="2_yqjtg"]
 [ext_resource type="PackedScene" uid="uid://dc8po6axusk31" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="Script" uid="uid://5dudvo0rnvqu" path="res://scripts/dialogue_consequences.gd" id="5_dinhu"]
 [ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="6_p57ef"]
@@ -29,9 +29,13 @@
 [ext_resource type="Script" uid="uid://ctce0wdnj5igm" path="res://scripts/paper_doll.gd" id="26_suyxu"]
 [ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
 
+[sub_resource type="LabelSettings" id="LabelSettings_sww3w"]
+font = ExtResource("6_p57ef")
+font_size = 24
+
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("6_p57ef")
-font_size = 64
+font_size = 32
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bhx41"]
 bg_color = Color(0.011764706, 0.011764706, 0.011764706, 0.43137255)
@@ -131,7 +135,6 @@ ok_button_text = "New Run"
 dialog_text = "A run is in progress. Starting a new run will overwrite your current save."
 
 [node name="PlayerHUD" type="Control" parent="GUI" unique_id=908196036]
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -140,71 +143,116 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PlayerHealthLabel" type="Label" parent="GUI/PlayerHUD" unique_id=2034464028]
-layout_mode = 1
-offset_left = 38.0
-offset_top = 21.0
-offset_right = 298.0
-offset_bottom = 109.0
-text = "100/100"
-label_settings = SubResource("LabelSettings_u5sy4")
+[node name="PlayerGold" type="PanelContainer" parent="GUI/PlayerHUD" unique_id=50661420]
+layout_mode = 0
+offset_left = 168.0
+offset_top = 160.0
+offset_right = 328.0
+offset_bottom = 208.0
 
-[node name="PlayerGoldLabel" type="Label" parent="GUI/PlayerHUD" unique_id=1470941939]
-layout_mode = 1
-offset_left = 1578.0
-offset_top = 19.0
-offset_right = 1895.0
-offset_bottom = 198.0
-text = "Gold: 000
-"
-label_settings = SubResource("LabelSettings_u5sy4")
+[node name="PlayerGoldLabel" type="Label" parent="GUI/PlayerHUD/PlayerGold" unique_id=1470941939]
+layout_mode = 2
+text = "Gold: 000"
+label_settings = SubResource("LabelSettings_sww3w")
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="PlayerXPLabel" type="Label" parent="GUI/PlayerHUD" unique_id=856153206]
-layout_mode = 1
-offset_left = 1579.0
-offset_top = 107.0
-offset_right = 1896.0
-offset_bottom = 286.0
-text = "XP: 0000"
-label_settings = SubResource("LabelSettings_u5sy4")
+[node name="PlayerHealth" type="Control" parent="GUI/PlayerHUD" unique_id=82371538]
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = 512.0
+offset_bottom = 80.0
 
-[node name="PlayerHealthBar" type="ProgressBar" parent="GUI/PlayerHUD" unique_id=100000009]
+[node name="PlayerHealthBar" type="ProgressBar" parent="GUI/PlayerHUD/PlayerHealth" unique_id=100000009]
+modulate = Color(0.9192808, 4.47616e-06, 1.1551381e-06, 1)
 layout_mode = 1
-offset_left = 38.0
-offset_top = 110.0
-offset_right = 298.0
-offset_bottom = 130.0
-value = 100.0
+offset_right = 480.0
+offset_bottom = 48.0
+value = 50.0
 show_percentage = false
 
-[node name="PlayerArmorLabel" type="Label" parent="GUI/PlayerHUD" unique_id=100000011]
-visible = false
+[node name="PlayerHealthLabel" type="Label" parent="GUI/PlayerHUD/PlayerHealth" unique_id=2034464028]
 layout_mode = 1
-offset_left = 320.0
-offset_top = 70.0
-offset_right = 620.0
-offset_bottom = 110.0
-text = "Armor 0/0"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "50/100"
 label_settings = SubResource("LabelSettings_u5sy4")
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="PlayerArmorBar" type="ProgressBar" parent="GUI/PlayerHUD" unique_id=100000010]
-visible = false
+[node name="PlayerArmor" type="Control" parent="GUI/PlayerHUD" unique_id=1497939842]
+anchors_preset = 0
+offset_left = 32.0
+offset_top = 96.0
+offset_right = 512.0
+offset_bottom = 144.0
+
+[node name="PlayerArmorBar" type="ProgressBar" parent="GUI/PlayerHUD/PlayerArmor" unique_id=100000010]
 modulate = Color(0.6, 0.72, 0.9, 1)
 layout_mode = 1
-offset_left = 320.0
-offset_top = 110.0
-offset_right = 580.0
-offset_bottom = 130.0
-value = 0.0
+offset_right = 480.0
+offset_bottom = 48.0
+value = 50.0
 show_percentage = false
+
+[node name="PlayerArmorLabel" type="Label" parent="GUI/PlayerHUD/PlayerArmor" unique_id=100000011]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "50/100"
+label_settings = SubResource("LabelSettings_u5sy4")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="InventoryButton" type="Button" parent="GUI/PlayerHUD" unique_id=300000009]
 layout_mode = 1
-offset_left = 38.0
-offset_top = 140.0
-offset_right = 180.0
-offset_bottom = 170.0
+offset_left = 32.0
+offset_top = 160.0
+offset_right = 152.0
+offset_bottom = 208.0
+theme_override_fonts/font = ExtResource("6_p57ef")
+theme_override_font_sizes/font_size = 24
 text = "Bag"
+
+[node name="PlayerXP" type="Control" parent="GUI/PlayerHUD" unique_id=289357299]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -512.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = 80.0
+grow_horizontal = 0
+
+[node name="PlayerXPBar" type="ProgressBar" parent="GUI/PlayerHUD/PlayerXP" unique_id=1987145989]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 50.0
+show_percentage = false
+
+[node name="PlayerXPLabel" type="Label" parent="GUI/PlayerHUD/PlayerXP" unique_id=856153206]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "50/100"
+label_settings = SubResource("LabelSettings_u5sy4")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="DialoguePanel" type="Control" parent="GUI" unique_id=1753475285]
 visible = false
@@ -859,9 +907,11 @@ grow_vertical = 0
 layout_mode = 0
 offset_left = 848.0
 offset_top = 916.0
-offset_right = 938.0
-offset_bottom = 947.0
-text = "END TURN"
+offset_right = 1088.0
+offset_bottom = 980.0
+theme_override_fonts/font = ExtResource("6_p57ef")
+theme_override_font_sizes/font_size = 32
+text = "End"
 
 [node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
 layout_mode = 0
