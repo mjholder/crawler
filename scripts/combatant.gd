@@ -34,18 +34,21 @@ func apply_status(data: StatusData, source: Node) -> void:
 				StatusData.StackPolicy.MAX_DURATION:
 					instance.turns_remaining = maxi(instance.turns_remaining, data.duration)
 				StatusData.StackPolicy.STACK:
-					# One instance per tag: bump intensity and refresh duration rather than
-					# adding a parallel instance. on_tick damage scales by stacks.
+					# One instance per tag: bump intensity rather than adding a parallel
+					# instance. on_tick damage scales by stacks.
 					instance.stacks += 1
-					instance.turns_remaining = data.duration
+					# Stack-decaying statuses (poison) are drained by ticks, so their lifetime
+					# is the stack count; others just refresh their fixed duration.
+					instance.turns_remaining = instance.stacks if data.stack_decays else data.duration
 			if not data.stat_modifiers.is_empty():
 				_on_stat_modifiers_changed()
 			status_applied.emit(data)
 			return
 	var entry := StatusInstance.new()
 	entry.data = data
-	entry.turns_remaining = data.duration
 	entry.stacks = 1
+	# A stack-decaying status lives one tick per stack (fresh = 1); others use `duration`.
+	entry.turns_remaining = entry.stacks if data.stack_decays else data.duration
 	entry.source = source
 	_active_statuses.append(entry)
 	_wire_status_subscriptions(entry)
@@ -110,6 +113,10 @@ func _tick_statuses() -> void:
 	for instance in _active_statuses:
 		if instance.data.on_tick != null:
 			(instance.data.on_tick as Effect).apply_tick(instance.source, self, instance)
+		# Stack-decaying statuses drain one stack per tick (kept in lockstep with
+		# turns_remaining), so the next tick's damage is one stack lower.
+		if instance.data.stack_decays:
+			instance.stacks -= 1
 		if instance.data.duration == -1:
 			continue
 		instance.turns_remaining -= 1

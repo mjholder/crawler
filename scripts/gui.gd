@@ -76,7 +76,6 @@ var _oh_used: bool = false
 var _oh_locked: bool = false
 var _action_mana: float = 0.0
 var _player_status_label: Label = null
-var _enemy_status_labels: Dictionary = {}
 
 
 func _ready() -> void:
@@ -262,7 +261,6 @@ func hide_event_hud() -> void:
 	for child in _enemy_hud.get_children():
 		child.queue_free()
 	_enemy_bars.clear()
-	_enemy_status_labels.clear()
 	_combat_hud.hide()
 	if not _inventory_panel.visible:
 		_consumable_belt.hide()
@@ -333,12 +331,14 @@ func add_enemy_health_bar(enemy: Enemy) -> void:
 	if _health_bar_scene == null:
 		return
 	var bar = _health_bar_scene.instantiate()
+	# Add first so the bar's @onready node refs resolve before we feed it data.
+	_enemy_hud.add_child(bar)
 	bar.set_max_health(enemy.max_health)
 	bar.set_current_health(enemy.health)
 	bar.set_armor(enemy.armor, enemy.max_armor)
 	var screen_pos: Vector2 = get_viewport().get_canvas_transform() * enemy.global_position
-	bar.position = screen_pos + enemy_health_bar_offset
-	_enemy_hud.add_child(bar)
+	# Control positions by top-left, so center the bar horizontally over the enemy.
+	bar.position = screen_pos + enemy_health_bar_offset - Vector2(bar.size.x * 0.5, 0.0)
 	_enemy_bars[enemy] = bar
 
 
@@ -347,7 +347,6 @@ func remove_enemy_health_bar(enemy: Enemy) -> void:
 		return
 	_enemy_bars[enemy].queue_free()
 	_enemy_bars.erase(enemy)
-	_enemy_status_labels.erase(enemy)
 
 
 func update_enemy_health_bar(enemy: Enemy, current: float) -> void:
@@ -362,26 +361,16 @@ func update_enemy_armor(enemy: Enemy, current: float, maximum: float) -> void:
 	_enemy_bars[enemy].set_armor(current, maximum)
 
 
-func add_enemy_status_label(enemy: Enemy) -> void:
+## Rebuilds an enemy's status-icon strip in its health bar's Statuses HBox,
+## mirroring the player's status strip (atlas icon + stack-count overlay + tooltip).
+func refresh_enemy_statuses(enemy: Enemy, statuses: Array) -> void:
 	if not _enemy_bars.has(enemy):
 		return
-	var lbl := Label.new()
-	lbl.name = "StatusLabel"
-	lbl.position = Vector2(-32.0, -18.0)
-	_enemy_bars[enemy].add_child(lbl)
-	_enemy_status_labels[enemy] = lbl
-
-
-func refresh_enemy_statuses(enemy: Enemy, statuses: Array) -> void:
-	if not _enemy_status_labels.has(enemy):
-		return
-	var parts: PackedStringArray = []
+	var strip: HBoxContainer = _enemy_bars[enemy].statuses
+	for child in strip.get_children():
+		child.queue_free()
 	for s in statuses:
-		if s.data.duration == -1:
-			parts.append(s.data.display_name)
-		else:
-			parts.append("%s(%d)" % [s.data.display_name, s.turns_remaining])
-	_enemy_status_labels[enemy].text = " ".join(parts)
+		strip.add_child(_make_status_icon(s))
 
 
 ## Rebuilds the player's active-status icon strip from the current status list.

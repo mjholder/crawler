@@ -886,7 +886,6 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 	enemy.position = _calculate_enemy_position(index, total_expected)
 	_scale_sprite_to_viewport(enemy.get_node("Sprite"))
 	_gui.add_enemy_health_bar(enemy)
-	_gui.add_enemy_status_label(enemy)
 	enemy.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
 	enemy.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
 	enemy.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))

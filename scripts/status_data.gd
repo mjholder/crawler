@@ -14,6 +14,13 @@ enum Persistence { COMBAT, PERSISTENT }
 @export var on_tick: Resource = null
 @export var on_expire: Resource = null
 @export var stack_policy: StackPolicy = StackPolicy.REFRESH
+
+# Classic-poison decay: when true, each tick consumes one stack and the status expires when
+# stacks reach 0, so damage ramps DOWN as the pool drains (e.g. 3 stacks -> 3/2/1). Lifetime
+# is driven by the stack count, not `duration`. When false, lifetime is driven by `duration`
+# and stacks only scale per-tick damage (bleed = sustained, burn = duration-decay).
+@export var stack_decays: bool = false
+
 @export var persistence: Persistence = Persistence.COMBAT
 
 # Shatter: while any active status has this set, the bearer's refresh_armor() is skipped,

@@ -1,28 +1,30 @@
 class_name HealthBar
-extends Node2D
+extends Control
 
-@export var base_health_sprite: Sprite2D
-@export var current_health_sprite: Sprite2D
-## Optional overlay for the per-round armor buffer, drawn just above the health strip.
-## Hidden whenever max_armor <= 0 (enemy has no DEF).
-@export var armor_sprite: Sprite2D
+@onready var _health_bar: ProgressBar = $Health/ProgressBar
+@onready var _health_label: Label = $Health/Label
+## Wrapping Control for the armor overlay; hidden whenever max_armor <= 0 (no DEF).
+@onready var _armor: Control = $Armor
+@onready var _armor_bar: ProgressBar = $Armor/ProgressBar
+@onready var _armor_label: Label = $Armor/Label
+## Status-icon strip; populated externally (see GUI.refresh_enemy_statuses).
+@onready var statuses: HBoxContainer = $Statuses
 
-@export var max_health: float = 100
-@export var current_health: float = 100
+var max_health: float = 100.0
+var current_health: float = 100.0
 
-@export var max_armor: float = 0
-@export var current_armor: float = 0
-
-@export var default_dimensions: Vector2 = Vector2(64, 16)
+var max_armor: float = 0.0
+var current_armor: float = 0.0
 
 func set_max_health(value: float) -> void:
-	max_health = value
+	max_health = maxf(value, 1.0)
+	_health_bar.max_value = max_health
 	set_current_health(current_health)  # Re-clamp current health to new max
 
 func set_current_health(value: float) -> void:
-	current_health = clamp(value, 0, max_health)
-	var health_ratio: float = 0.0 if max_health <= 0 else current_health / max_health
-	current_health_sprite.scale.x = health_ratio * default_dimensions.x
+	current_health = clampf(value, 0.0, max_health)
+	_health_bar.value = current_health
+	_health_label.text = "%d/%d" % [int(current_health), int(max_health)]
 
 func subtract_health(amount: float) -> void:
 	set_current_health(current_health - amount)
@@ -32,9 +34,8 @@ func add_health(amount: float) -> void:
 
 func set_armor(value: float, maximum: float) -> void:
 	max_armor = maximum
-	current_armor = clamp(value, 0, max_armor)
-	if armor_sprite == null:
-		return
-	armor_sprite.visible = max_armor > 0
-	var armor_ratio: float = 0.0 if max_armor <= 0 else current_armor / max_armor
-	armor_sprite.scale.x = armor_ratio * default_dimensions.x
+	current_armor = clampf(value, 0.0, maxf(max_armor, 0.0))
+	_armor.visible = max_armor > 0.0
+	_armor_bar.max_value = maxf(max_armor, 1.0)
+	_armor_bar.value = current_armor
+	_armor_label.text = "%d/%d" % [int(current_armor), int(max_armor)]

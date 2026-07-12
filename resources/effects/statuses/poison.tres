@@ -10,7 +10,7 @@ region = Rect2(32, 0, 32, 32)
 
 [sub_resource type="Resource" id="Tick_1"]
 script = ExtResource("2_damage_script")
-damage_expression = "3"
+damage_expression = "1"
 
 [resource]
 script = ExtResource("1_script")
@@ -19,3 +19,4 @@ display_name = "Poison"
 icon = SubResource("AtlasTexture_chqs0")
 on_tick = SubResource("Tick_1")
 stack_policy = 1
+stack_decays = true

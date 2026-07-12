@@ -10,15 +10,19 @@
           {
             "id": "a0611322424ae1bd",
             "type": "leaf",
+            "pinned": true,
             "state": {
-              "type": "markdown",
+              "type": "kanban",
               "state": {
-                "file": "ideas/player-facing-legibility.md",
-                "mode": "source",
-                "source": false
+                "file": "ideas-board.md",
+                "kanbanViewState": {
+                  "kanban-plugin": "board",
+                  "list-collapse": []
+                }
               },
-              "icon": "lucide-file",
-              "title": "player-facing-legibility"
+              "pinned": true,
+              "icon": "lucide-trello",
+              "title": "ideas-board"
             }
           }
         ]
@@ -186,6 +190,10 @@
   },
   "active": "a0611322424ae1bd",
   "lastOpenFiles": [
+    "daily/2026-07-12.md.tmp.38221.420731f51ced",
+    "daily/2026-07-12.md",
+    "daily/2026-07-12.md.tmp.7038.00be9985bab4",
+    "ideas/player-facing-legibility.md",
     "ideas-board.md.tmp.38221.ef338349fa96",
     "ideas/combat-ui-widget-scenes.md",
     "ideas/combat-ui-widget-scenes.md.tmp.38221.0f073d075804",
@@ -196,8 +204,6 @@
     "daily/2026-07-11.md.tmp.38221.a6c047501563",
     "daily/2026-07-11.md.tmp.38221.5fd686964c76",
     "daily/2026-07-11.md.tmp.38221.32ca46d51edc",
-    "daily/2026-07-11.md.tmp.38221.7caa0def56de",
-    "daily/2026-07-11.md.tmp.7038.b55e66ac92fd",
     "daily/2026-07-11.md",
     "ideas-board.md",
     "daily/2026-07-10.md",
@@ -217,11 +223,9 @@
     "ideas/content-editor-inline-subresource-creation.md",
     "ideas/content-editor-enemy-event-authoring.md",
     "ideas/character-creation-layers.md",
-    "ideas/player-facing-legibility.md",
     "ideas/balance-legibility-baseline.md",
     "ideas/sparring-partner-enemies.md",
     "ideas/elemental-combo-reactions.md",
-    "ideas/status-effect-vocabulary.md",
     "canvas/Untitled 2.canvas",
     "canvas/Untitled 1.canvas",
     "canvas/Untitled.canvas",

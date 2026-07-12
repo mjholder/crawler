@@ -1,25 +1,82 @@
 [gd_scene format=3 uid="uid://ciyvvtls2c4cd"]
 
 [ext_resource type="Script" uid="uid://blsnteh6gey8r" path="res://scripts/health_bar.gd" id="1_6opq1"]
-[ext_resource type="Texture2D" uid="uid://c0koi3q6571vo" path="res://assets/sprites/ui/base_health.png" id="2_tujlf"]
-[ext_resource type="Texture2D" uid="uid://bi0ovt7ag50sy" path="res://assets/sprites/ui/current_health.png" id="3_5oo0i"]
+[ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="2_y3kqx"]
 
-[node name="HealthBar" type="Node2D" unique_id=1136298593 node_paths=PackedStringArray("base_health_sprite", "current_health_sprite", "armor_sprite")]
+[sub_resource type="LabelSettings" id="LabelSettings_6opq1"]
+font = ExtResource("2_y3kqx")
+
+[sub_resource type="LabelSettings" id="LabelSettings_tujlf"]
+font = ExtResource("2_y3kqx")
+
+[node name="HealthBar" type="Control" unique_id=1926741839]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 14.0
+offset_top = 1.0
+offset_right = 270.0
+offset_bottom = 97.0
 script = ExtResource("1_6opq1")
-base_health_sprite = NodePath("BaseHealth")
-current_health_sprite = NodePath("CurrentHealth")
-armor_sprite = NodePath("Armor")
 
-[node name="BaseHealth" type="Sprite2D" parent="." unique_id=2132809796]
-scale = Vector2(64, 1)
-texture = ExtResource("2_tujlf")
+[node name="Health" type="Control" parent="." unique_id=1201398990]
+custom_minimum_size = Vector2(256, 24)
+anchors_preset = 0
+offset_right = 256.0
+offset_bottom = 24.0
 
-[node name="CurrentHealth" type="Sprite2D" parent="." unique_id=1179928119]
-scale = Vector2(64, 1)
-texture = ExtResource("3_5oo0i")
+[node name="ProgressBar" type="ProgressBar" parent="Health" unique_id=1107608180]
+modulate = Color(0.9157745, 4.8371403e-06, 6.738305e-07, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+show_percentage = false
 
-[node name="Armor" type="Sprite2D" parent="." unique_id=1179928120]
-modulate = Color(0.6, 0.72, 0.9, 1)
-position = Vector2(0, -6)
-scale = Vector2(64, 1)
-texture = ExtResource("3_5oo0i")
+[node name="Label" type="Label" parent="Health" unique_id=1639429381]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "50/100"
+label_settings = SubResource("LabelSettings_6opq1")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Armor" type="Control" parent="." unique_id=1981210169]
+anchors_preset = 0
+offset_top = 32.0
+offset_right = 256.0
+offset_bottom = 56.0
+
+[node name="ProgressBar" type="ProgressBar" parent="Armor" unique_id=186541017]
+modulate = Color(0.46423507, 0.46423507, 0.46423507, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+show_percentage = false
+
+[node name="Label" type="Label" parent="Armor" unique_id=1025942934]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "50/100"
+label_settings = SubResource("LabelSettings_tujlf")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Statuses" type="HBoxContainer" parent="." unique_id=674514297]
+custom_minimum_size = Vector2(256, 32)
+layout_mode = 0
+offset_top = 64.0
+offset_right = 256.0
+offset_bottom = 96.0
