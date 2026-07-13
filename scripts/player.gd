@@ -364,6 +364,8 @@ func begin_turn() -> void:
 	# Round start: full dodge chance and a fresh armor buffer for the round ahead.
 	_dodge_streak = 0
 	refresh_armor()
+	# Burn (if an enemy inflicted it) discharges at the start of the player's turn too.
+	resolve_turn_start_bursts()
 
 
 ## Refills the armor buffer to the current effective DEF. Called at the start of each round.
@@ -552,6 +554,10 @@ func _add_to_base_stat(stat: Enums.Stat, amount: float) -> void:
 
 
 # --- Combat ---
+
+func _is_burst_bearer_defeated() -> bool:
+	return is_dead
+
 
 func take_damage(amount: float, pierce: float = 0.0) -> void:
 	if is_dead:

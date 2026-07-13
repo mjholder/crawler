@@ -21,6 +21,13 @@ enum Persistence { COMBAT, PERSISTENT }
 # and stacks only scale per-tick damage (bleed = sustained, burn = duration-decay).
 @export var stack_decays: bool = false
 
+# Burst (Fire's signature): when true, the whole stack pool discharges as a single-turn
+# countdown at the START of the bearer's turn (via Combatant.resolve_turn_start_bursts) —
+# on_tick fires once per stack for stacks, stacks-1, ... 1, then the status is removed. This
+# replaces the per-turn _tick_statuses cadence: a burst is a one-round burst, not a lingering
+# DoT. Contrast stack_decays (poison), which drains ONE stack per turn across many turns.
+@export var burst_on_turn_start: bool = false
+
 @export var persistence: Persistence = Persistence.COMBAT
 
 # Shatter: while any active status has this set, the bearer's refresh_armor() is skipped,

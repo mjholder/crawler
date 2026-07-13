@@ -10,7 +10,7 @@ region = Rect2(96, 0, 32, 32)
 
 [sub_resource type="Resource" id="Tick_1"]
 script = ExtResource("2_dmg_script")
-damage_expression = "6"
+damage_expression = "1"
 
 [resource]
 script = ExtResource("1_script")
@@ -19,3 +19,4 @@ display_name = "Burn"
 icon = SubResource("AtlasTexture_hqmsl")
 on_tick = SubResource("Tick_1")
 stack_policy = 1
+burst_on_turn_start = true

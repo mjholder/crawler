@@ -19,6 +19,44 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Burn = single-turn start-of-turn burst (not a lingering DoT)
+
+**Date:** 2026-07-13
+**Daily:** [[daily/2026-07-13]]
+
+**Decision:** Burn is a **one-round burst that discharges its whole stack pool at the start of
+the bearer's turn, before it acts** — the opposite of poison's slow drain. Applying N burn = N
+stacks; on the bearer's next turn start the pool empties as a countdown (N, N-1, … 1 damage,
+one hit per step with a short delay so the health bar visibly steps down), then the status is
+removed. Total scales triangularly (3 stacks → 6, 5 → 15), which is burn's "scales big" identity.
+
+Mechanism:
+- New data flag `StatusData.burst_on_turn_start`. Burst statuses are **excluded** from the
+  per-turn `_tick_statuses()` cadence.
+- New async `Combatant.resolve_turn_start_bursts()` walks `instance.stacks` down, reusing the
+  existing `DamageEffect.apply_tick` (which already deals `base × stacks`) — so `burn.tres` stays
+  a plain `DamageEffect` at `damage_expression = "1"` (raw stack countdown). A delay of
+  `BURST_STEP_DELAY` (0.3s) separates hits; `status_ticked` fires each step so the UI stack
+  number counts down 3 → 2 → 1.
+- `Enemy.take_turn()` `await`s the burst before `_perform_action()`; `Player.begin_turn()` fires
+  it too (so enemy-inflicted burn on the player also bursts). A `_is_burst_bearer_defeated()`
+  hook (overridden by Player/Enemy via `is_dead`) stops a burst from hitting a corpse.
+
+**Context:** Burn had been implemented as a flat `DamageEffect` ("6" for `duration` turns), which
+made it a weaker, longer-lasting poison — no distinct identity. The user wanted the felt
+difference: poison lingers and ramps down across turns; burn detonates all at once, up front.
+
+**Alternatives considered:** The earlier plan (this entry supersedes the Fire note below, dated
+2026-07-09) had burn as a `BurstDamageEffect` scaling by `turns_remaining`, i.e. 3/2/1 spread
+across three *separate* turns. That is still a lingering DoT, just front-loaded — not the
+single-turn detonation the user asked for. `BurstDamageEffect` is now unused by burn.
+
+**Trade-offs / risks:** Burn resolution is async (timed), so `take_turn()`/`begin_turn()` now
+yield mid-call; the turn loop relies on the existing one-shot `turn_ended` wiring to advance,
+which is unchanged. Burst damage still routes through `take_damage`, so the armor buffer can
+absorb small per-step hits (consistent with poison). Only burn moves to start-of-turn; poison
+and other DoTs keep their end-of-turn ramp.
+
 ## Elemental & martial status-verb systems (hybrid: bus subscriptions + per-verb plumbing)
 
 **Date:** 2026-07-09

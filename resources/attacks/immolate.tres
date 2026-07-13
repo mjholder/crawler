@@ -12,6 +12,7 @@ damage_expression = "spirit * 0.25"
 [sub_resource type="Resource" id="StatusEffect_burn"]
 script = ExtResource("4_seff")
 status_data = ExtResource("3_burn")
+stacks = 3
 
 [resource]
 script = ExtResource("1_script")
