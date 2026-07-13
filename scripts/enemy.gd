@@ -42,6 +42,13 @@ func _ready() -> void:
 func take_turn() -> void:
 	if is_dead:
 		return
+	# Burn discharges before the enemy acts. Awaiting yields control back to the turn loop;
+	# the one-shot turn_ended connection stays wired and _process still ends the turn.
+	await resolve_turn_start_bursts()
+	if is_dead:
+		# Died to the burn burst — let _process emit turn_ended so the turn loop advances.
+		_turn_pending = true
+		return
 	if has_preventing_status():
 		print("[ENEMY] %s is stunned! Turn skipped." % enemy_name)
 		_turn_pending = true
@@ -121,6 +128,10 @@ func refresh_armor() -> void:
 	max_armor = get_effective_stat(Enums.Stat.DEFENSE)
 	armor = max_armor
 	armor_changed.emit(armor, max_armor)
+
+
+func _is_burst_bearer_defeated() -> bool:
+	return is_dead
 
 
 func _get_base_stat(stat: Enums.Stat) -> float:

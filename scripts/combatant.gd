@@ -6,6 +6,10 @@ signal status_applied(data: StatusData)
 signal status_ticked(data: StatusData, turns_remaining: int)
 signal status_expired(data: StatusData)
 
+# Seconds between each hit of a turn-start burst (burn), so the countdown reads as three
+# distinct drops on the health bar rather than one instant drop.
+const BURST_STEP_DELAY := 0.3
+
 # --- Status State ---
 var _active_statuses: Array[StatusInstance] = []
 
@@ -23,9 +27,13 @@ func get_effective_stat(stat: Enums.Stat) -> float:
 	return base + bonus
 
 
-func apply_status(data: StatusData, source: Node) -> void:
+## `stacks` is how many stacks this application grants (STACK policy only; ignored by
+## REFRESH/MAX_DURATION, which are always intensity 1). A 3-stack burn hit lands as one
+## instance at 3 stacks — e.g. a burst that detonates 3/2/1.
+func apply_status(data: StatusData, source: Node, stacks: int = 1) -> void:
 	if data == null:
 		return
+	var grant: int = maxi(stacks, 1)
 	for instance in _active_statuses:
 		if instance.data.tag == data.tag:
 			match data.stack_policy:
@@ -36,7 +44,7 @@ func apply_status(data: StatusData, source: Node) -> void:
 				StatusData.StackPolicy.STACK:
 					# One instance per tag: bump intensity rather than adding a parallel
 					# instance. on_tick damage scales by stacks.
-					instance.stacks += 1
+					instance.stacks += grant
 					# Stack-decaying statuses (poison) are drained by ticks, so their lifetime
 					# is the stack count; others just refresh their fixed duration.
 					instance.turns_remaining = instance.stacks if data.stack_decays else data.duration
@@ -46,8 +54,8 @@ func apply_status(data: StatusData, source: Node) -> void:
 			return
 	var entry := StatusInstance.new()
 	entry.data = data
-	entry.stacks = 1
-	# A stack-decaying status lives one tick per stack (fresh = 1); others use `duration`.
+	entry.stacks = grant if data.stack_policy == StatusData.StackPolicy.STACK else 1
+	# A stack-decaying status lives one tick per stack (fresh = stacks); others use `duration`.
 	entry.turns_remaining = entry.stacks if data.stack_decays else data.duration
 	entry.source = source
 	_active_statuses.append(entry)
@@ -111,6 +119,10 @@ func has_armor_refresh_suppressed() -> bool:
 func _tick_statuses() -> void:
 	var expired: Array = []
 	for instance in _active_statuses:
+		# Burst statuses (burn) discharge at turn start via resolve_turn_start_bursts and are
+		# gone before this runs; skip so a burst never also ticks at end of turn.
+		if instance.data.burst_on_turn_start:
+			continue
 		if instance.data.on_tick != null:
 			(instance.data.on_tick as Effect).apply_tick(instance.source, self, instance)
 		# Stack-decaying statuses drain one stack per tick (kept in lockstep with
@@ -132,6 +144,42 @@ func _tick_statuses() -> void:
 		if not instance.data.stat_modifiers.is_empty():
 			_on_stat_modifiers_changed()
 		status_expired.emit(instance.data)
+
+
+## Discharge every burst status (burn) at the start of the bearer's turn, before it acts.
+## Each burst empties its whole stack pool as a countdown: on_tick fires for stacks,
+## stacks-1, ... 1 (a plain DamageEffect at "1" deals base * stacks = the current count),
+## with a delay between hits so the drops are visible, then the status is removed. Async:
+## callers `await` it so the burst resolves before the turn's action.
+func resolve_turn_start_bursts() -> void:
+	var bursts: Array[StatusInstance] = []
+	for instance in _active_statuses:
+		if instance.data.burst_on_turn_start:
+			bursts.append(instance)
+	for instance in bursts:
+		var effect := instance.data.on_tick as Effect
+		while instance.stacks > 0:
+			if effect != null:
+				effect.apply_tick(instance.source, self, instance)
+			status_ticked.emit(instance.data, instance.stacks)
+			instance.stacks -= 1
+			if _is_burst_bearer_defeated():
+				break
+			if instance.stacks > 0:
+				await get_tree().create_timer(BURST_STEP_DELAY).timeout
+		_active_statuses.erase(instance)
+		_unwire_status_subscriptions(instance)
+		if instance.data.on_expire != null:
+			(instance.data.on_expire as Effect).apply(instance.source, self)
+		if not instance.data.stat_modifiers.is_empty():
+			_on_stat_modifiers_changed()
+		status_expired.emit(instance.data)
+
+
+## True once the bearer is dead, so a burst stops hitting a corpse. Overridden by
+## Player/Enemy (both expose `is_dead`); the base class never dies.
+func _is_burst_bearer_defeated() -> bool:
+	return false
 
 
 func get_active_statuses() -> Array:
