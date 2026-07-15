@@ -562,10 +562,11 @@ func _enter_world_map(completed_node: WorldMapNode = null) -> void:
 	_gui.update_player_health(player.health, player.max_health)
 	_gui.update_player_stats(player.build_stats_dict())
 	_gui.update_player_gold(player.gold)
-	# Fill the armor buffer to the player's (now fully-equipped) DEF so the bar reads its
-	# resting value on the map, rather than staying 0/0 until the first combat round.
+	# Fill the armor and mana bars with the player's equipped values so they read correctly
+	# on the map, rather than showing editor placeholders until the first combat round.
 	player.refresh_armor()
 	_gui.update_player_armor(player.armor, player.max_armor)
+	_gui.update_player_mana(player.mana, player.max_mana)
 	_gui.update_player_xp(player.experience, player.xp_to_next_level())
 
 

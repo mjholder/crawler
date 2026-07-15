@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SpellData" format=3]
+
+[ext_resource type="Script" path="res://scripts/spell_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/effects/heal_10_flat.tres" id="2_new"]
+[ext_resource type="Resource" path="res://resources/effects/apply_regen.tres" id="3_new"]
+
+[resource]
+script = ExtResource("1_script")
+spell_name = "Lay on Hands"
+description = "Channel divine warmth into your own wounds, mending a little now and steadily over the turns that follow."
+mana_cost = 8
+target_mode = 2
+effects = [ExtResource("2_new"), ExtResource("3_new")]

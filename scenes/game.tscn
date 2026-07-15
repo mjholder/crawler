@@ -14,18 +14,13 @@
 [ext_resource type="Script" uid="uid://ddqp83ddmt7ba" path="res://scripts/town_panel.gd" id="14_townp"]
 [ext_resource type="PackedScene" uid="uid://b0sqp1dfwigqy" path="res://scenes/world_map.tscn" id="16_ca42v"]
 [ext_resource type="Script" uid="uid://cwnh362po6p8" path="res://scripts/character_creation_panel.gd" id="19_264po"]
-[ext_resource type="Script" path="res://scripts/player_class_data.gd" id="20_bt5mj"]
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
-[ext_resource type="Resource" path="res://resources/classes/mage.tres" id="20_suyxu"]
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
-[ext_resource type="Resource" uid="uid://d0qsuhxi8ws57" path="res://resources/classes/assassin.tres" id="21_sgl2t"]
 [ext_resource type="PackedScene" uid="uid://c6yng6pikfy1w" path="res://scenes/item_button.tscn" id="21_sww3w"]
-[ext_resource type="Resource" uid="uid://gd05xm21dlnr" path="res://resources/classes/warrior.tres" id="22_warrior"]
 [ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]
 [ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
 [ext_resource type="Script" uid="uid://qloduutsnv77" path="res://scripts/victory_panel.gd" id="25_bhx41"]
 [ext_resource type="Script" uid="uid://biwwcl2cyveoh" path="res://scripts/consumable_belt_ui.gd" id="26_cbeltu"]
-[ext_resource type="Resource" path="res://resources/classes/pyromancer.tres" id="26_pyro"]
 [ext_resource type="Script" uid="uid://ctce0wdnj5igm" path="res://scripts/paper_doll.gd" id="26_suyxu"]
 [ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
 
@@ -631,7 +626,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("19_264po")
-available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior"), ExtResource("20_suyxu"), ExtResource("21_sgl2t"), ExtResource("26_pyro")])
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/CharacterCreationPanel" unique_id=490170422]
 layout_mode = 1

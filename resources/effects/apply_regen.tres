@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="StatusEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/status_effect.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/effects/statuses/regen.tres" id="2_new"]
+
+[resource]
+script = ExtResource("1_script")
+status_data = ExtResource("2_new")

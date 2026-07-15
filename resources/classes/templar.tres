@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="PlayerClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/player_class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/equipment/weapons/mace.tres" id="2_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/plate/plate_gauntlets.tres" id="3_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/plate/plate_sabatons.tres" id="4_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/plate/plate_greaves.tres" id="5_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/plate/plate_chest.tres" id="6_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/plate/plate_helm.tres" id="7_new"]
+[ext_resource type="Resource" path="res://resources/spells/lay_on_hands.tres" id="8_new"]
+
+[resource]
+script = ExtResource("1_script")
+class_name_text = "Templar"
+description = "A holy warrior who wades into the fray in full plate. The consecrated Warmace dazes any foe it strikes, and a whispered prayer knits the Templar's own wounds shut over time."
+strength = 60
+defense = 55
+constitution = 55
+agility = 35
+spirit = 45
+luck = 40
+class_health_bonus = 15
+class_mana_bonus = 10
+growth_rates = {
+0: 3,
+2: 2
+}
+starting_equipped = {
+0: ExtResource("2_new"),
+1: ExtResource("3_new"),
+2: ExtResource("4_new"),
+3: ExtResource("5_new"),
+4: ExtResource("6_new"),
+5: ExtResource("7_new")
+}
+starting_prep_slots = 1
+starting_learned_spells = [ExtResource("8_new")]
+starting_prepared_spells = [ExtResource("8_new")]
+mana_regen_per_turn = 1.5

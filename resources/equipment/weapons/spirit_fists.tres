@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" uid="uid://bkgb8ckvvwyft" path="res://scripts/weapon_data.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://drbota0c0gcff" path="res://assets/sprites/weapons/battle_axe/windup.png" id="2_windup"]
+[ext_resource type="Texture2D" uid="uid://dbv4prm15qp3l" path="res://assets/sprites/weapons/battle_axe/swing.png" id="3_swing"]
+[ext_resource type="Texture2D" uid="uid://bx8qgjpp08r0n" path="res://assets/sprites/weapons/battle_axe/idle.png" id="4_idle"]
+[ext_resource type="Texture2D" uid="uid://bj083b7w7egw7" path="res://assets/sprites/weapons/battle_axe/icon.png" id="5_icon"]
+[ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="6_scene"]
+[ext_resource type="Resource" path="res://resources/attacks/palm_strike.tres" id="7_palm"]
+[ext_resource type="Resource" path="res://resources/attacks/windstep.tres" id="8_windstep"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_windup"]
+atlas = ExtResource("2_windup")
+region = Rect2(0, 0, 480, 270)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_main"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_idle")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_swing")
+}],
+"loop": false,
+"name": &"swing",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_windup")
+}],
+"loop": true,
+"name": &"wind_up",
+"speed": 5.0
+}]
+
+[resource]
+script = ExtResource("1_script")
+item_name = "Spirit Fists"
+description = "Wrapped hand-guards channeling inner ki. Strike fast, and step into a flowing haste when the fight demands it."
+sprite_frames = SubResource("SpriteFrames_main")
+paper_doll_front = ExtResource("5_icon")
+stat_modifiers = {
+3: 6.0
+}
+scene = ExtResource("6_scene")
+price = 70
+attacks = Array[Resource]([ExtResource("7_palm"), ExtResource("8_windstep")])
