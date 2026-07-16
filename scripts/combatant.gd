@@ -108,6 +108,15 @@ func has_preventing_status() -> bool:
 	return false
 
 
+## Product of all active statuses' incoming attack multipliers (vulnerable/ward). 1.0 = none.
+## Flat per instance — stacks extend a status's timer, not its multiplier.
+func get_incoming_attack_multiplier() -> float:
+	var mult := 1.0
+	for instance in _active_statuses:
+		mult *= instance.data.incoming_attack_multiplier
+	return mult
+
+
 ## Shatter: true while any active status suppresses the per-round armor refresh.
 func has_armor_refresh_suppressed() -> bool:
 	for instance in _active_statuses:

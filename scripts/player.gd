@@ -559,16 +559,21 @@ func _is_burst_bearer_defeated() -> bool:
 	return is_dead
 
 
-func take_damage(amount: float, pierce: float = 0.0) -> void:
+func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false, is_attack: bool = true) -> void:
 	if is_dead:
 		return
 	if _roll_dodge():
 		dodged.emit()
 		return
-	var net_amount: float = _apply_defense(amount, pierce)
-	var absorbed := amount - net_amount
-	if absorbed > 0.0:
-		armor_absorbed.emit(absorbed)
+	# Vulnerable/ward scales the incoming hit before armor soaks it — DoT ticks pass is_attack=false.
+	if is_attack:
+		amount *= get_incoming_attack_multiplier()
+	var net_amount: float = amount
+	if not bypass_armor:
+		net_amount = _apply_defense(amount, pierce)
+		var absorbed := amount - net_amount
+		if absorbed > 0.0:
+			armor_absorbed.emit(absorbed)
 	if net_amount <= 0.0:
 		return  # the armor buffer soaked the whole hit — no HP loss, no hurt feedback
 	health = maxf(health - net_amount, 0.0)

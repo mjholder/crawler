@@ -17,4 +17,4 @@ func apply_tick(source: Node, target: Node, instance: StatusInstance) -> void:
 		return
 	var per_turn := _eval.evaluate(damage_expression, source)
 	var pierce := _eval.evaluate(pierce_expression, source)
-	target.take_damage(per_turn * float(instance.turns_remaining) * float(instance.stacks), pierce)
+	target.take_damage(per_turn * float(instance.turns_remaining) * float(instance.stacks), pierce, false, false)
