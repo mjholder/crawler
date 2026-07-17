@@ -574,6 +574,7 @@ func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false,
 		var absorbed := amount - net_amount
 		if absorbed > 0.0:
 			armor_absorbed.emit(absorbed)
+	net_amount = roundf(net_amount)  # HP is integral — round the applied delta, not the raw math
 	if net_amount <= 0.0:
 		return  # the armor buffer soaked the whole hit — no HP loss, no hurt feedback
 	health = maxf(health - net_amount, 0.0)
@@ -589,7 +590,7 @@ func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false,
 func heal(amount: float) -> void:
 	if is_dead:
 		return
-	var actual := minf(amount, max_health - health)
+	var actual := roundf(minf(amount, max_health - health))
 	health += actual
 	healed.emit(actual)
 
@@ -634,7 +635,7 @@ func _recalculate_max_health() -> void:
 		return
 	var old_max := max_health
 	var effective_con := get_effective_stat(Enums.Stat.CONSTITUTION)
-	max_health = (effective_con * health_modifier) + _class_data.class_health_bonus
+	max_health = roundf((effective_con * health_modifier) + _class_data.class_health_bonus)
 	var delta := max_health - old_max
 	if delta > 0.0:
 		health += delta
@@ -1132,7 +1133,7 @@ func apply_save_dict(d: Dictionary) -> void:
 	_recalculate_max_health()
 	_recalculate_max_mana()
 	_recalculate_prep_slots()
-	health = minf(d["health"], max_health)
+	health = roundf(minf(d["health"], max_health))
 	for path in d.get("learned_spells", []):
 		var spell := load(path) as SpellData
 		if spell != null:

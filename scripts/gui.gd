@@ -63,6 +63,8 @@ signal continue_requested
 @onready var _game_over_panel: GameOverPanel = $GameOverPanel
 @onready var _victory_panel: VictoryPanel = $VictoryPanel
 
+const ACTION_SCENE := preload("res://scenes/action.tscn")
+
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
 
@@ -445,13 +447,10 @@ func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spell
 
 
 func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float) -> void:
-	var btn := Button.new()
-	btn.text = "%s (%d)" % [action_name, int(cost)] if cost > 0.0 else action_name
-	btn.set_meta("hand", hand)
-	btn.set_meta("action", action_name)
-	btn.set_meta("cost", cost)
-	btn.pressed.connect(func() -> void: attack_requested.emit(hand, action_name))
-	group.add_child(btn)
+	var action := ACTION_SCENE.instantiate() as ActionButtonUI
+	action.configure(hand, action_name, cost)
+	action.pressed.connect(func() -> void: attack_requested.emit(hand, action_name))
+	group.add_child(action)
 
 
 ## Recomputes every action button's disabled/focus state from the current gates.
@@ -467,11 +466,10 @@ func _apply_group_states(group: HBoxContainer, hand_used: bool) -> void:
 		return
 	var base := _is_player_turn and not _sheathed and not hand_used
 	for child in group.get_children():
-		if not child is Button:
+		var action := child as ActionButtonUI
+		if action == null:
 			continue
-		var btn := child as Button
-		var cost: float = btn.get_meta("cost", 0.0)
-		btn.disabled = not base or (cost > 0.0 and _action_mana < cost)
+		action.set_disabled(not base or (action.cost > 0.0 and _action_mana < action.cost))
 
 
 func set_targeting_action(hand: int, action_name: String) -> void:
@@ -480,15 +478,11 @@ func set_targeting_action(hand: int, action_name: String) -> void:
 		if group == null:
 			continue
 		for child in group.get_children():
-			if not child is Button:
+			var action := child as ActionButtonUI
+			if action == null:
 				continue
-			var btn := child as Button
-			btn.focus_mode = Control.FOCUS_NONE if targeting else Control.FOCUS_ALL
-			var match_hand: int = btn.get_meta("hand", -1)
-			if targeting and match_hand == hand and btn.get_meta("action", "") == action_name:
-				btn.modulate = Color(1.4, 1.4, 0.6)
-			else:
-				btn.modulate = Color.WHITE
+			action.set_focus_enabled(not targeting)
+			action.set_highlighted(targeting and action.hand == hand and action.action_name == action_name)
 
 
 func set_player_turn(is_player_turn: bool) -> void:

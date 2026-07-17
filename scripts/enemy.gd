@@ -104,6 +104,7 @@ func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false,
 	if is_attack:
 		amount *= get_incoming_attack_multiplier()
 	var net_amount: float = amount if bypass_armor else _apply_defense(amount, pierce)
+	net_amount = roundf(net_amount)  # HP is integral — round the applied delta, not the raw math
 	health -= net_amount
 	print("  %s HP: %.0f / %.0f" % [enemy_name, health, max_health])
 	damaged.emit(net_amount)
@@ -166,6 +167,7 @@ func _emit_death_finished() -> void:
 # --- Extension Hooks ---
 
 func _on_ready() -> void:
+	max_health = roundf(max_health)  # keep HP integral so "shown 0 == dead" holds
 	health = max_health
 	refresh_armor()  # full armor before the player can hit it on the spawn turn
 

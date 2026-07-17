@@ -24,7 +24,7 @@ func set_max_health(value: float) -> void:
 func set_current_health(value: float) -> void:
 	current_health = clampf(value, 0.0, max_health)
 	_health_bar.value = current_health
-	_health_label.text = "%d/%d" % [int(current_health), int(max_health)]
+	_health_label.text = "%d/%d" % [roundi(current_health), roundi(max_health)]
 
 func subtract_health(amount: float) -> void:
 	set_current_health(current_health - amount)
@@ -38,4 +38,4 @@ func set_armor(value: float, maximum: float) -> void:
 	_armor.visible = max_armor > 0.0
 	_armor_bar.max_value = maxf(max_armor, 1.0)
 	_armor_bar.value = current_armor
-	_armor_label.text = "%d/%d" % [int(current_armor), int(max_armor)]
+	_armor_label.text = "%d/%d" % [roundi(current_armor), roundi(max_armor)]

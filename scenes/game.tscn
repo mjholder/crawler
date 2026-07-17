@@ -23,6 +23,7 @@
 [ext_resource type="Script" uid="uid://biwwcl2cyveoh" path="res://scripts/consumable_belt_ui.gd" id="26_cbeltu"]
 [ext_resource type="Script" uid="uid://ctce0wdnj5igm" path="res://scripts/paper_doll.gd" id="26_suyxu"]
 [ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
+[ext_resource type="PackedScene" uid="uid://dgbjlk3ybk6xm" path="res://scenes/action.tscn" id="28_action"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_sww3w"]
 font = ExtResource("6_p57ef")
@@ -945,17 +946,32 @@ offset_right = 660.0
 offset_bottom = -68.0
 grow_vertical = 0
 
-[node name="DummyMainAction1" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+[node name="DummyMainAction1" parent="GUI/CombatHUD/ActionMenu/MainhandActions" instance=ExtResource("28_action")]
 layout_mode = 2
+
+[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction1" index="1"]
 text = "Slash"
 
-[node name="DummyMainAction2" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction1" index="2"]
+visible = false
+
+[node name="DummyMainAction2" parent="GUI/CombatHUD/ActionMenu/MainhandActions" instance=ExtResource("28_action")]
 layout_mode = 2
+
+[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction2" index="1"]
 text = "Stab"
 
-[node name="DummyMainAction3" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction2" index="2"]
+visible = false
+
+[node name="DummyMainAction3" parent="GUI/CombatHUD/ActionMenu/MainhandActions" instance=ExtResource("28_action")]
 layout_mode = 2
+
+[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction3" index="1"]
 text = "Cleave"
+
+[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction3" index="2"]
+visible = false
 
 [node name="OffhandActions" type="HBoxContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=1176052192]
 layout_mode = 1
@@ -971,17 +987,32 @@ offset_bottom = -71.0
 grow_horizontal = 0
 grow_vertical = 0
 
-[node name="DummyOffAction1" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+[node name="DummyOffAction1" parent="GUI/CombatHUD/ActionMenu/OffhandActions" instance=ExtResource("28_action")]
 layout_mode = 2
+
+[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction1" index="1"]
 text = "Brace"
 
-[node name="DummyOffAction2" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction1" index="2"]
+visible = false
+
+[node name="DummyOffAction2" parent="GUI/CombatHUD/ActionMenu/OffhandActions" instance=ExtResource("28_action")]
 layout_mode = 2
+
+[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction2" index="1"]
 text = "Chop"
 
-[node name="DummyOffAction3" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction2" index="2"]
+visible = false
+
+[node name="DummyOffAction3" parent="GUI/CombatHUD/ActionMenu/OffhandActions" instance=ExtResource("28_action")]
 layout_mode = 2
-text = "Flail"
+
+[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction3" index="1"]
+text = "Ward"
+
+[node name="SpellCostLabel" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction3/SpellCostContainer" index="0"]
+text = "4"
 
 [node name="EndTurnButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=359829558]
 layout_mode = 1
