@@ -24,6 +24,7 @@
 [ext_resource type="Script" uid="uid://ctce0wdnj5igm" path="res://scripts/paper_doll.gd" id="26_suyxu"]
 [ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
 [ext_resource type="PackedScene" uid="uid://dgbjlk3ybk6xm" path="res://scenes/action.tscn" id="28_action"]
+[ext_resource type="Script" uid="uid://127dhuk4vprq" path="res://scripts/combat_log.gd" id="29_clog"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_sww3w"]
 font = ExtResource("6_p57ef")
@@ -170,7 +171,6 @@ modulate = Color(0.9192808, 4.47616e-06, 1.1551381e-06, 1)
 layout_mode = 1
 offset_right = 480.0
 offset_bottom = 48.0
-max_value = 100.0
 value = 70.0
 show_percentage = false
 
@@ -906,25 +906,19 @@ anchors_preset = 0
 offset_left = 1.0
 offset_right = 1.0
 
-[node name="DummyEnemyBar1" parent="GUI/CombatHUD/EnemyHUD" instance=ExtResource("9_hbar")]
-position = Vector2(760, 260)
+[node name="DummyEnemyBar1" parent="GUI/CombatHUD/EnemyHUD" unique_id=1458833519 instance=ExtResource("9_hbar")]
+layout_mode = 0
+offset_left = 760.0
+offset_top = 260.0
+offset_right = 1016.0
+offset_bottom = 356.0
 
-[node name="CurrentHealth" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar1" index="1"]
-scale = Vector2(64, 1)
-
-[node name="Armor" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar1" index="2"]
-visible = true
-scale = Vector2(40, 1)
-
-[node name="DummyEnemyBar2" parent="GUI/CombatHUD/EnemyHUD" instance=ExtResource("9_hbar")]
-position = Vector2(1160, 260)
-
-[node name="CurrentHealth" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar2" index="1"]
-scale = Vector2(38, 1)
-
-[node name="Armor" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar2" index="2"]
-visible = true
-scale = Vector2(20, 1)
+[node name="DummyEnemyBar2" parent="GUI/CombatHUD/EnemyHUD" unique_id=1028176894 instance=ExtResource("9_hbar")]
+layout_mode = 0
+offset_left = 1160.0
+offset_top = 260.0
+offset_right = 1416.0
+offset_bottom = 356.0
 
 [node name="ActionMenu" type="Control" parent="GUI/CombatHUD" unique_id=2111488421]
 layout_mode = 1
@@ -946,32 +940,14 @@ offset_right = 660.0
 offset_bottom = -68.0
 grow_vertical = 0
 
-[node name="DummyMainAction1" parent="GUI/CombatHUD/ActionMenu/MainhandActions" instance=ExtResource("28_action")]
+[node name="DummyMainAction1" parent="GUI/CombatHUD/ActionMenu/MainhandActions" unique_id=818060999 instance=ExtResource("28_action")]
 layout_mode = 2
 
-[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction1" index="1"]
-text = "Slash"
-
-[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction1" index="2"]
-visible = false
-
-[node name="DummyMainAction2" parent="GUI/CombatHUD/ActionMenu/MainhandActions" instance=ExtResource("28_action")]
+[node name="DummyMainAction2" parent="GUI/CombatHUD/ActionMenu/MainhandActions" unique_id=1162358600 instance=ExtResource("28_action")]
 layout_mode = 2
 
-[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction2" index="1"]
-text = "Stab"
-
-[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction2" index="2"]
-visible = false
-
-[node name="DummyMainAction3" parent="GUI/CombatHUD/ActionMenu/MainhandActions" instance=ExtResource("28_action")]
+[node name="DummyMainAction3" parent="GUI/CombatHUD/ActionMenu/MainhandActions" unique_id=47448247 instance=ExtResource("28_action")]
 layout_mode = 2
-
-[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction3" index="1"]
-text = "Cleave"
-
-[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/MainhandActions/DummyMainAction3" index="2"]
-visible = false
 
 [node name="OffhandActions" type="HBoxContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=1176052192]
 layout_mode = 1
@@ -986,33 +962,16 @@ offset_right = -47.0
 offset_bottom = -71.0
 grow_horizontal = 0
 grow_vertical = 0
+alignment = 2
 
-[node name="DummyOffAction1" parent="GUI/CombatHUD/ActionMenu/OffhandActions" instance=ExtResource("28_action")]
+[node name="DummyOffAction1" parent="GUI/CombatHUD/ActionMenu/OffhandActions" unique_id=254348707 instance=ExtResource("28_action")]
 layout_mode = 2
 
-[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction1" index="1"]
-text = "Brace"
-
-[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction1" index="2"]
-visible = false
-
-[node name="DummyOffAction2" parent="GUI/CombatHUD/ActionMenu/OffhandActions" instance=ExtResource("28_action")]
+[node name="DummyOffAction2" parent="GUI/CombatHUD/ActionMenu/OffhandActions" unique_id=1192003805 instance=ExtResource("28_action")]
 layout_mode = 2
 
-[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction2" index="1"]
-text = "Chop"
-
-[node name="SpellCostContainer" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction2" index="2"]
-visible = false
-
-[node name="DummyOffAction3" parent="GUI/CombatHUD/ActionMenu/OffhandActions" instance=ExtResource("28_action")]
+[node name="DummyOffAction3" parent="GUI/CombatHUD/ActionMenu/OffhandActions" unique_id=1957458368 instance=ExtResource("28_action")]
 layout_mode = 2
-
-[node name="ActionLabel" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction3" index="1"]
-text = "Ward"
-
-[node name="SpellCostLabel" parent="GUI/CombatHUD/ActionMenu/OffhandActions/DummyOffAction3/SpellCostContainer" index="0"]
-text = "4"
 
 [node name="EndTurnButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=359829558]
 layout_mode = 1
@@ -1031,8 +990,19 @@ theme_override_fonts/font = ExtResource("6_p57ef")
 theme_override_font_sizes/font_size = 32
 text = "End"
 
-[node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
-layout_mode = 0
+[node name="CombatLog" type="Control" parent="GUI/CombatHUD" unique_id=696235466]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 400.0
+offset_right = 300.0
+offset_bottom = 445.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("29_clog")
+spawn_gap = 0.83
 
 [node name="PlayerStatusEffects" type="Control" parent="GUI/CombatHUD" unique_id=2024602087]
 layout_mode = 1

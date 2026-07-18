@@ -19,6 +19,46 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Combat log = spawn-per-message floating instances, not a reused label or scrolling box
+
+**Date:** 2026-07-18
+**Daily:** [[daily/2026-07-18]]
+
+**Decision:** The combat log announces narrative events (dodges, status apply/expire, deaths)
+as **individually spawned, self-freeing `CombatMessage` instances** that each play the authored
+float-up-and-fade animation and `queue_free()` on `animation_finished`. The `CombatLog` node is a
+thin spawner: `push(text)` enqueues, a staggered `_drain()` spawns one message per line, and
+consecutive spawns are spaced so a multi-event turn forms a readable rising column. Floating
+**damage numbers** are explicitly a separate, later system.
+
+**Alternatives considered:**
+- *One reused `Label` + a queue* (play, wait for `animation_finished`, then show the next). Simple,
+  but only one message on screen at a time; a burst either serializes slowly or clobbers.
+- *A scrolling `RichTextLabel`* (the half-finished original — `_combat_log` was typed `RichTextLabel`
+  on a `Control` and `log_message` called `append_text`, both broken). A log wall, not the
+  float-and-fade banner the animation was authored for.
+
+**Rationale:** Spawning independent instances lets multiple messages coexist and stagger without any
+one blocking the next — the same pattern floating damage numbers will use. It reuses the exact
+authored animation the designer liked, extracted into `combat_message.tscn`.
+
+**Pacing:** `_gap_for` prefers a named `advance_marker` read off the `CombatMessageFloat` timeline
+(`Animation.get_marker_time`, Godot 4.3+) so spacing tracks the animation; it falls back to the
+`spawn_gap` export otherwise (tuned to 0.83s).
+
+**Capture point / suppression:** `game.gd` (already the Player/Enemy signal broker) logs at the
+existing status closures and death handlers, so no new signals were needed. Because
+`Combatant.clear_combat_statuses()` fires the *same* `status_expired` signal on the end-of-fight
+mass sweep as a natural mid-fight expiry, a `_clearing_combat_statuses` flag +
+`is_clearing_combat_statuses()` lets the log suppress the end-of-fight burst without touching the
+signal shape.
+
+**Trade-offs / risks:** A long-lived float (~3s) means several messages share the air on a busy turn;
+the lever is a shorter animation or an earlier `advance` marker, not code. The `spawn_gap` fallback
+is a magic number that can drift from the animation length if no marker is authored.
+
+---
+
 ## Burn = single-turn start-of-turn burst (not a lingering DoT)
 
 **Date:** 2026-07-13

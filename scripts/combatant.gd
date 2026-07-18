@@ -13,6 +13,11 @@ const BURST_STEP_DELAY := 0.3
 # --- Status State ---
 var _active_statuses: Array[StatusInstance] = []
 
+# True only while clear_combat_statuses() is sweeping the board at end of combat. Lets
+# listeners tell a forced end-of-fight clear from a natural mid-fight expiry (both emit
+# status_expired) so the combat log doesn't spam "wears off" when a fight resolves.
+var _clearing_combat_statuses: bool = false
+
 # The game.gd lifecycle bus, injected by whoever owns this combatant (Player at set_player,
 # Enemy at _on_combat_enemy_added). Used to wire StatusData.subscriptions; null = no wiring.
 var _status_bus: Node = null
@@ -90,6 +95,7 @@ func clear_combat_statuses() -> void:
 			cleared.append(instance)
 	if cleared.is_empty():
 		return
+	_clearing_combat_statuses = true
 	var stats_changed := false
 	for instance in cleared:
 		_active_statuses.erase(instance)
@@ -97,8 +103,13 @@ func clear_combat_statuses() -> void:
 		if not instance.data.stat_modifiers.is_empty():
 			stats_changed = true
 		status_expired.emit(instance.data)
+	_clearing_combat_statuses = false
 	if stats_changed:
 		_on_stat_modifiers_changed()
+
+
+func is_clearing_combat_statuses() -> bool:
+	return _clearing_combat_statuses
 
 
 func has_preventing_status() -> bool:

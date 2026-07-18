@@ -393,9 +393,14 @@ func set_player(p: Player) -> void:
 	player.dodged.connect(_on_player_dodged)
 	player.armor_changed.connect(_on_player_armor_changed)
 	player.armor_absorbed.connect(_on_player_armor_absorbed)
-	player.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
+	player.status_applied.connect(func(d: StatusData) -> void:
+		_gui.refresh_player_statuses(player.get_active_statuses())
+		_gui.log_message("You gain %s." % d.display_name))
 	player.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
-	player.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
+	player.status_expired.connect(func(d: StatusData) -> void:
+		_gui.refresh_player_statuses(player.get_active_statuses())
+		if not player.is_clearing_combat_statuses():
+			_gui.log_message("%s wears off." % d.display_name))
 	_gui.setup_consumable_belt(player.get_node("Inventory") as Inventory)
 	_gui.setup_spell_prep(player)
 	_gui.update_player_health(player.max_health, player.max_health)
@@ -887,9 +892,13 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 	enemy.position = _calculate_enemy_position(index, total_expected)
 	_scale_sprite_to_viewport(enemy.get_node("Sprite"))
 	_gui.add_enemy_health_bar(enemy)
-	enemy.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
+	enemy.status_applied.connect(func(d: StatusData) -> void:
+		_gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses())
+		_gui.log_message("%s is afflicted with %s." % [enemy.enemy_name, d.display_name]))
 	enemy.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
-	enemy.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
+	enemy.status_expired.connect(func(d: StatusData) -> void:
+		_gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses())
+		_gui.log_message("%s wears off %s." % [d.display_name, enemy.enemy_name]))
 	enemy.damaged.connect(func(amt: float) -> void:
 		_gui.update_enemy_health_bar(enemy, enemy.health)
 		enemy_damaged.emit(enemy, amt))
@@ -897,6 +906,7 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 		_gui.update_enemy_armor(enemy, cur, mx))
 	enemy.died.connect(func() -> void:
 		_gui.remove_enemy_health_bar(enemy)
+		_gui.log_message("%s is slain." % enemy.enemy_name)
 		enemy_died.emit(enemy)
 		if player.mana_on_kill > 0.0:
 			player.restore_mana(player.mana_on_kill))
@@ -1053,6 +1063,7 @@ func _start_exploration_music() -> void:
 
 func _on_player_died() -> void:
 	print("[GAME] Player died — GAME OVER")
+	_gui.log_message("You fall.")
 	SaveManager.clear()
 	_exit_event()
 	_enter_game_over()

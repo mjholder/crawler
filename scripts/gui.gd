@@ -47,7 +47,7 @@ signal continue_requested
 @onready var _offhand_actions: HBoxContainer = get_node_or_null("CombatHUD/ActionMenu/OffhandActions")
 @onready var _end_turn_button: Button = get_node_or_null("CombatHUD/ActionMenu/EndTurnButton")
 @onready var _consumable_belt: ConsumableBeltUI = $ConsumableBelt
-@onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
+@onready var _combat_log: CombatLog = $CombatHUD/CombatLog
 @onready var _player_mana_bar: ProgressBar = $PlayerHUD/PlayerMagic/PlayerMagicBar
 @onready var _player_mana_label: Label = $PlayerHUD/PlayerMagic/PlayerMagicLabel
 @onready var _status_container: HBoxContainer = $CombatHUD/PlayerStatusEffects/StatusContainer
@@ -254,7 +254,7 @@ func return_to_main_menu() -> void:
 
 func show_event_hud() -> void:
 	set_sheathed(true)
-	_combat_log.text = ""
+	_combat_log.clear()
 	_combat_hud.show()
 	_consumable_belt.show()
 
@@ -448,9 +448,9 @@ func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spell
 
 func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float) -> void:
 	var action := ACTION_SCENE.instantiate() as ActionButtonUI
+	group.add_child(action)
 	action.configure(hand, action_name, cost)
 	action.pressed.connect(func() -> void: attack_requested.emit(hand, action_name))
-	group.add_child(action)
 
 
 ## Recomputes every action button's disabled/focus state from the current gates.
@@ -491,7 +491,7 @@ func set_player_turn(is_player_turn: bool) -> void:
 
 
 func log_message(text: String) -> void:
-	_combat_log.append_text(text + "\n")
+	_combat_log.push(text)
 
 
 # --- World Map ---
