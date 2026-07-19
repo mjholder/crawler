@@ -9,4 +9,5 @@ spell_name = "Enfeeble"
 description = "Lay a withering curse on the foe, sapping the strength and spirit from their limbs."
 mana_cost = 6
 target_mode = 0
+cooldown = 3
 effects = [ExtResource("2_new")]

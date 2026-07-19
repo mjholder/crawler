@@ -341,6 +341,7 @@ classDiagram
         <<Resource>>
         +String attack_name
         +TargetMode target_mode
+        +int cooldown
         +Array~Resource~ effects
     }
     class SpellData {
@@ -348,6 +349,7 @@ classDiagram
         +String spell_name
         +float mana_cost
         +AttackData.TargetMode target_mode
+        +int cooldown
         +Array~Resource~ effects
     }
     class Effect {

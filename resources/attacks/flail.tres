@@ -9,4 +9,5 @@ script = ExtResource("1_script")
 attack_name = "Flail"
 description = "A wild spin that strikes all enemies and disperses poison"
 target_mode = 1
+cooldown = 2
 effects = Array[Resource]([ExtResource("2_dmg"), ExtResource("3_apply_poison")])

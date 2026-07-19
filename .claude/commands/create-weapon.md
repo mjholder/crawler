@@ -71,7 +71,8 @@ What is the weapon's name, and give it a one-line description?
 
 **Group 3 — Combat**
 - Attacks to attach — comma-separated from the existing list, or describe new attacks to create [slash, cleave]
-  - For each new attack: name, target (single/all/self), and what it does (damage formula, buff, etc.)
+  - For each new attack: name, target (single/all/self), cooldown (player turns until reusable, 0 = none), and what it does (damage formula, buff, etc.)
+    - Cooldown: use ≥2 to actually gate; `1` is a no-op given one action per hand per turn.
 - Innate spells (res://resources/spells/ file names, or none)? [none]
 
 **Group 4 — Stats**
@@ -151,6 +152,8 @@ duration = 3
 When a requested attack isn't in the existing list, write a new `AttackData .tres` at `resources/attacks/<snake_name>.tres` **before** the weapon file. Reference it with a path-only ext_resource (no uid).
 
 TargetMode: SINGLE_ENEMY=0, ALL_ENEMIES=1, SELF=2
+
+**Cooldown:** add `cooldown = N` (int, player turns until reusable) after `target_mode` **only when N > 0** — omit the line for the default 0 (Godot drops default values). Use ≥2 to actually gate.
 
 ### AttackData template (inline damage effect, single enemy)
 

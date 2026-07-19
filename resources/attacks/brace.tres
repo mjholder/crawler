@@ -8,4 +8,5 @@ script = ExtResource("1_script")
 attack_name = "Brace"
 description = "A defensive stance"
 target_mode = 2
+cooldown = 3
 effects = Array[Resource]([ExtResource("1_ynduh")])

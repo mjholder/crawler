@@ -21,6 +21,10 @@
 					"type": "enum"
 				},
 				{
+					"name": "cooldown",
+					"type": "int"
+				},
+				{
 					"element_type": "Effect",
 					"name": "effects",
 					"type": "Array"
@@ -169,6 +173,11 @@
 				{
 					"name": "duration",
 					"type": "int"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
 				},
 				{
 					"name": "_eval",
@@ -964,6 +973,10 @@
 					},
 					"name": "target_mode",
 					"type": "enum"
+				},
+				{
+					"name": "cooldown",
+					"type": "int"
 				},
 				{
 					"element_type": "Effect",

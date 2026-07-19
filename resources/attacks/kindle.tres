@@ -8,4 +8,5 @@ script = ExtResource("1_script")
 attack_name = "Kindle"
 description = "Draw the flame inward, surging your spirit to empower the spell to come."
 target_mode = 2
+cooldown = 3
 effects = Array[Resource]([ExtResource("2_buff")])

@@ -159,6 +159,9 @@ func _on_action_requested(hand: int, action_name: String) -> void:
 		_confirm_targeting()
 		return
 	_cancel_targeting()
+	if player.get_cooldown_remaining(hand, action_name) > 0:
+		_gui.show_status("On cooldown")
+		return
 	# Resolve the name within the requesting hand's own action list.
 	for atk_res in player.get_hand_attacks(hand):
 		var atk := atk_res as AttackData
@@ -520,7 +523,8 @@ func _refresh_action_bar() -> void:
 		player.get_hand_attacks(Player.Hand.OFFHAND), player.get_hand_spells(Player.Hand.OFFHAND),
 		player.mana,
 		player.is_hand_used(Player.Hand.MAINHAND), player.is_hand_used(Player.Hand.OFFHAND),
-		player.is_offhand_locked())
+		player.is_offhand_locked(),
+		player.get_hand_cooldowns(Player.Hand.MAINHAND), player.get_hand_cooldowns(Player.Hand.OFFHAND))
 
 
 func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:

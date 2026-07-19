@@ -480,21 +480,22 @@ func rebuild_action_buttons(
 	mainhand_attacks: Array, mainhand_spells: Array,
 	offhand_attacks: Array, offhand_spells: Array,
 	current_mana: float,
-	mainhand_used: bool, offhand_used: bool, offhand_locked: bool
+	mainhand_used: bool, offhand_used: bool, offhand_locked: bool,
+	mainhand_cooldowns: Dictionary = {}, offhand_cooldowns: Dictionary = {}
 ) -> void:
 	_action_mana = current_mana
 	_mh_used = mainhand_used
 	_oh_used = offhand_used
 	_oh_locked = offhand_locked
-	_populate_hand_group(_mainhand_actions, Player.Hand.MAINHAND, mainhand_attacks, mainhand_spells)
-	_populate_hand_group(_offhand_actions, Player.Hand.OFFHAND, offhand_attacks, offhand_spells)
+	_populate_hand_group(_mainhand_actions, Player.Hand.MAINHAND, mainhand_attacks, mainhand_spells, mainhand_cooldowns)
+	_populate_hand_group(_offhand_actions, Player.Hand.OFFHAND, offhand_attacks, offhand_spells, offhand_cooldowns)
 	# The offhand row hides entirely when the hand offers nothing (e.g. a two-hander that
 	# locks the offhand and grants no supporting action).
 	_offhand_actions.visible = _offhand_actions.get_child_count() > 0
 	_apply_action_states()
 
 
-func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spells: Array) -> void:
+func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spells: Array, cooldowns: Dictionary = {}) -> void:
 	if group == null:
 		return
 	for child in group.get_children():
@@ -502,17 +503,17 @@ func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spell
 	for atk_res in attacks:
 		var atk := atk_res as AttackData
 		if atk != null:
-			_add_action_button(group, hand, atk.attack_name, 0.0)
+			_add_action_button(group, hand, atk.attack_name, 0.0, cooldowns.get(atk.attack_name, 0))
 	for spell_res in spells:
 		var spell := spell_res as SpellData
 		if spell != null:
-			_add_action_button(group, hand, spell.spell_name, spell.mana_cost)
+			_add_action_button(group, hand, spell.spell_name, spell.mana_cost, cooldowns.get(spell.spell_name, 0))
 
 
-func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float) -> void:
+func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float, cooldown_remaining: int = 0) -> void:
 	var action := ACTION_SCENE.instantiate() as ActionButtonUI
 	group.add_child(action)
-	action.configure(hand, action_name, cost)
+	action.configure(hand, action_name, cost, cooldown_remaining)
 	action.pressed.connect(func() -> void: attack_requested.emit(hand, action_name))
 
 
@@ -532,7 +533,7 @@ func _apply_group_states(group: HBoxContainer, hand_used: bool) -> void:
 		var action := child as ActionButtonUI
 		if action == null:
 			continue
-		action.set_disabled(not base or (action.cost > 0.0 and _action_mana < action.cost))
+		action.set_disabled(not base or (action.cost > 0.0 and _action_mana < action.cost) or action.cooldown_remaining > 0)
 
 
 func set_targeting_action(hand: int, action_name: String) -> void:

@@ -145,6 +145,9 @@ const _UNARMED: AttackData = preload("res://resources/equipment/weapons/unarmed_
 var _hand_actions := { Hand.MAINHAND: {}, Hand.OFFHAND: {} }
 var _hand_attacks := { Hand.MAINHAND: [], Hand.OFFHAND: [] }   # hand -> Array[AttackData]
 var _hand_spells := { Hand.MAINHAND: [], Hand.OFFHAND: [] }    # hand -> Array[SpellData]
+# Live per-action cooldowns: hand -> {action_name: turns_remaining}. Seeded on use from
+# the source resource's `cooldown`, decremented once per player turn in begin_turn().
+var _cooldowns := { Hand.MAINHAND: {}, Hand.OFFHAND: {} }
 
 
 func _ready() -> void:
@@ -365,6 +368,7 @@ func begin_turn() -> void:
 	_action_resolving = false
 	# Round start: full dodge chance and a fresh armor buffer for the round ahead.
 	_dodge_streak = 0
+	_tick_cooldowns()
 	refresh_armor()
 	# Burn (if an enemy inflicted it) discharges at the start of the player's turn too.
 	resolve_turn_start_bursts()
@@ -413,12 +417,55 @@ func get_hand_spells(hand: Hand) -> Array:
 func execute_action(hand: Hand, action_name: String) -> void:
 	if is_dead or _action_resolving or is_hand_used(hand):
 		return
+	if get_cooldown_remaining(hand, action_name) > 0:
+		return
 	if not _hand_actions[hand].has(action_name):
 		return
 	print("[PLAYER] Action (%s): %s" % ["main" if hand == Hand.MAINHAND else "off", action_name])
 	_pending_hand = hand
 	_hand_actions[hand][action_name].call()
 	_action_resolving = true
+	# An action that reaches here always commits, so start its cooldown now.
+	var cd := _action_base_cooldown(hand, action_name)
+	if cd > 0:
+		_cooldowns[hand][action_name] = cd
+
+
+## Returns the authored cooldown of the named action in this hand (0 if none).
+func _action_base_cooldown(hand: Hand, action_name: String) -> int:
+	for atk in _hand_attacks[hand]:
+		if atk != null and atk.attack_name == action_name:
+			return atk.cooldown
+	for spell in _hand_spells[hand]:
+		if spell != null and spell.spell_name == action_name:
+			return spell.cooldown
+	return 0
+
+
+## Turns left before the named action can be used again (0 = ready).
+func get_cooldown_remaining(hand: Hand, action_name: String) -> int:
+	return _cooldowns[hand].get(action_name, 0)
+
+
+## Snapshot of the hand's active cooldowns for the UI: {action_name: turns_remaining}.
+func get_hand_cooldowns(hand: Hand) -> Dictionary:
+	var out := {}
+	for action_name in _cooldowns[hand]:
+		var remaining: int = _cooldowns[hand][action_name]
+		if remaining > 0:
+			out[action_name] = remaining
+	return out
+
+
+## Decrements every active cooldown by one player turn, clearing those that reach 0.
+func _tick_cooldowns() -> void:
+	for hand in _cooldowns:
+		for action_name in _cooldowns[hand].keys():
+			var remaining: int = _cooldowns[hand][action_name] - 1
+			if remaining > 0:
+				_cooldowns[hand][action_name] = remaining
+			else:
+				_cooldowns[hand].erase(action_name)
 
 
 func _set_hand_used(hand: Hand) -> void:

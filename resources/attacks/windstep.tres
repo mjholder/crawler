@@ -8,4 +8,5 @@ script = ExtResource("1_script")
 attack_name = "Windstep"
 description = "Fall into a flowing stance, quickening every motion. Sustained haste for the turns ahead."
 target_mode = 2
+cooldown = 3
 effects = [ExtResource("2_new")]

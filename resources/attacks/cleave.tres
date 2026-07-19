@@ -8,4 +8,5 @@ script = ExtResource("1_script")
 attack_name = "Cleave"
 description = "A wide swing hitting all enemies"
 target_mode = 1
+cooldown = 2
 effects = Array[Resource]([ExtResource("2_effect")])

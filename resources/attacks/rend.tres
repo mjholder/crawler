@@ -8,4 +8,5 @@ script = ExtResource("1_script")
 attack_name = "Rend"
 description = "A raking slash that opens a wound. If it draws blood, the foe bleeds for turns to come."
 target_mode = 0
+cooldown = 2
 effects = [ExtResource("2_new")]

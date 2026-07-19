@@ -10,4 +10,5 @@ spell_name = "Lay on Hands"
 description = "Channel divine warmth into your own wounds, mending a little now and steadily over the turns that follow."
 mana_cost = 8
 target_mode = 2
+cooldown = 3
 effects = [ExtResource("2_new"), ExtResource("3_new")]
