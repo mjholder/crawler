@@ -159,6 +159,9 @@ func _on_action_requested(hand: int, action_name: String) -> void:
 		_confirm_targeting()
 		return
 	_cancel_targeting()
+	if player.get_cooldown_remaining(hand, action_name) > 0:
+		_gui.show_status("On cooldown")
+		return
 	# Resolve the name within the requesting hand's own action list.
 	for atk_res in player.get_hand_attacks(hand):
 		var atk := atk_res as AttackData
@@ -393,9 +396,14 @@ func set_player(p: Player) -> void:
 	player.dodged.connect(_on_player_dodged)
 	player.armor_changed.connect(_on_player_armor_changed)
 	player.armor_absorbed.connect(_on_player_armor_absorbed)
-	player.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
+	player.status_applied.connect(func(d: StatusData) -> void:
+		_gui.refresh_player_statuses(player.get_active_statuses())
+		_gui.log_message("You gain %s." % d.display_name))
 	player.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
-	player.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_player_statuses(player.get_active_statuses()))
+	player.status_expired.connect(func(d: StatusData) -> void:
+		_gui.refresh_player_statuses(player.get_active_statuses())
+		if not player.is_clearing_combat_statuses():
+			_gui.log_message("%s wears off." % d.display_name))
 	_gui.setup_consumable_belt(player.get_node("Inventory") as Inventory)
 	_gui.setup_spell_prep(player)
 	_gui.update_player_health(player.max_health, player.max_health)
@@ -412,17 +420,23 @@ func _on_player_armor_changed(current: float, maximum: float) -> void:
 	_gui.update_player_armor(current, maximum)
 
 
-func _on_player_armor_absorbed(absorbed: float) -> void:
+func _on_player_armor_absorbed(absorbed: float, fully_absorbed: bool) -> void:
 	_gui.log_message("Your armor absorbs %d damage." % int(absorbed))
+	# One number per hit: gray when the armor ate the whole hit; a partial hit shows the
+	# white HP number (via _on_player_damaged) instead, so the two don't stack.
+	if fully_absorbed:
+		_gui.spawn_player_armor_damage(absorbed)
 
 
 func _on_player_damaged(amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
+	_gui.spawn_player_damage(amount)
 	player_damaged.emit(amount)
 
 
 func _on_player_healed(amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
+	_gui.spawn_player_heal(amount)
 	player_healed.emit(amount)
 
 
@@ -509,7 +523,8 @@ func _refresh_action_bar() -> void:
 		player.get_hand_attacks(Player.Hand.OFFHAND), player.get_hand_spells(Player.Hand.OFFHAND),
 		player.mana,
 		player.is_hand_used(Player.Hand.MAINHAND), player.is_hand_used(Player.Hand.OFFHAND),
-		player.is_offhand_locked())
+		player.is_offhand_locked(),
+		player.get_hand_cooldowns(Player.Hand.MAINHAND), player.get_hand_cooldowns(Player.Hand.OFFHAND))
 
 
 func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
@@ -526,8 +541,9 @@ func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
 					print("[PLAYER] %s on %s" % [spell.spell_name, (target as Enemy).enemy_name])
 
 
-func _on_player_mana_spent(_amount: float) -> void:
+func _on_player_mana_spent(amount: float) -> void:
 	_gui.update_player_mana(player.mana, player.max_mana)
+	_gui.spawn_player_mana_cost(amount)
 
 
 func _on_player_mana_restored(_amount: float) -> void:
@@ -562,10 +578,11 @@ func _enter_world_map(completed_node: WorldMapNode = null) -> void:
 	_gui.update_player_health(player.health, player.max_health)
 	_gui.update_player_stats(player.build_stats_dict())
 	_gui.update_player_gold(player.gold)
-	# Fill the armor buffer to the player's (now fully-equipped) DEF so the bar reads its
-	# resting value on the map, rather than staying 0/0 until the first combat round.
+	# Fill the armor and mana bars with the player's equipped values so they read correctly
+	# on the map, rather than showing editor placeholders until the first combat round.
 	player.refresh_armor()
 	_gui.update_player_armor(player.armor, player.max_armor)
+	_gui.update_player_mana(player.mana, player.max_mana)
 	_gui.update_player_xp(player.experience, player.xp_to_next_level())
 
 
@@ -886,16 +903,22 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 	enemy.position = _calculate_enemy_position(index, total_expected)
 	_scale_sprite_to_viewport(enemy.get_node("Sprite"))
 	_gui.add_enemy_health_bar(enemy)
-	enemy.status_applied.connect(func(_d: StatusData) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
+	enemy.status_applied.connect(func(d: StatusData) -> void:
+		_gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses())
+		_gui.log_message("%s is afflicted with %s." % [enemy.enemy_name, d.display_name]))
 	enemy.status_ticked.connect(func(_d: StatusData, _t: int) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
-	enemy.status_expired.connect(func(_d: StatusData) -> void: _gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses()))
+	enemy.status_expired.connect(func(d: StatusData) -> void:
+		_gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses())
+		_gui.log_message("%s wears off %s." % [d.display_name, enemy.enemy_name]))
 	enemy.damaged.connect(func(amt: float) -> void:
 		_gui.update_enemy_health_bar(enemy, enemy.health)
+		_gui.spawn_enemy_damage(enemy, amt)
 		enemy_damaged.emit(enemy, amt))
 	enemy.armor_changed.connect(func(cur: float, mx: float) -> void:
 		_gui.update_enemy_armor(enemy, cur, mx))
 	enemy.died.connect(func() -> void:
 		_gui.remove_enemy_health_bar(enemy)
+		_gui.log_message("%s is slain." % enemy.enemy_name)
 		enemy_died.emit(enemy)
 		if player.mana_on_kill > 0.0:
 			player.restore_mana(player.mana_on_kill))
@@ -1052,6 +1075,7 @@ func _start_exploration_music() -> void:
 
 func _on_player_died() -> void:
 	print("[GAME] Player died — GAME OVER")
+	_gui.log_message("You fall.")
 	SaveManager.clear()
 	_exit_event()
 	_enter_game_over()

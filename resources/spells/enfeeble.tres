@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SpellData" format=3]
+
+[ext_resource type="Script" path="res://scripts/spell_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/effects/apply_weaken.tres" id="2_new"]
+
+[resource]
+script = ExtResource("1_script")
+spell_name = "Enfeeble"
+description = "Lay a withering curse on the foe, sapping the strength and spirit from their limbs."
+mana_cost = 6
+target_mode = 0
+cooldown = 3
+effects = [ExtResource("2_new")]

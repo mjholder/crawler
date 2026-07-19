@@ -10,13 +10,14 @@ region = Rect2(64, 0, 32, 32)
 
 [sub_resource type="Resource" id="Tick_1"]
 script = ExtResource("2_damage_script")
-damage_expression = "2"
+damage_expression = "1"
+bypass_armor = true
 
 [resource]
 script = ExtResource("1_script")
 tag = &"bleed"
 display_name = "Bleed"
 icon = SubResource("AtlasTexture_fcklb")
-duration = 4
+duration = -1
 on_tick = SubResource("Tick_1")
 stack_policy = 1

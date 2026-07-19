@@ -34,6 +34,10 @@ enum Persistence { COMBAT, PERSISTENT }
 # so the per-round armor buffer is not refilled (checked in Player/Enemy.refresh_armor).
 @export var suppresses_armor_refresh: bool = false
 
+# Vulnerable/ward: multiplies incoming ATTACK damage while active (DoT ticks are unaffected —
+# they pass is_attack=false to take_damage). 1.0 = no change, 1.5 = +50% taken, 0.5 = warded.
+@export var incoming_attack_multiplier: float = 1.0
+
 # Signal-name (StringName) -> Effect. Wired to the game.gd lifecycle bus when the status is
 # applied and disconnected when it is removed/cleared (mirrors BlessingData.subscriptions).
 # Handlers fire effect.apply(source, bearer). Use for reactive statuses (e.g. retaliate

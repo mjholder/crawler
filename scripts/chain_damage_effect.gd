@@ -2,7 +2,8 @@ class_name ChainDamageEffect
 extends Effect
 
 ## Chain damage (Lightning's signature). The primary hit lands on the chosen target, then the
-## bolt arcs to one array-adjacent enemy in the wave for a fraction of the damage.
+## bolt arcs to BOTH immediate array-adjacent enemies in the wave (the flankers) for a fraction
+## of the damage. An end enemy has only one flanker; a lone survivor has none.
 ##
 ## "Adjacent" = index-adjacent among the target's living siblings under CombatEvent/$Enemies —
 ## the pragmatic placeholder until a real battlefield-position system exists. Self-contained:
@@ -22,24 +23,24 @@ func apply(source: Node, target: Node) -> void:
 	var dmg := _eval.evaluate(damage_expression, source)
 	var pierce := _eval.evaluate(pierce_expression, source)
 	target.take_damage(dmg, pierce)
-	var neighbor := _find_neighbor(target)
-	if neighbor != null:
+	for neighbor in _find_neighbors(target):
 		neighbor.take_damage(dmg * chain_multiplier, pierce)
 
 
-## The nearest living array-adjacent sibling (next preferred, then previous).
-func _find_neighbor(target: Node) -> Node:
+## The living array-adjacent siblings on both sides of the target (left flanker, right flanker).
+func _find_neighbors(target: Node) -> Array[Node]:
+	var neighbors: Array[Node] = []
 	var parent := target.get_parent()
 	if parent == null:
-		return null
+		return neighbors
 	var siblings := parent.get_children()
 	var idx := siblings.find(target)
 	if idx == -1:
-		return null
-	for offset in [1, -1]:
+		return neighbors
+	for offset in [-1, 1]:
 		var j: int = idx + offset
 		if j >= 0 and j < siblings.size():
 			var cand: Node = siblings[j]
 			if cand != target and cand.has_method("take_damage") and not cand.get("is_dead"):
-				return cand
-	return null
+				neighbors.append(cand)
+	return neighbors

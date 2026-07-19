@@ -199,6 +199,8 @@ Spell name and description?
 **Group 2 — Mechanics**
 - Target mode: SINGLE_ENEMY / ALL_ENEMIES / SELF? [SINGLE_ENEMY]
 - Mana cost? [5]
+- Cooldown — player turns until reusable, 0 = none? [0]
+  (Use ≥2 to actually gate; `1` is a no-op given one action per hand per turn.)
 
 **Group 3 — Effects**
 Effects to apply (comma-separated from the list above, or describe a new one)?
@@ -217,6 +219,7 @@ Rules:
 3. **Multiple effects**: give each an ext_resource with sequential IDs (2_eff1, 3_eff2, …); all go in the `effects = Array[Resource]([...])`.
 4. **Custom / inline effects**: add the effect script as an ext_resource, then define a sub_resource before [resource].
 5. **StringNames** use `&""` syntax if needed (e.g. for status tags).
+6. **Cooldown**: add `cooldown = N` (int) after `target_mode` **only when N > 0**; omit the line for the default 0 (Godot drops default values).
 
 ### Template (single existing effect)
 

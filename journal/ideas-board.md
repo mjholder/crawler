@@ -35,21 +35,23 @@ kanban-plugin: board
 
 - [ ] Elemental signature identities — Poison, Fire, Lightning, Frost — Concrete mechanics for four elemental signatures; systems shipped, .tres content unauthored. [[ideas/elemental-signature-identities]]
 - [ ] Martial utility verbs — Bleed, Shatter, Brace — Non-magic verb set mirroring the elemental matrix; systems shipped, .tres content and Sentinel kit unauthored. [[ideas/martial-utility-verbs]]
-- [ ] Status effects clear at combat end — Combat-inflicted statuses wipe at fight end while equipment/background statuses persist; groundwork shipped, dependent status entries remain. [[ideas/status-clear-at-combat-end]]
-- [ ] DEF as refreshing ward — Replaces linear DEF mitigation with a per-round armor buffer; shipped as armor, only a balance pass remains. [[ideas/def-refreshing-ward]]
-- [ ] Enemy Attack Patterns — Optional data-driven fixed-sequence move patterns for enemies, layered over the `_perform_action` hook; sound + weighted extension remain. [[ideas/enemy-attack-patterns]]
-- [ ] Dual-Action Combat (Mainhand / Offhand) — Split the player turn into two independently-gated per-hand action slots with an explicit End Turn; shipped, HUD layout + v2 anims remain. [[ideas/dual-action-combat]]
-- [ ] Character Creation Layers — Background + Patron Saint — Three-part build identity with saint tiers that ascend across acts; Phase 1 + shrine/act progression shipped, proc + act maps remain. [[ideas/character-creation-layers]]
-- [ ] Content editor — enemy and event authoring — Events shipped; a dedicated enemy stat/AI/drops editor still remains. [[ideas/content-editor-enemy-event-authoring]]
-- [ ] Spell Casting System — Learned-spell magic with mana, prep slots, foci, tomes; foundation + tomes + offhand lock shipped, dual-pool loot + prep-UI polish remain. [[ideas/spell-casting-system]]
-- [ ] MCP server for AI-assisted content authoring — 11-tool stdio server shipped; one linter follow-up (verify `__ref` paths) remains. [[ideas/mcp-content-authoring-server]]
-- [ ] Equipment locked in dungeons ("bad air") — Equip lock shipped; identify-on-pickup, shrine equip window, and loot calibration remain. [[ideas/equipment-locked-in-dungeons]]
 
 
 ## Done
 
 - [ ] Consecutive-attack dodge decay — AGI dodge chance halves per successful dodge within a round, resetting each round; shipped 2026-07-07. [[ideas/consecutive-attack-dodge-decay]]
 - [ ] Per-Hand Weapon Restriction + Offhand Moveset — `hand_restriction` enum + per-hand movesets with a hand-selection UI and animated mirrored offhand weapons; shipped 2026-07-03. [[ideas/per-hand-weapon-restriction]]
+- [ ] DEF as refreshing ward — Replaces linear DEF mitigation with a per-round armor buffer; shipped as armor, only a balance pass remains. [[ideas/def-refreshing-ward]]
+- [ ] MCP server for AI-assisted content authoring — 11-tool stdio server shipped; one linter follow-up (verify `__ref` paths) remains. [[ideas/mcp-content-authoring-server]]
+- [ ] Equipment locked in dungeons ("bad air") — Equip lock shipped; identify-on-pickup, shrine equip window, and loot calibration remain. [[ideas/equipment-locked-in-dungeons]]
+- [ ] Spell Casting System — Learned-spell magic with mana, prep slots, foci, tomes; foundation + tomes + offhand lock shipped, dual-pool loot + prep-UI polish remain. [[ideas/spell-casting-system]]
+- [ ] Content editor — enemy and event authoring — Events shipped; a dedicated enemy stat/AI/drops editor still remains. [[ideas/content-editor-enemy-event-authoring]]
+- [ ] Character Creation Layers — Background + Patron Saint — Three-part build identity with saint tiers that ascend across acts; Phase 1 + shrine/act progression shipped, proc + act maps remain. [[ideas/character-creation-layers]]
+- [ ] Dual-Action Combat (Mainhand / Offhand) — Split the player turn into two independently-gated per-hand action slots with an explicit End Turn; shipped, HUD layout + v2 anims remain. [[ideas/dual-action-combat]]
+- [ ] Enemy Attack Patterns — Optional data-driven fixed-sequence move patterns for enemies, layered over the `_perform_action` hook; sound + weighted extension remain. [[ideas/enemy-attack-patterns]]
+- [ ] Status effects clear at combat end — Combat-inflicted statuses wipe at fight end while equipment/background statuses persist; groundwork shipped, dependent status entries remain. [[ideas/status-clear-at-combat-end]]
+
+
 
 
 %% kanban:settings

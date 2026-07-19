@@ -34,7 +34,9 @@ signal dodged
 ## Per-round armor buffer (DEF-derived) changed — current/maximum. UI listens to draw it.
 signal armor_changed(current: float, maximum: float)
 ## A hit was (partly or wholly) soaked by the armor buffer. Drives combat-log feedback.
-signal armor_absorbed(absorbed: float)
+## fully_absorbed is true when the buffer ate the whole hit (no HP will be lost this
+## hit) — lets listeners show a single "damage taken" number colored by outcome.
+signal armor_absorbed(absorbed: float, fully_absorbed: bool)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -143,6 +145,9 @@ const _UNARMED: AttackData = preload("res://resources/equipment/weapons/unarmed_
 var _hand_actions := { Hand.MAINHAND: {}, Hand.OFFHAND: {} }
 var _hand_attacks := { Hand.MAINHAND: [], Hand.OFFHAND: [] }   # hand -> Array[AttackData]
 var _hand_spells := { Hand.MAINHAND: [], Hand.OFFHAND: [] }    # hand -> Array[SpellData]
+# Live per-action cooldowns: hand -> {action_name: turns_remaining}. Seeded on use from
+# the source resource's `cooldown`, decremented once per player turn in begin_turn().
+var _cooldowns := { Hand.MAINHAND: {}, Hand.OFFHAND: {} }
 
 
 func _ready() -> void:
@@ -363,6 +368,7 @@ func begin_turn() -> void:
 	_action_resolving = false
 	# Round start: full dodge chance and a fresh armor buffer for the round ahead.
 	_dodge_streak = 0
+	_tick_cooldowns()
 	refresh_armor()
 	# Burn (if an enemy inflicted it) discharges at the start of the player's turn too.
 	resolve_turn_start_bursts()
@@ -411,12 +417,55 @@ func get_hand_spells(hand: Hand) -> Array:
 func execute_action(hand: Hand, action_name: String) -> void:
 	if is_dead or _action_resolving or is_hand_used(hand):
 		return
+	if get_cooldown_remaining(hand, action_name) > 0:
+		return
 	if not _hand_actions[hand].has(action_name):
 		return
 	print("[PLAYER] Action (%s): %s" % ["main" if hand == Hand.MAINHAND else "off", action_name])
 	_pending_hand = hand
 	_hand_actions[hand][action_name].call()
 	_action_resolving = true
+	# An action that reaches here always commits, so start its cooldown now.
+	var cd := _action_base_cooldown(hand, action_name)
+	if cd > 0:
+		_cooldowns[hand][action_name] = cd
+
+
+## Returns the authored cooldown of the named action in this hand (0 if none).
+func _action_base_cooldown(hand: Hand, action_name: String) -> int:
+	for atk in _hand_attacks[hand]:
+		if atk != null and atk.attack_name == action_name:
+			return atk.cooldown
+	for spell in _hand_spells[hand]:
+		if spell != null and spell.spell_name == action_name:
+			return spell.cooldown
+	return 0
+
+
+## Turns left before the named action can be used again (0 = ready).
+func get_cooldown_remaining(hand: Hand, action_name: String) -> int:
+	return _cooldowns[hand].get(action_name, 0)
+
+
+## Snapshot of the hand's active cooldowns for the UI: {action_name: turns_remaining}.
+func get_hand_cooldowns(hand: Hand) -> Dictionary:
+	var out := {}
+	for action_name in _cooldowns[hand]:
+		var remaining: int = _cooldowns[hand][action_name]
+		if remaining > 0:
+			out[action_name] = remaining
+	return out
+
+
+## Decrements every active cooldown by one player turn, clearing those that reach 0.
+func _tick_cooldowns() -> void:
+	for hand in _cooldowns:
+		for action_name in _cooldowns[hand].keys():
+			var remaining: int = _cooldowns[hand][action_name] - 1
+			if remaining > 0:
+				_cooldowns[hand][action_name] = remaining
+			else:
+				_cooldowns[hand].erase(action_name)
 
 
 func _set_hand_used(hand: Hand) -> void:
@@ -559,16 +608,22 @@ func _is_burst_bearer_defeated() -> bool:
 	return is_dead
 
 
-func take_damage(amount: float, pierce: float = 0.0) -> void:
+func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false, is_attack: bool = true) -> void:
 	if is_dead:
 		return
 	if _roll_dodge():
 		dodged.emit()
 		return
-	var net_amount: float = _apply_defense(amount, pierce)
-	var absorbed := amount - net_amount
-	if absorbed > 0.0:
-		armor_absorbed.emit(absorbed)
+	# Vulnerable/ward scales the incoming hit before armor soaks it — DoT ticks pass is_attack=false.
+	if is_attack:
+		amount *= get_incoming_attack_multiplier()
+	var net_amount: float = amount
+	if not bypass_armor:
+		net_amount = _apply_defense(amount, pierce)
+		var absorbed := amount - net_amount
+		if absorbed > 0.0:
+			armor_absorbed.emit(absorbed, roundf(net_amount) <= 0.0)
+	net_amount = roundf(net_amount)  # HP is integral — round the applied delta, not the raw math
 	if net_amount <= 0.0:
 		return  # the armor buffer soaked the whole hit — no HP loss, no hurt feedback
 	health = maxf(health - net_amount, 0.0)
@@ -584,7 +639,7 @@ func take_damage(amount: float, pierce: float = 0.0) -> void:
 func heal(amount: float) -> void:
 	if is_dead:
 		return
-	var actual := minf(amount, max_health - health)
+	var actual := roundf(minf(amount, max_health - health))
 	health += actual
 	healed.emit(actual)
 
@@ -629,7 +684,7 @@ func _recalculate_max_health() -> void:
 		return
 	var old_max := max_health
 	var effective_con := get_effective_stat(Enums.Stat.CONSTITUTION)
-	max_health = (effective_con * health_modifier) + _class_data.class_health_bonus
+	max_health = roundf((effective_con * health_modifier) + _class_data.class_health_bonus)
 	var delta := max_health - old_max
 	if delta > 0.0:
 		health += delta
@@ -1127,7 +1182,7 @@ func apply_save_dict(d: Dictionary) -> void:
 	_recalculate_max_health()
 	_recalculate_max_mana()
 	_recalculate_prep_slots()
-	health = minf(d["health"], max_health)
+	health = roundf(minf(d["health"], max_health))
 	for path in d.get("learned_spells", []):
 		var spell := load(path) as SpellData
 		if spell != null:

@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="PlayerClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/player_class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/equipment/weapons/rapier.tres" id="2_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_gauntlets.tres" id="3_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_sabatons.tres" id="4_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_greaves.tres" id="5_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_chest.tres" id="6_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_helm.tres" id="7_new"]
+
+[resource]
+script = ExtResource("1_script")
+class_name_text = "Duelist"
+description = "A nimble swordsman who wins fights with precision, not brute force. The rapier's point slips past armor with a Lunge, while a raking Rend leaves foes bleeding out over the turns to come."
+strength = 45
+defense = 40
+constitution = 40
+agility = 60
+spirit = 25
+luck = 50
+class_health_bonus = 10
+growth_rates = {
+0: 2,
+3: 4
+}
+starting_equipped = {
+0: ExtResource("2_new"),
+1: ExtResource("3_new"),
+2: ExtResource("4_new"),
+3: ExtResource("5_new"),
+4: ExtResource("6_new"),
+5: ExtResource("7_new")
+}

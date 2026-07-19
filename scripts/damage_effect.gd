@@ -10,6 +10,12 @@ extends Effect
 ## signature; also a general damage-shape lever). Evaluated against source stats. "0" = none.
 @export var pierce_expression: String = "0"
 
+## When true, the TICK variant deals damage straight to health, skipping the armor buffer
+## entirely (poison/bleed signature — a DoT in the blood is not soaked by armor, and the
+## per-round armor refresh would otherwise erase a small tick before it ever reached HP).
+## Only affects apply_tick; direct apply() hits still respect armor.
+@export var bypass_armor: bool = false
+
 var _eval := StatExprEval.new()
 
 
@@ -25,4 +31,4 @@ func apply_tick(source: Node, target: Node, instance: StatusInstance) -> void:
 	if target == null or not target.has_method("take_damage"):
 		return
 	var stacks: int = instance.stacks if instance != null else 1
-	target.take_damage(_eval.evaluate(damage_expression, source) * float(stacks), _eval.evaluate(pierce_expression, source))
+	target.take_damage(_eval.evaluate(damage_expression, source) * float(stacks), _eval.evaluate(pierce_expression, source), bypass_armor, false)

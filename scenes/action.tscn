@@ -1,0 +1,80 @@
+[gd_scene format=3 uid="uid://dgbjlk3ybk6xm"]
+
+[ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="1_dnasc"]
+[ext_resource type="Script" path="res://scripts/action_button.gd" id="2_actbtn"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_h1spn"]
+font = ExtResource("1_dnasc")
+font_size = 24
+
+[sub_resource type="LabelSettings" id="LabelSettings_dnasc"]
+font = ExtResource("1_dnasc")
+
+[node name="Action" type="Control" unique_id=1837507290]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 120.0
+offset_bottom = 120.0
+script = ExtResource("2_actbtn")
+
+[node name="ActionButton" type="Button" parent="." unique_id=117033150]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ActionLabel" type="Label" parent="." unique_id=1697561983]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+text = "Test"
+label_settings = SubResource("LabelSettings_h1spn")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SpellCostContainer" type="PanelContainer" parent="." unique_id=1912727488]
+layout_mode = 1
+anchors_preset = 3
+mouse_filter = 2
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 16.0
+offset_bottom = 16.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="SpellCostLabel" type="Label" parent="SpellCostContainer" unique_id=259460799]
+layout_mode = 2
+size_flags_vertical = 1
+mouse_filter = 2
+text = "3"
+label_settings = SubResource("LabelSettings_dnasc")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CooldownContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 0
+mouse_filter = 2
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CooldownLabel" type="Label" parent="CooldownContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+mouse_filter = 2
+text = "2"
+label_settings = SubResource("LabelSettings_dnasc")
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -14,20 +14,17 @@
 [ext_resource type="Script" uid="uid://ddqp83ddmt7ba" path="res://scripts/town_panel.gd" id="14_townp"]
 [ext_resource type="PackedScene" uid="uid://b0sqp1dfwigqy" path="res://scenes/world_map.tscn" id="16_ca42v"]
 [ext_resource type="Script" uid="uid://cwnh362po6p8" path="res://scripts/character_creation_panel.gd" id="19_264po"]
-[ext_resource type="Script" path="res://scripts/player_class_data.gd" id="20_bt5mj"]
 [ext_resource type="Script" uid="uid://dq3n8vtv7672i" path="res://scripts/inventory_panel.gd" id="20_invpanel"]
-[ext_resource type="Resource" path="res://resources/classes/mage.tres" id="20_suyxu"]
 [ext_resource type="Script" uid="uid://wvf2r1h67525" path="res://scripts/level_up_panel.gd" id="21_lvlup"]
-[ext_resource type="Resource" uid="uid://d0qsuhxi8ws57" path="res://resources/classes/assassin.tres" id="21_sgl2t"]
 [ext_resource type="PackedScene" uid="uid://c6yng6pikfy1w" path="res://scenes/item_button.tscn" id="21_sww3w"]
-[ext_resource type="Resource" uid="uid://gd05xm21dlnr" path="res://resources/classes/warrior.tres" id="22_warrior"]
 [ext_resource type="Script" uid="uid://yiym2m3gkrwg" path="res://scripts/shop_panel.gd" id="23_e1j6l"]
 [ext_resource type="Script" uid="uid://g3og4p1jprpn" path="res://scripts/game_over_panel.gd" id="24_pl11u"]
 [ext_resource type="Script" uid="uid://qloduutsnv77" path="res://scripts/victory_panel.gd" id="25_bhx41"]
 [ext_resource type="Script" uid="uid://biwwcl2cyveoh" path="res://scripts/consumable_belt_ui.gd" id="26_cbeltu"]
-[ext_resource type="Resource" path="res://resources/classes/pyromancer.tres" id="26_pyro"]
 [ext_resource type="Script" uid="uid://ctce0wdnj5igm" path="res://scripts/paper_doll.gd" id="26_suyxu"]
 [ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
+[ext_resource type="PackedScene" uid="uid://dgbjlk3ybk6xm" path="res://scenes/action.tscn" id="28_action"]
+[ext_resource type="Script" uid="uid://127dhuk4vprq" path="res://scripts/combat_log.gd" id="29_clog"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_sww3w"]
 font = ExtResource("6_p57ef")
@@ -174,7 +171,6 @@ modulate = Color(0.9192808, 4.47616e-06, 1.1551381e-06, 1)
 layout_mode = 1
 offset_right = 480.0
 offset_bottom = 48.0
-max_value = 100.0
 value = 70.0
 show_percentage = false
 
@@ -631,7 +627,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("19_264po")
-available_classes = Array[ExtResource("20_bt5mj")]([ExtResource("22_warrior"), ExtResource("20_suyxu"), ExtResource("21_sgl2t"), ExtResource("26_pyro")])
 
 [node name="PanelContainer" type="PanelContainer" parent="GUI/CharacterCreationPanel" unique_id=490170422]
 layout_mode = 1
@@ -911,25 +906,36 @@ anchors_preset = 0
 offset_left = 1.0
 offset_right = 1.0
 
-[node name="DummyEnemyBar1" parent="GUI/CombatHUD/EnemyHUD" instance=ExtResource("9_hbar")]
-position = Vector2(760, 260)
+[node name="DummyEnemyBar1" parent="GUI/CombatHUD/EnemyHUD" unique_id=1458833519 instance=ExtResource("9_hbar")]
+layout_mode = 0
+offset_left = 760.0
+offset_top = 260.0
+offset_right = 1016.0
+offset_bottom = 356.0
 
-[node name="CurrentHealth" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar1" index="1"]
-scale = Vector2(64, 1)
+[node name="DummyEnemyBar2" parent="GUI/CombatHUD/EnemyHUD" unique_id=1028176894 instance=ExtResource("9_hbar")]
+layout_mode = 0
+offset_left = 1160.0
+offset_top = 260.0
+offset_right = 1416.0
+offset_bottom = 356.0
 
-[node name="Armor" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar1" index="2"]
-visible = true
-scale = Vector2(40, 1)
+[node name="DamageNumbers" type="Control" parent="GUI/CombatHUD" unique_id=314159265]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="DummyEnemyBar2" parent="GUI/CombatHUD/EnemyHUD" instance=ExtResource("9_hbar")]
-position = Vector2(1160, 260)
-
-[node name="CurrentHealth" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar2" index="1"]
-scale = Vector2(38, 1)
-
-[node name="Armor" parent="GUI/CombatHUD/EnemyHUD/DummyEnemyBar2" index="2"]
-visible = true
-scale = Vector2(20, 1)
+[node name="PlayerDamageSpawnpoint" type="Control" parent="GUI/CombatHUD" unique_id=364353866]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 530.0
+offset_top = 90.0
+offset_right = 530.0
+offset_bottom = 90.0
 
 [node name="ActionMenu" type="Control" parent="GUI/CombatHUD" unique_id=2111488421]
 layout_mode = 1
@@ -951,17 +957,14 @@ offset_right = 660.0
 offset_bottom = -68.0
 grow_vertical = 0
 
-[node name="DummyMainAction1" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+[node name="DummyMainAction1" parent="GUI/CombatHUD/ActionMenu/MainhandActions" unique_id=818060999 instance=ExtResource("28_action")]
 layout_mode = 2
-text = "Slash"
 
-[node name="DummyMainAction2" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+[node name="DummyMainAction2" parent="GUI/CombatHUD/ActionMenu/MainhandActions" unique_id=1162358600 instance=ExtResource("28_action")]
 layout_mode = 2
-text = "Stab"
 
-[node name="DummyMainAction3" type="Button" parent="GUI/CombatHUD/ActionMenu/MainhandActions"]
+[node name="DummyMainAction3" parent="GUI/CombatHUD/ActionMenu/MainhandActions" unique_id=47448247 instance=ExtResource("28_action")]
 layout_mode = 2
-text = "Cleave"
 
 [node name="OffhandActions" type="HBoxContainer" parent="GUI/CombatHUD/ActionMenu" unique_id=1176052192]
 layout_mode = 1
@@ -976,18 +979,16 @@ offset_right = -47.0
 offset_bottom = -71.0
 grow_horizontal = 0
 grow_vertical = 0
+alignment = 2
 
-[node name="DummyOffAction1" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+[node name="DummyOffAction1" parent="GUI/CombatHUD/ActionMenu/OffhandActions" unique_id=254348707 instance=ExtResource("28_action")]
 layout_mode = 2
-text = "Brace"
 
-[node name="DummyOffAction2" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+[node name="DummyOffAction2" parent="GUI/CombatHUD/ActionMenu/OffhandActions" unique_id=1192003805 instance=ExtResource("28_action")]
 layout_mode = 2
-text = "Chop"
 
-[node name="DummyOffAction3" type="Button" parent="GUI/CombatHUD/ActionMenu/OffhandActions"]
+[node name="DummyOffAction3" parent="GUI/CombatHUD/ActionMenu/OffhandActions" unique_id=1957458368 instance=ExtResource("28_action")]
 layout_mode = 2
-text = "Flail"
 
 [node name="EndTurnButton" type="Button" parent="GUI/CombatHUD/ActionMenu" unique_id=359829558]
 layout_mode = 1
@@ -1006,8 +1007,19 @@ theme_override_fonts/font = ExtResource("6_p57ef")
 theme_override_font_sizes/font_size = 32
 text = "End"
 
-[node name="CombatLog" type="RichTextLabel" parent="GUI/CombatHUD" unique_id=1166319260]
-layout_mode = 0
+[node name="CombatLog" type="Control" parent="GUI/CombatHUD" unique_id=696235466]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 400.0
+offset_right = 300.0
+offset_bottom = 445.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("29_clog")
+spawn_gap = 0.83
 
 [node name="PlayerStatusEffects" type="Control" parent="GUI/CombatHUD" unique_id=2024602087]
 layout_mode = 1
@@ -1033,6 +1045,14 @@ grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
+[node name="SpellSpendNumber" type="Control" parent="GUI/CombatHUD" unique_id=364353865]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 530.0
+offset_top = 184.0
+offset_right = 530.0
+offset_bottom = 184.0
+
 [node name="ConsumableBelt" type="HFlowContainer" parent="GUI" unique_id=1764667387 node_paths=PackedStringArray("template_button")]
 anchors_preset = 3
 anchor_left = 1.0
@@ -1040,9 +1060,9 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -806.0
-offset_top = -303.0
+offset_top = -380.0
 offset_right = -38.0
-offset_bottom = -167.0
+offset_bottom = -244.0
 grow_horizontal = 0
 grow_vertical = 0
 alignment = 2

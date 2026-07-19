@@ -9,4 +9,5 @@ spell_name = "Mend"
 description = "Knit wounds closed with spirit."
 mana_cost = 8.0
 target_mode = 2
+cooldown = 3
 effects = Array[Resource]([ExtResource("2_effect")])

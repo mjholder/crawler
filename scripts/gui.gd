@@ -39,6 +39,12 @@ signal continue_requested
 @onready var _player_xp_label: Label = $PlayerHUD/PlayerXP/PlayerXPLabel
 @onready var _combat_hud: Control = $CombatHUD
 @onready var _enemy_hud: Control = $CombatHUD/EnemyHUD
+## Screen-space overlay (on top of the health bars) that floating damage numbers
+## parent to; see _spawn_at.
+@onready var _damage_number_layer: Control = $CombatHUD/DamageNumbers
+## Hand-placed launch points for the player-facing floating numbers.
+@onready var _player_damage_origin: Control = $CombatHUD/PlayerDamageSpawnpoint
+@onready var _spell_spend_origin: Control = $CombatHUD/SpellSpendNumber
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
 # Dual-action bar: one button group per hand plus an explicit End Turn. Built in the
 # scene under ActionMenu; if absent (scene not yet updated), _ensure_action_nodes()
@@ -47,7 +53,7 @@ signal continue_requested
 @onready var _offhand_actions: HBoxContainer = get_node_or_null("CombatHUD/ActionMenu/OffhandActions")
 @onready var _end_turn_button: Button = get_node_or_null("CombatHUD/ActionMenu/EndTurnButton")
 @onready var _consumable_belt: ConsumableBeltUI = $ConsumableBelt
-@onready var _combat_log: RichTextLabel = $CombatHUD/CombatLog
+@onready var _combat_log: CombatLog = $CombatHUD/CombatLog
 @onready var _player_mana_bar: ProgressBar = $PlayerHUD/PlayerMagic/PlayerMagicBar
 @onready var _player_mana_label: Label = $PlayerHUD/PlayerMagic/PlayerMagicLabel
 @onready var _status_container: HBoxContainer = $CombatHUD/PlayerStatusEffects/StatusContainer
@@ -62,6 +68,9 @@ signal continue_requested
 @onready var _shop_panel: ShopPanel = $ShopPanel
 @onready var _game_over_panel: GameOverPanel = $GameOverPanel
 @onready var _victory_panel: VictoryPanel = $VictoryPanel
+
+const ACTION_SCENE := preload("res://scenes/action.tscn")
+const DAMAGE_NUMBER_SCENE := preload("res://scenes/damage_number.tscn")
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -252,7 +261,7 @@ func return_to_main_menu() -> void:
 
 func show_event_hud() -> void:
 	set_sheathed(true)
-	_combat_log.text = ""
+	_combat_log.clear()
 	_combat_hud.show()
 	_consumable_belt.show()
 
@@ -261,6 +270,9 @@ func hide_event_hud() -> void:
 	for child in _enemy_hud.get_children():
 		child.queue_free()
 	_enemy_bars.clear()
+	if _damage_number_layer != null:
+		for child in _damage_number_layer.get_children():
+			child.queue_free()
 	_combat_hud.hide()
 	if not _inventory_panel.visible:
 		_consumable_belt.hide()
@@ -361,6 +373,59 @@ func update_enemy_armor(enemy: Enemy, current: float, maximum: float) -> void:
 	_enemy_bars[enemy].set_armor(current, maximum)
 
 
+# --- Floating damage numbers ---
+
+## Spawn a self-freeing DamageNumber centered on a global `origin` point, in the
+## overlay layer. The layer and every source node share this CanvasLayer's screen-space
+## frame. Parenting to the layer (not a bar) lets the number keep animating even if its
+## source is freed mid-flight (e.g. the enemy dies).
+func _spawn_at(origin: Vector2, amount: float, kind: int) -> void:
+	if _damage_number_layer == null:
+		return
+	var dn: DamageNumber = DAMAGE_NUMBER_SCENE.instantiate()
+	_damage_number_layer.add_child(dn)
+	dn.global_position = origin - dn.size * 0.5  # center on origin
+	dn.setup(amount, kind)
+
+
+func _marker_center(c: Control) -> Vector2:
+	return c.global_position + c.size * 0.5
+
+
+## Global launch point for an enemy's numbers: the center of its "DamageNumberSpawnpoint"
+## marker child (hand-placed in the health-bar scene) if present, else the bar's top-center.
+func _bar_origin(bar: Control) -> Vector2:
+	var marker := bar.get_node_or_null("DamageNumberSpawnpoint")
+	if marker is Control:
+		return _marker_center(marker)
+	return bar.global_position + Vector2(bar.size.x * 0.5, 0.0)
+
+
+func spawn_enemy_damage(enemy: Enemy, amount: float) -> void:
+	if _enemy_bars.has(enemy):
+		_spawn_at(_bar_origin(_enemy_bars[enemy]), amount, DamageNumber.Kind.DAMAGE)
+
+
+func spawn_player_damage(amount: float) -> void:
+	if _player_damage_origin != null:
+		_spawn_at(_marker_center(_player_damage_origin), amount, DamageNumber.Kind.DAMAGE)
+
+
+func spawn_player_heal(amount: float) -> void:
+	if _player_damage_origin != null:
+		_spawn_at(_marker_center(_player_damage_origin), amount, DamageNumber.Kind.HEAL)
+
+
+func spawn_player_armor_damage(amount: float) -> void:
+	if _player_damage_origin != null:
+		_spawn_at(_marker_center(_player_damage_origin), amount, DamageNumber.Kind.ARMOR)
+
+
+func spawn_player_mana_cost(amount: float) -> void:
+	if _spell_spend_origin != null:
+		_spawn_at(_marker_center(_spell_spend_origin), amount, DamageNumber.Kind.MANA)
+
+
 ## Rebuilds an enemy's status-icon strip in its health bar's Statuses HBox,
 ## mirroring the player's status strip (atlas icon + stack-count overlay + tooltip).
 func refresh_enemy_statuses(enemy: Enemy, statuses: Array) -> void:
@@ -415,21 +480,22 @@ func rebuild_action_buttons(
 	mainhand_attacks: Array, mainhand_spells: Array,
 	offhand_attacks: Array, offhand_spells: Array,
 	current_mana: float,
-	mainhand_used: bool, offhand_used: bool, offhand_locked: bool
+	mainhand_used: bool, offhand_used: bool, offhand_locked: bool,
+	mainhand_cooldowns: Dictionary = {}, offhand_cooldowns: Dictionary = {}
 ) -> void:
 	_action_mana = current_mana
 	_mh_used = mainhand_used
 	_oh_used = offhand_used
 	_oh_locked = offhand_locked
-	_populate_hand_group(_mainhand_actions, Player.Hand.MAINHAND, mainhand_attacks, mainhand_spells)
-	_populate_hand_group(_offhand_actions, Player.Hand.OFFHAND, offhand_attacks, offhand_spells)
+	_populate_hand_group(_mainhand_actions, Player.Hand.MAINHAND, mainhand_attacks, mainhand_spells, mainhand_cooldowns)
+	_populate_hand_group(_offhand_actions, Player.Hand.OFFHAND, offhand_attacks, offhand_spells, offhand_cooldowns)
 	# The offhand row hides entirely when the hand offers nothing (e.g. a two-hander that
 	# locks the offhand and grants no supporting action).
 	_offhand_actions.visible = _offhand_actions.get_child_count() > 0
 	_apply_action_states()
 
 
-func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spells: Array) -> void:
+func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spells: Array, cooldowns: Dictionary = {}) -> void:
 	if group == null:
 		return
 	for child in group.get_children():
@@ -437,21 +503,18 @@ func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spell
 	for atk_res in attacks:
 		var atk := atk_res as AttackData
 		if atk != null:
-			_add_action_button(group, hand, atk.attack_name, 0.0)
+			_add_action_button(group, hand, atk.attack_name, 0.0, cooldowns.get(atk.attack_name, 0))
 	for spell_res in spells:
 		var spell := spell_res as SpellData
 		if spell != null:
-			_add_action_button(group, hand, spell.spell_name, spell.mana_cost)
+			_add_action_button(group, hand, spell.spell_name, spell.mana_cost, cooldowns.get(spell.spell_name, 0))
 
 
-func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float) -> void:
-	var btn := Button.new()
-	btn.text = "%s (%d)" % [action_name, int(cost)] if cost > 0.0 else action_name
-	btn.set_meta("hand", hand)
-	btn.set_meta("action", action_name)
-	btn.set_meta("cost", cost)
-	btn.pressed.connect(func() -> void: attack_requested.emit(hand, action_name))
-	group.add_child(btn)
+func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float, cooldown_remaining: int = 0) -> void:
+	var action := ACTION_SCENE.instantiate() as ActionButtonUI
+	group.add_child(action)
+	action.configure(hand, action_name, cost, cooldown_remaining)
+	action.pressed.connect(func() -> void: attack_requested.emit(hand, action_name))
 
 
 ## Recomputes every action button's disabled/focus state from the current gates.
@@ -467,11 +530,10 @@ func _apply_group_states(group: HBoxContainer, hand_used: bool) -> void:
 		return
 	var base := _is_player_turn and not _sheathed and not hand_used
 	for child in group.get_children():
-		if not child is Button:
+		var action := child as ActionButtonUI
+		if action == null:
 			continue
-		var btn := child as Button
-		var cost: float = btn.get_meta("cost", 0.0)
-		btn.disabled = not base or (cost > 0.0 and _action_mana < cost)
+		action.set_disabled(not base or (action.cost > 0.0 and _action_mana < action.cost) or action.cooldown_remaining > 0)
 
 
 func set_targeting_action(hand: int, action_name: String) -> void:
@@ -480,15 +542,11 @@ func set_targeting_action(hand: int, action_name: String) -> void:
 		if group == null:
 			continue
 		for child in group.get_children():
-			if not child is Button:
+			var action := child as ActionButtonUI
+			if action == null:
 				continue
-			var btn := child as Button
-			btn.focus_mode = Control.FOCUS_NONE if targeting else Control.FOCUS_ALL
-			var match_hand: int = btn.get_meta("hand", -1)
-			if targeting and match_hand == hand and btn.get_meta("action", "") == action_name:
-				btn.modulate = Color(1.4, 1.4, 0.6)
-			else:
-				btn.modulate = Color.WHITE
+			action.set_focus_enabled(not targeting)
+			action.set_highlighted(targeting and action.hand == hand and action.action_name == action_name)
 
 
 func set_player_turn(is_player_turn: bool) -> void:
@@ -497,7 +555,7 @@ func set_player_turn(is_player_turn: bool) -> void:
 
 
 func log_message(text: String) -> void:
-	_combat_log.append_text(text + "\n")
+	_combat_log.push(text)
 
 
 # --- World Map ---

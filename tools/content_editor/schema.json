@@ -21,6 +21,10 @@
 					"type": "enum"
 				},
 				{
+					"name": "cooldown",
+					"type": "int"
+				},
+				{
 					"element_type": "Effect",
 					"name": "effects",
 					"type": "Array"
@@ -171,6 +175,11 @@
 					"type": "int"
 				},
 				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
 					"name": "_eval",
 					"type": "Object"
 				}
@@ -187,6 +196,10 @@
 				{
 					"name": "pierce_expression",
 					"type": "String"
+				},
+				{
+					"name": "bypass_armor",
+					"type": "bool"
 				},
 				{
 					"name": "_eval",
@@ -406,6 +419,10 @@
 				{
 					"name": "pierce_expression",
 					"type": "String"
+				},
+				{
+					"name": "bypass_armor",
+					"type": "bool"
 				},
 				{
 					"name": "_eval",
@@ -958,6 +975,10 @@
 					"type": "enum"
 				},
 				{
+					"name": "cooldown",
+					"type": "int"
+				},
+				{
 					"element_type": "Effect",
 					"name": "effects",
 					"type": "Array"
@@ -1030,6 +1051,14 @@
 					"type": "enum"
 				},
 				{
+					"name": "stack_decays",
+					"type": "bool"
+				},
+				{
+					"name": "burst_on_turn_start",
+					"type": "bool"
+				},
+				{
 					"enum_values": {
 						"Combat": 0,
 						"Persistent": 1
@@ -1040,6 +1069,10 @@
 				{
 					"name": "suppresses_armor_refresh",
 					"type": "bool"
+				},
+				{
+					"name": "incoming_attack_multiplier",
+					"type": "float"
 				},
 				{
 					"key_type": "StringName",
@@ -1057,6 +1090,10 @@
 					"name": "status_data",
 					"resource_type": "StatusData",
 					"type": "Resource"
+				},
+				{
+					"name": "stacks",
+					"type": "int"
 				}
 			],
 			"script": "res://scripts/status_effect.gd"

@@ -9,4 +9,5 @@ spell_name = "Flicker"
 description = "Dissolve into heat haze, blurring like a guttering flame. Drastically heightens agility through the coming turn, slipping nearly every blow."
 mana_cost = 6.0
 target_mode = 2
+cooldown = 3
 effects = Array[Resource]([ExtResource("2_effect")])

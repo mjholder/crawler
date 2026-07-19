@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackData" format=3]
+
+[ext_resource type="Script" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/damage_effect.gd" id="2_dmg_script"]
+[ext_resource type="Resource" path="res://resources/effects/apply_stun.tres" id="3_stun"]
+
+[sub_resource type="Resource" id="DamageEffect_main"]
+script = ExtResource("2_dmg_script")
+damage_expression = "strength * 0.5"
+
+[resource]
+script = ExtResource("1_script")
+attack_name = "Skull Bash"
+description = "Bring the mace down on the skull with crushing force, leaving the foe reeling and unable to act."
+target_mode = 0
+cooldown = 3
+effects = Array[Resource]([SubResource("DamageEffect_main"), ExtResource("3_stun")])

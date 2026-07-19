@@ -19,4 +19,5 @@ script = ExtResource("1_script")
 attack_name = "Immolate"
 description = "Bathe the battlefield in clinging fire, searing every enemy for turns to come."
 target_mode = 1
+cooldown = 3
 effects = Array[Resource]([SubResource("DamageEffect_main"), SubResource("StatusEffect_burn")])

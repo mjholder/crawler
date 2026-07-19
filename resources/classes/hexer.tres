@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="PlayerClassData" format=3]
+
+[ext_resource type="Script" path="res://scripts/player_class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/equipment/weapons/mage/hex_rod.tres" id="2_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/mage_gloves.tres" id="3_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/arcane_boots.tres" id="4_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/arcane_legwraps.tres" id="5_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/apprentice_robes.tres" id="6_new"]
+[ext_resource type="Resource" path="res://resources/equipment/armor/mage/mage_hood.tres" id="7_new"]
+[ext_resource type="Resource" path="res://resources/spells/enfeeble.tres" id="8_new"]
+[ext_resource type="Resource" path="res://resources/spells/wither.tres" id="9_new"]
+
+[resource]
+script = ExtResource("1_script")
+class_name_text = "Hexer"
+description = "A caster of draining curses. Enfeeble saps the strength and spirit from a foe, softening it for the killing blow, while Wither gnaws away at what remains. Frail, but ruinous to fight for long."
+strength = 25
+defense = 35
+constitution = 40
+agility = 40
+spirit = 70
+luck = 45
+class_mana_bonus = 10
+growth_rates = {
+2: 1,
+4: 3
+}
+starting_equipped = {
+0: ExtResource("2_new"),
+1: ExtResource("3_new"),
+2: ExtResource("4_new"),
+3: ExtResource("5_new"),
+4: ExtResource("6_new"),
+5: ExtResource("7_new")
+}
+starting_prep_slots = 2
+starting_learned_spells = [ExtResource("8_new"), ExtResource("9_new")]
+starting_prepared_spells = [ExtResource("8_new"), ExtResource("9_new")]
+mana_regen_per_turn = 2

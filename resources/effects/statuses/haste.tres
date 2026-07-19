@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="StatusData" format=3]
+
+[ext_resource type="Texture2D" uid="uid://cq4lntsy45th0" path="res://assets/sprites/ui/status-sheet.png" id="1_sheet"]
+[ext_resource type="Script" uid="uid://b6e1sgjh81xns" path="res://scripts/status_data.gd" id="1_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_haste"]
+atlas = ExtResource("1_sheet")
+region = Rect2(224, 0, 32, 32)
+
+[resource]
+script = ExtResource("1_script")
+tag = &"haste"
+display_name = "Haste"
+icon = SubResource("AtlasTexture_haste")
+duration = 3
+stat_modifiers = {
+3: 30.0
+}
+stack_policy = 0
