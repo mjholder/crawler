@@ -34,7 +34,9 @@ signal dodged
 ## Per-round armor buffer (DEF-derived) changed — current/maximum. UI listens to draw it.
 signal armor_changed(current: float, maximum: float)
 ## A hit was (partly or wholly) soaked by the armor buffer. Drives combat-log feedback.
-signal armor_absorbed(absorbed: float)
+## fully_absorbed is true when the buffer ate the whole hit (no HP will be lost this
+## hit) — lets listeners show a single "damage taken" number colored by outcome.
+signal armor_absorbed(absorbed: float, fully_absorbed: bool)
 
 # --- Stats ---
 @export var player_name: String = "Player"
@@ -573,7 +575,7 @@ func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false,
 		net_amount = _apply_defense(amount, pierce)
 		var absorbed := amount - net_amount
 		if absorbed > 0.0:
-			armor_absorbed.emit(absorbed)
+			armor_absorbed.emit(absorbed, roundf(net_amount) <= 0.0)
 	net_amount = roundf(net_amount)  # HP is integral — round the applied delta, not the raw math
 	if net_amount <= 0.0:
 		return  # the armor buffer soaked the whole hit — no HP loss, no hurt feedback

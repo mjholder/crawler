@@ -417,17 +417,23 @@ func _on_player_armor_changed(current: float, maximum: float) -> void:
 	_gui.update_player_armor(current, maximum)
 
 
-func _on_player_armor_absorbed(absorbed: float) -> void:
+func _on_player_armor_absorbed(absorbed: float, fully_absorbed: bool) -> void:
 	_gui.log_message("Your armor absorbs %d damage." % int(absorbed))
+	# One number per hit: gray when the armor ate the whole hit; a partial hit shows the
+	# white HP number (via _on_player_damaged) instead, so the two don't stack.
+	if fully_absorbed:
+		_gui.spawn_player_armor_damage(absorbed)
 
 
 func _on_player_damaged(amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
+	_gui.spawn_player_damage(amount)
 	player_damaged.emit(amount)
 
 
 func _on_player_healed(amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
+	_gui.spawn_player_heal(amount)
 	player_healed.emit(amount)
 
 
@@ -531,8 +537,9 @@ func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
 					print("[PLAYER] %s on %s" % [spell.spell_name, (target as Enemy).enemy_name])
 
 
-func _on_player_mana_spent(_amount: float) -> void:
+func _on_player_mana_spent(amount: float) -> void:
 	_gui.update_player_mana(player.mana, player.max_mana)
+	_gui.spawn_player_mana_cost(amount)
 
 
 func _on_player_mana_restored(_amount: float) -> void:
@@ -901,6 +908,7 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 		_gui.log_message("%s wears off %s." % [d.display_name, enemy.enemy_name]))
 	enemy.damaged.connect(func(amt: float) -> void:
 		_gui.update_enemy_health_bar(enemy, enemy.health)
+		_gui.spawn_enemy_damage(enemy, amt)
 		enemy_damaged.emit(enemy, amt))
 	enemy.armor_changed.connect(func(cur: float, mx: float) -> void:
 		_gui.update_enemy_armor(enemy, cur, mx))

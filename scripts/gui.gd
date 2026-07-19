@@ -39,6 +39,12 @@ signal continue_requested
 @onready var _player_xp_label: Label = $PlayerHUD/PlayerXP/PlayerXPLabel
 @onready var _combat_hud: Control = $CombatHUD
 @onready var _enemy_hud: Control = $CombatHUD/EnemyHUD
+## Screen-space overlay (on top of the health bars) that floating damage numbers
+## parent to; see _spawn_at.
+@onready var _damage_number_layer: Control = $CombatHUD/DamageNumbers
+## Hand-placed launch points for the player-facing floating numbers.
+@onready var _player_damage_origin: Control = $CombatHUD/PlayerDamageSpawnpoint
+@onready var _spell_spend_origin: Control = $CombatHUD/SpellSpendNumber
 @onready var _action_menu: Control = $CombatHUD/ActionMenu
 # Dual-action bar: one button group per hand plus an explicit End Turn. Built in the
 # scene under ActionMenu; if absent (scene not yet updated), _ensure_action_nodes()
@@ -64,6 +70,7 @@ signal continue_requested
 @onready var _victory_panel: VictoryPanel = $VictoryPanel
 
 const ACTION_SCENE := preload("res://scenes/action.tscn")
+const DAMAGE_NUMBER_SCENE := preload("res://scenes/damage_number.tscn")
 
 @export var _health_bar_scene: PackedScene
 @export var enemy_health_bar_offset: Vector2 = Vector2(0, -40)
@@ -263,6 +270,9 @@ func hide_event_hud() -> void:
 	for child in _enemy_hud.get_children():
 		child.queue_free()
 	_enemy_bars.clear()
+	if _damage_number_layer != null:
+		for child in _damage_number_layer.get_children():
+			child.queue_free()
 	_combat_hud.hide()
 	if not _inventory_panel.visible:
 		_consumable_belt.hide()
@@ -361,6 +371,59 @@ func update_enemy_armor(enemy: Enemy, current: float, maximum: float) -> void:
 	if not _enemy_bars.has(enemy):
 		return
 	_enemy_bars[enemy].set_armor(current, maximum)
+
+
+# --- Floating damage numbers ---
+
+## Spawn a self-freeing DamageNumber centered on a global `origin` point, in the
+## overlay layer. The layer and every source node share this CanvasLayer's screen-space
+## frame. Parenting to the layer (not a bar) lets the number keep animating even if its
+## source is freed mid-flight (e.g. the enemy dies).
+func _spawn_at(origin: Vector2, amount: float, kind: int) -> void:
+	if _damage_number_layer == null:
+		return
+	var dn: DamageNumber = DAMAGE_NUMBER_SCENE.instantiate()
+	_damage_number_layer.add_child(dn)
+	dn.global_position = origin - dn.size * 0.5  # center on origin
+	dn.setup(amount, kind)
+
+
+func _marker_center(c: Control) -> Vector2:
+	return c.global_position + c.size * 0.5
+
+
+## Global launch point for an enemy's numbers: the center of its "DamageNumberSpawnpoint"
+## marker child (hand-placed in the health-bar scene) if present, else the bar's top-center.
+func _bar_origin(bar: Control) -> Vector2:
+	var marker := bar.get_node_or_null("DamageNumberSpawnpoint")
+	if marker is Control:
+		return _marker_center(marker)
+	return bar.global_position + Vector2(bar.size.x * 0.5, 0.0)
+
+
+func spawn_enemy_damage(enemy: Enemy, amount: float) -> void:
+	if _enemy_bars.has(enemy):
+		_spawn_at(_bar_origin(_enemy_bars[enemy]), amount, DamageNumber.Kind.DAMAGE)
+
+
+func spawn_player_damage(amount: float) -> void:
+	if _player_damage_origin != null:
+		_spawn_at(_marker_center(_player_damage_origin), amount, DamageNumber.Kind.DAMAGE)
+
+
+func spawn_player_heal(amount: float) -> void:
+	if _player_damage_origin != null:
+		_spawn_at(_marker_center(_player_damage_origin), amount, DamageNumber.Kind.HEAL)
+
+
+func spawn_player_armor_damage(amount: float) -> void:
+	if _player_damage_origin != null:
+		_spawn_at(_marker_center(_player_damage_origin), amount, DamageNumber.Kind.ARMOR)
+
+
+func spawn_player_mana_cost(amount: float) -> void:
+	if _spell_spend_origin != null:
+		_spawn_at(_marker_center(_spell_spend_origin), amount, DamageNumber.Kind.MANA)
 
 
 ## Rebuilds an enemy's status-icon strip in its health bar's Statuses HBox,
