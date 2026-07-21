@@ -72,6 +72,7 @@ func _on_exit(game: Node) -> void:
 	for enemy in _enemies:
 		game._gui.remove_enemy_health_bar(enemy)
 	game.player.clear_combat_statuses()
+	game.player.reset_combat_state()
 	game._gui.set_sheathed(true)
 	game.player.set_weapon_visible(false)
 

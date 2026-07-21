@@ -222,6 +222,8 @@ func reset_run_state() -> void:
 	_pending_spell_targets = []
 	_mainhand_used = false
 	_offhand_used = false
+	for hand in _cooldowns:
+		_cooldowns[hand].clear()
 	_action_resolving = false
 	armor = 0.0
 	max_armor = 0.0
@@ -475,6 +477,15 @@ func _set_hand_used(hand: Hand) -> void:
 		_mainhand_used = true
 	else:
 		_offhand_used = true
+
+
+## Clears fight-scoped action state so nothing leaks into the next combat: per-action
+## cooldowns and hand-used flags. Called from CombatEvent._on_exit() when a fight ends.
+func reset_combat_state() -> void:
+	for hand in _cooldowns:
+		_cooldowns[hand].clear()
+	_mainhand_used = false
+	_offhand_used = false
 
 
 ## The offhand offers no action only when a two-handed weapon locks it and defines no
