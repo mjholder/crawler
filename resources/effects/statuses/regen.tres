@@ -18,3 +18,4 @@ tag = &"regen"
 display_name = "Regeneration"
 icon = SubResource("AtlasTexture_guy41")
 on_tick = SubResource("Tick_1")
+stack_decays = true

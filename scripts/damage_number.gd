@@ -6,7 +6,7 @@ extends Control
 ## Motion is a script Tween (per-number randomized arc); the fade is the embedded
 ## AnimationPlayer track. Multiple numbers coexist, each with independent hue/alpha.
 
-enum Kind { DAMAGE, HEAL, MANA, ARMOR }  # CRIT later, once take_damage carries a crit flag
+enum Kind { DAMAGE, HEAL, MANA, ARMOR, CRIT }
 
 @onready var _label: Label = $DamageNumberLabel
 @onready var _anim: AnimationPlayer = $DamageNumberAnimationPlayer
@@ -52,6 +52,12 @@ func _apply() -> void:
 		Kind.ARMOR:
 			_label.text = "-%d" % roundi(amount)
 			_label.label_settings.font_color = Color(0.75, 0.78, 0.85)  # steel/gray
+		Kind.CRIT:
+			# Crit reads instantly: hot gold, an emphatic "!", and a larger pop. label_settings
+			# is local to each instance (colors already vary per number), so scaling size is safe.
+			_label.text = "-%d!" % roundi(amount)
+			_label.label_settings.font_color = Color(1.0, 0.72, 0.2)  # gold
+			_label.label_settings.font_size = int(_label.label_settings.font_size * 1.4)
 		_:
 			_label.text = "-%d" % roundi(amount)
 			_label.label_settings.font_color = Color(1, 1, 1)  # white/neutral

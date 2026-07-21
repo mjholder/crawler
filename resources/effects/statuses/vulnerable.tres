@@ -13,6 +13,5 @@ tag = &"vulnerable"
 display_name = "Vulnerable"
 icon = SubResource("AtlasTexture_vulnerable")
 duration = 1
-stack_policy = 1
 stack_decays = true
 incoming_attack_multiplier = 1.5

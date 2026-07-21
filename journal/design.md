@@ -19,6 +19,50 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Statuses unify on stacks; `stack_policy` removed
+
+**Date:** 2026-07-21
+**Daily:** [[daily/2026-07-21]]
+
+**Decision:** Every status is stack-based. The `StatusData.stack_policy` field and its
+`StackPolicy { REFRESH, STACK, MAX_DURATION }` enum are **removed**. `stacks` is the single
+intensity lever for all statuses; re-applying always bumps the one instance's stack count, and a
+crit doubles the *stacks applied* (uniformly, at the call site — a 3-burn attack applies 6 on crit;
+the per-tick damage is never separately doubled). What a stack *means* is set entirely by the two
+existing cool-down flags:
+- `stack_decays = true` → lifetime **is** the stack count (drains one/turn): poison, vulnerable,
+  and now the former REFRESH statuses stun, regen, haste, weaken. A crit that doubles stacks
+  therefore doubles their **duration** (a crit stun lasts two turns; a crit buff lasts twice as long).
+- `stack_decays = false` → lifetime is `duration` (or `-1` = until combat end); stacks scale
+  per-tick strength (bleed). `burst_on_turn_start` (burn) discharges the whole pool at turn start.
+
+The four former-REFRESH statuses migrated to `stack_decays`; their appliers grant stacks equal to
+their old duration (stun 1, regen/haste/weaken 3), so default behavior is unchanged and only crits
+now extend them.
+
+**Context:** Building LUCK crits raised the question of whether a crit should double status
+*duration* (incl. stuns). The original crit design said "strict: double STACK stacks only, never
+duration." The cleaner answer is that duration and intensity are the same lever — stacks — so a
+crit doubles stacks and each status's cool-down style decides whether that reads as more damage or
+more turns. Three policies for one concept was redundant (MAX_DURATION was never used).
+
+**Alternatives considered:**
+- *Keep policies; add a `duration_mult` to `apply_status` so crits scale REFRESH/MAX_DURATION
+  duration.* Rejected — two parallel crit levers (stacks vs duration) and a policy the crit path
+  has to special-case. More surface, same result.
+- *Keep the enum but collapse to STACK only.* Rejected — a one-value enum is noise; removing the
+  field is the honest end state.
+
+**Rationale:** One lever (stacks), one crit rule (×2 stacks), per-status cool-down behavior via
+flags that already existed. Uniform, legible, and it makes "crit buffs" and crit-extended control
+fall out for free. Matches the "stacks drive effectiveness for every status" principle.
+
+**Trade-offs / risks:** Re-applying a buff/stun now *extends* it (adds stacks) instead of refreshing
+to a fixed duration — intended, but a behavior change for anything that leaned on REFRESH capping.
+`duration` is dead data on `stack_decays` statuses (kept non-`-1` so the tick loop still decrements);
+authors must know stacks, not `duration`, drive those lifetimes. The content-editor schema still
+lists `stack_policy` until `make schema` is re-run (tooling only).
+
 ## Combat log = spawn-per-message floating instances, not a reused label or scrolling box
 
 **Date:** 2026-07-18
@@ -514,7 +558,7 @@ _roll_dodge:    randf() < clamp(AGI / 100.0, 0, 1)
    - `stat_modifiers: Dictionary` — optional flat stat layer while active
    - `prevents_action: bool` — combatant skips its turn
    - `on_apply: Effect`, `on_tick: Effect`, `on_expire: Effect` — any may be null
-   - `stack_policy: enum { REFRESH, STACK, MAX_DURATION }` — default `REFRESH`
+   - `stack_policy: enum { REFRESH, STACK, MAX_DURATION }` — default `REFRESH` *(superseded 2026-07-21 — removed; all statuses are stack-based, see "Statuses unify on stacks" above)*
    - `persistence: enum { COMBAT, PERSISTENT }` — default `COMBAT`; whether the status survives a fight (added 2026-07-08, see "Combat-inflicted statuses clear at combat end" above)
    - `suppresses_armor_refresh: bool` — default `false`; while any active status has this set, the bearer's `refresh_armor()` is skipped (Shatter). Added 2026-07-09, see "Elemental & martial status-verb systems" above
    - `subscriptions: Dictionary` — signal-name → Effect, wired to the lifecycle bus on apply and disconnected on removal/clear, mirroring `BlessingData.subscriptions`. For *reactive* statuses; per-turn ticks stay on `on_tick`. Added 2026-07-09
@@ -555,7 +599,7 @@ _roll_dodge:    randf() < clamp(AGI / 100.0, 0, 1)
 
 - **Signal-bus surface area.** Many signals; each must emit at the right point. Mitigation: `game.gd` emits only (never consumes its own bus); subscribers own connect/disconnect. Document the full contract in the `game.gd` header.
 - **Subscription leaks.** Every status/blessing/proc holds a `game.gd` connection. Must disconnect on removal/expiry/unequip. Mitigation: `Subscription` helper (signal + callable pair); removal is mechanical.
-- **Stack semantics require per-status authoring.** Default `REFRESH` is correct for most cases; `STACK` (e.g. Bleed) must not crash the HUD. Mitigation: cap *visible* stack count in HUD; logic stays uncapped.
+- **Stack semantics require per-status authoring.** Default `REFRESH` is correct for most cases; `STACK` (e.g. Bleed) must not crash the HUD. Mitigation: cap *visible* stack count in HUD; logic stays uncapped. *(Superseded 2026-07-21 — policies removed; every status is stack-based, cool-down set by `stack_decays`/`burst_on_turn_start`.)*
 - **`apply_buff` doc/code drift.** `character.md:530` claims `apply_buff` emits `stats_changed`; actual `player.gd:399` does not call `_recalculate_max_health()` — CON buffs do not update max HP until next equip change. Fix in phase 3.
 - **Conditional modifier per-frame cost.** Bounded by `StatExprEval` compile cache; dirty-flag optimisation available later if needed.
 - **Phase ordering is strict.** Each phase must land independently and pass existing combat (Skeleton, SkeletonLord) before the next begins. Do not interleave.

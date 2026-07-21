@@ -10,6 +10,10 @@ signal status_expired(data: StatusData)
 # distinct drops on the health bar rather than one instant drop.
 const BURST_STEP_DELAY := 0.3
 
+# A critical hit doubles the whole hit: 2x damage AND 2x applied stacks (STACK-policy only).
+# Single source of truth so saints/backgrounds can bend it later.
+const CRIT_MULTIPLIER := 2.0
+
 # --- Status State ---
 var _active_statuses: Array[StatusInstance] = []
 
@@ -32,34 +36,33 @@ func get_effective_stat(stat: Enums.Stat) -> float:
 	return base + bonus
 
 
-## `stacks` is how many stacks this application grants (STACK policy only; ignored by
-## REFRESH/MAX_DURATION, which are always intensity 1). A 3-stack burn hit lands as one
-## instance at 3 stacks — e.g. a burst that detonates 3/2/1.
+## Crit chance is effective LUCK as a percent (LCK 45 -> 45%). Linear, no hidden constant —
+## the crit % literally is the luck number. Enemies with no LUCK never crit (chance 0).
+func roll_crit() -> bool:
+	return randf() < get_effective_stat(Enums.Stat.LUCK) / 100.0
+
+
+## `stacks` is how many stacks this application grants (a crit doubles it at the call site). One
+## instance per tag: re-applying bumps that instance's intensity rather than adding a parallel one.
+## A stack-decaying status's lifetime IS its stack count (3 stacks -> 3 turns); others live for
+## `duration` and let stacks scale per-tick strength. A 3-stack burn lands as one instance at 3.
 func apply_status(data: StatusData, source: Node, stacks: int = 1) -> void:
 	if data == null:
 		return
 	var grant: int = maxi(stacks, 1)
 	for instance in _active_statuses:
 		if instance.data.tag == data.tag:
-			match data.stack_policy:
-				StatusData.StackPolicy.REFRESH:
-					instance.turns_remaining = data.duration
-				StatusData.StackPolicy.MAX_DURATION:
-					instance.turns_remaining = maxi(instance.turns_remaining, data.duration)
-				StatusData.StackPolicy.STACK:
-					# One instance per tag: bump intensity rather than adding a parallel
-					# instance. on_tick damage scales by stacks.
-					instance.stacks += grant
-					# Stack-decaying statuses (poison) are drained by ticks, so their lifetime
-					# is the stack count; others just refresh their fixed duration.
-					instance.turns_remaining = instance.stacks if data.stack_decays else data.duration
+			instance.stacks += grant
+			# Decaying statuses are drained by ticks, so their lifetime tracks the stack count;
+			# others refresh their fixed duration.
+			instance.turns_remaining = instance.stacks if data.stack_decays else data.duration
 			if not data.stat_modifiers.is_empty():
 				_on_stat_modifiers_changed()
 			status_applied.emit(data)
 			return
 	var entry := StatusInstance.new()
 	entry.data = data
-	entry.stacks = grant if data.stack_policy == StatusData.StackPolicy.STACK else 1
+	entry.stacks = grant
 	# A stack-decaying status lives one tick per stack (fresh = stacks); others use `duration`.
 	entry.turns_remaining = entry.stacks if data.stack_decays else data.duration
 	entry.source = source

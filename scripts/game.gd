@@ -422,15 +422,19 @@ func _on_player_armor_changed(current: float, maximum: float) -> void:
 
 func _on_player_armor_absorbed(absorbed: float, fully_absorbed: bool) -> void:
 	_gui.log_message("Your armor absorbs %d damage." % int(absorbed))
-	# One number per hit: gray when the armor ate the whole hit; a partial hit shows the
-	# white HP number (via _on_player_damaged) instead, so the two don't stack.
+	# One number per hit: gray when the armor ate the whole hit; a partial hit shows the white
+	# total-damage number (via _on_player_damaged, which doesn't fire on a full absorb) instead,
+	# so the two never stack.
 	if fully_absorbed:
 		_gui.spawn_player_armor_damage(absorbed)
 
 
-func _on_player_damaged(amount: float) -> void:
+func _on_player_damaged(amount: float, is_crit: bool, total_amount: float) -> void:
 	_gui.update_player_health(player.health, player.max_health)
-	_gui.spawn_player_damage(amount)
+	# The floating number shows total damage dealt (pre-armor); the armor bar shows the soak.
+	_gui.spawn_player_damage(total_amount, is_crit)
+	if is_crit:
+		_gui.log_message("Critical hit! You take %d damage." % int(total_amount))
 	player_damaged.emit(amount)
 
 
@@ -465,10 +469,12 @@ func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
 			continue
 		if target is Enemy and (target as Enemy).is_dead:
 			continue
+		# One crit roll per target governs the whole hit — damage and stacks double together.
+		var crit_mult := Combatant.CRIT_MULTIPLIER if player.roll_crit() else 1.0
 		for effect_res in attack_data.effects:
 			var effect := effect_res as Effect
 			if effect != null:
-				effect.apply(player, target)
+				effect.apply(player, target, crit_mult)
 				if target is Enemy:
 					print("[PLAYER] %s on %s" % [attack_data.attack_name, (target as Enemy).enemy_name])
 
@@ -478,11 +484,13 @@ func _on_enemy_move_performed(enemy: Enemy, move: EnemyMoveData) -> void:
 	# resolution because enemies hold no player reference.
 	var target: Node = enemy if move.target == EnemyMoveData.Target.SELF else player
 	var deals_damage := false
+	# Enemies roll crit off their own LUCK (0 by default, so unauthored enemies never crit).
+	var crit_mult := Combatant.CRIT_MULTIPLIER if enemy.roll_crit() else 1.0
 	for effect_res in move.effects:
 		var effect := effect_res as Effect
 		if effect == null:
 			continue
-		effect.apply(enemy, target)
+		effect.apply(enemy, target, crit_mult)
 		if effect is DamageEffect:
 			deals_damage = true
 	# Keep equipment retaliation procs firing (equipment.gd keys on enemy_attack_hit).
@@ -533,10 +541,12 @@ func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
 			continue
 		if target is Enemy and (target as Enemy).is_dead:
 			continue
+		# One crit roll per target governs the whole cast — damage and stacks double together.
+		var crit_mult := Combatant.CRIT_MULTIPLIER if player.roll_crit() else 1.0
 		for effect_res in spell.effects:
 			var effect := effect_res as Effect
 			if effect != null:
-				effect.apply(player, target)
+				effect.apply(player, target, crit_mult)
 				if target is Enemy:
 					print("[PLAYER] %s on %s" % [spell.spell_name, (target as Enemy).enemy_name])
 
@@ -910,9 +920,12 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 	enemy.status_expired.connect(func(d: StatusData) -> void:
 		_gui.refresh_enemy_statuses(enemy, enemy.get_active_statuses())
 		_gui.log_message("%s wears off %s." % [d.display_name, enemy.enemy_name]))
-	enemy.damaged.connect(func(amt: float) -> void:
+	enemy.damaged.connect(func(amt: float, is_crit: bool, total: float) -> void:
 		_gui.update_enemy_health_bar(enemy, enemy.health)
-		_gui.spawn_enemy_damage(enemy, amt)
+		# The floating number shows total damage dealt (pre-armor); the armor bar shows the soak.
+		_gui.spawn_enemy_damage(enemy, total, is_crit)
+		if is_crit and total > 0.0:
+			_gui.log_message("Critical hit! %s takes %d damage." % [enemy.enemy_name, int(total)])
 		enemy_damaged.emit(enemy, amt))
 	enemy.armor_changed.connect(func(cur: float, mx: float) -> void:
 		_gui.update_enemy_armor(enemy, cur, mx))

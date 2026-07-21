@@ -20,4 +20,3 @@ display_name = "Bleed"
 icon = SubResource("AtlasTexture_fcklb")
 duration = -1
 on_tick = SubResource("Tick_1")
-stack_policy = 1

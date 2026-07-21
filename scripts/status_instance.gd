@@ -4,9 +4,9 @@ extends Resource
 @export var data: StatusData = null
 @export var turns_remaining: int = 0
 
-# Intensity for STACK-policy statuses (poison, bleed, burn). Re-applying increments this on
-# the existing instance rather than adding a second instance; on_tick damage scales by it.
-# Always 1 for REFRESH / MAX_DURATION statuses.
+# Intensity lever for every status. Re-applying increments this on the existing instance rather
+# than adding a second; on_tick strength scales by it, and for stack-decaying statuses it also IS
+# the remaining lifetime (a crit doubles it, so a crit stun lasts twice as long).
 @export var stacks: int = 1
 
 # Not exported — Node refs can't be serialized. After a save/load, source is null

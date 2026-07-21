@@ -17,4 +17,4 @@ stat_modifiers = {
 0: -10.0,
 4: -10.0
 }
-stack_policy = 0
+stack_decays = true

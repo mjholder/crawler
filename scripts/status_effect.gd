@@ -8,7 +8,9 @@ extends Effect
 @export var stacks: int = 1
 
 
-func apply(source: Node, target: Node) -> void:
+func apply(source: Node, target: Node, crit_mult: float = 1.0) -> void:
 	if target == null or status_data == null or not target.has_method("apply_status"):
 		return
-	target.apply_status(status_data, source, stacks)
+	# A crit doubles applied stacks. apply_status ignores the count for non-STACK policies,
+	# so duration/control statuses get no free duration — exactly the strict-stacking rule.
+	target.apply_status(status_data, source, int(stacks * crit_mult))

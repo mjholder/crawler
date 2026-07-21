@@ -15,7 +15,7 @@ var _eval := StatExprEval.new()
 const _DEFAULT_ICON := preload("res://resources/effects/statuses/regen.tres")
 
 
-func apply(source: Node, target: Node) -> void:
+func apply(source: Node, target: Node, crit_mult: float = 1.0) -> void:
 	if target == null or not target.has_method("apply_status"):
 		return
 	var amount := _eval.evaluate(amount_expression, target)
@@ -25,8 +25,9 @@ func apply(source: Node, target: Node) -> void:
 	data.icon = icon if icon != null else _DEFAULT_ICON.icon
 	data.duration = duration
 	data.stat_modifiers = {stat: amount}
-	data.stack_policy = StatusData.StackPolicy.REFRESH
-	target.apply_status(data, source)
+	# Buffs live one turn per stack; a crit doubles the stacks, so a crit buff lasts twice as long.
+	data.stack_decays = true
+	target.apply_status(data, source, int(round(duration * crit_mult)))
 
 
 # Signed, whole numbers drop the decimals ("+20"), fractional amounts keep one ("+2.5").

@@ -16,4 +16,4 @@ duration = 3
 stat_modifiers = {
 3: 30.0
 }
-stack_policy = 0
+stack_decays = true

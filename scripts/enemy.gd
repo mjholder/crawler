@@ -2,7 +2,9 @@ class_name Enemy
 extends Combatant
 
 # --- Signals ---
-signal damaged(amount: float)
+## `amount` is the HP-pool damage (drives the floating number); `total_amount` is the full hit
+## before armor absorption (drives the combat log, which reports damage dealt, not just HP lost).
+signal damaged(amount: float, is_crit: bool, total_amount: float)
 signal died
 signal death_finished
 signal turn_ended
@@ -17,6 +19,8 @@ signal armor_changed(current: float, maximum: float)
 @export var attack_damage: float = 5.0
 @export var experience_value: int = 10
 @export var defense: float = 0.0
+## Crit chance as a percent (LCK/100). 0 = never crits; author per-enemy to grant crits.
+@export var luck: float = 0.0
 
 # --- Behavior ---
 @export var pattern: EnemyPatternData = null
@@ -97,7 +101,7 @@ func _emit_attack() -> void:
 
 # --- Combat ---
 
-func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false, is_attack: bool = true) -> void:
+func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false, is_attack: bool = true, is_crit: bool = false) -> void:
 	if is_dead:
 		return
 	# Vulnerable/ward scales the incoming hit before armor soaks it — DoT ticks pass is_attack=false.
@@ -107,7 +111,7 @@ func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false,
 	net_amount = roundf(net_amount)  # HP is integral — round the applied delta, not the raw math
 	health -= net_amount
 	print("  %s HP: %.0f / %.0f" % [enemy_name, health, max_health])
-	damaged.emit(net_amount)
+	damaged.emit(net_amount, is_crit, roundf(amount))
 	_on_damaged(net_amount)
 	if health <= 0.0:
 		_die()
@@ -141,6 +145,7 @@ func _is_burst_bearer_defeated() -> bool:
 func _get_base_stat(stat: Enums.Stat) -> float:
 	match stat:
 		Enums.Stat.DEFENSE: return defense
+		Enums.Stat.LUCK: return luck
 	return 0.0
 
 

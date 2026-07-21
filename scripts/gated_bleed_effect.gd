@@ -16,16 +16,17 @@ extends Effect
 var _eval := StatExprEval.new()
 
 
-func apply(source: Node, target: Node) -> void:
+func apply(source: Node, target: Node, crit_mult: float = 1.0) -> void:
 	if target == null or not target.has_method("take_damage"):
 		return
 	var hp_before := _health_of(target)
-	var dmg := _eval.evaluate(damage_expression, source)
+	var dmg := _eval.evaluate(damage_expression, source) * crit_mult
 	var pierce := _eval.evaluate(pierce_expression, source)
-	target.take_damage(dmg, pierce)
+	target.take_damage(dmg, pierce, false, true, crit_mult > 1.0)
 	var hp_after := _health_of(target)
+	# A crit doubles the applied bleed stacks too (the Saint of Ambush synergy).
 	if status_data != null and hp_after < hp_before and target.has_method("apply_status"):
-		target.apply_status(status_data, source)
+		target.apply_status(status_data, source, int(crit_mult))
 
 
 func _health_of(target: Node) -> float:

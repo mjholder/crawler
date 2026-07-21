@@ -6,3 +6,4 @@
 [resource]
 script = ExtResource("1_script")
 status_data = ExtResource("2_new")
+stacks = 3

@@ -2,7 +2,9 @@ class_name Player
 extends Combatant
 
 # --- Signals ---
-signal damaged(amount: float)
+## `amount` is the HP-pool damage (drives the floating number); `total_amount` is the full hit
+## before armor absorption (drives the combat log, which reports damage dealt, not just HP lost).
+signal damaged(amount: float, is_crit: bool, total_amount: float)
 signal healed(amount: float)
 signal died
 signal turn_ended
@@ -608,7 +610,7 @@ func _is_burst_bearer_defeated() -> bool:
 	return is_dead
 
 
-func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false, is_attack: bool = true) -> void:
+func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false, is_attack: bool = true, is_crit: bool = false) -> void:
 	if is_dead:
 		return
 	if _roll_dodge():
@@ -628,7 +630,7 @@ func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false,
 		return  # the armor buffer soaked the whole hit — no HP loss, no hurt feedback
 	health = maxf(health - net_amount, 0.0)
 	print("  Player HP: %.0f / %.0f" % [health, max_health])
-	damaged.emit(net_amount)
+	damaged.emit(net_amount, is_crit, roundf(amount))
 	_flash_hurt_overlay()
 	if health <= 0.0:
 		_die()

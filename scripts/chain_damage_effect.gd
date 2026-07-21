@@ -17,14 +17,16 @@ extends Effect
 var _eval := StatExprEval.new()
 
 
-func apply(source: Node, target: Node) -> void:
+func apply(source: Node, target: Node, crit_mult: float = 1.0) -> void:
 	if target == null or not target.has_method("take_damage"):
 		return
-	var dmg := _eval.evaluate(damage_expression, source)
+	# One crit roll governs the whole arc — primary and both flankers share it.
+	var is_crit := crit_mult > 1.0
+	var dmg := _eval.evaluate(damage_expression, source) * crit_mult
 	var pierce := _eval.evaluate(pierce_expression, source)
-	target.take_damage(dmg, pierce)
+	target.take_damage(dmg, pierce, false, true, is_crit)
 	for neighbor in _find_neighbors(target):
-		neighbor.take_damage(dmg * chain_multiplier, pierce)
+		neighbor.take_damage(dmg * chain_multiplier, pierce, false, true, is_crit)
 
 
 ## The living array-adjacent siblings on both sides of the target (left flanker, right flanker).

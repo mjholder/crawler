@@ -1,7 +1,6 @@
 class_name StatusData
 extends Resource
 
-enum StackPolicy { REFRESH, STACK, MAX_DURATION }
 enum Persistence { COMBAT, PERSISTENT }
 
 @export var tag: StringName = &""
@@ -13,12 +12,15 @@ enum Persistence { COMBAT, PERSISTENT }
 @export var on_apply: Resource = null
 @export var on_tick: Resource = null
 @export var on_expire: Resource = null
-@export var stack_policy: StackPolicy = StackPolicy.REFRESH
 
-# Classic-poison decay: when true, each tick consumes one stack and the status expires when
-# stacks reach 0, so damage ramps DOWN as the pool drains (e.g. 3 stacks -> 3/2/1). Lifetime
-# is driven by the stack count, not `duration`. When false, lifetime is driven by `duration`
-# and stacks only scale per-tick damage (bleed = sustained, burn = duration-decay).
+# Every status is stack-based: re-applying bumps a single instance's `stacks` (the one intensity
+# lever), and a crit doubles the granted stacks. What stacks *mean* is set by the two flags below.
+#
+# stack_decays — classic-poison cool-down: each tick consumes one stack and the status expires
+# when stacks reach 0, so its LIFETIME is the stack count (3 stacks -> 3 turns). DoTs ramp their
+# damage DOWN as the pool drains (3/2/1); control/buff statuses (stun, haste) just live one turn
+# per stack, so a crit that doubles stacks doubles their duration. When false, lifetime is driven
+# by `duration` and stacks only scale per-tick effect strength (bleed = sustained per-stack damage).
 @export var stack_decays: bool = false
 
 # Burst (Fire's signature): when true, the whole stack pool discharges as a single-turn

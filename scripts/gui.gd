@@ -401,14 +401,16 @@ func _bar_origin(bar: Control) -> Vector2:
 	return bar.global_position + Vector2(bar.size.x * 0.5, 0.0)
 
 
-func spawn_enemy_damage(enemy: Enemy, amount: float) -> void:
+func spawn_enemy_damage(enemy: Enemy, amount: float, is_crit: bool = false) -> void:
 	if _enemy_bars.has(enemy):
-		_spawn_at(_bar_origin(_enemy_bars[enemy]), amount, DamageNumber.Kind.DAMAGE)
+		var kind := DamageNumber.Kind.CRIT if is_crit else DamageNumber.Kind.DAMAGE
+		_spawn_at(_bar_origin(_enemy_bars[enemy]), amount, kind)
 
 
-func spawn_player_damage(amount: float) -> void:
+func spawn_player_damage(amount: float, is_crit: bool = false) -> void:
 	if _player_damage_origin != null:
-		_spawn_at(_marker_center(_player_damage_origin), amount, DamageNumber.Kind.DAMAGE)
+		var kind := DamageNumber.Kind.CRIT if is_crit else DamageNumber.Kind.DAMAGE
+		_spawn_at(_marker_center(_player_damage_origin), amount, kind)
 
 
 func spawn_player_heal(amount: float) -> void:

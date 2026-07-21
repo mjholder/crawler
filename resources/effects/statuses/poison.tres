@@ -19,5 +19,4 @@ tag = &"poison"
 display_name = "Poison"
 icon = SubResource("AtlasTexture_chqs0")
 on_tick = SubResource("Tick_1")
-stack_policy = 1
 stack_decays = true

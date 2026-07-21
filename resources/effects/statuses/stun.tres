@@ -14,3 +14,4 @@ display_name = "Stun"
 icon = SubResource("AtlasTexture_fjwwu")
 duration = 1
 prevents_action = true
+stack_decays = true

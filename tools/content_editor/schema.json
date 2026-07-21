@@ -1042,15 +1042,6 @@
 					"type": "Resource"
 				},
 				{
-					"enum_values": {
-						"Max Duration": 2,
-						"Refresh": 0,
-						"Stack": 1
-					},
-					"name": "stack_policy",
-					"type": "enum"
-				},
-				{
 					"name": "stack_decays",
 					"type": "bool"
 				},
@@ -1477,11 +1468,6 @@
 		"StatusData.Persistence": {
 			"COMBAT": 0,
 			"PERSISTENT": 1
-		},
-		"StatusData.StackPolicy": {
-			"MAX_DURATION": 2,
-			"REFRESH": 0,
-			"STACK": 1
 		}
 	}
 }
