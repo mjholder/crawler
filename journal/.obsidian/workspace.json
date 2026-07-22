@@ -31,12 +31,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "daily/2026-07-21.md",
+                "file": "daily/2026-07-22.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "2026-07-21"
+              "title": "2026-07-22"
             }
           }
         ],
@@ -205,6 +205,11 @@
   },
   "active": "3367f3fd0640ef42",
   "lastOpenFiles": [
+    "ideas-board.md.tmp.5425.a5d91f909eab",
+    "ideas/player-facing-legibility.md.tmp.5425.68ad5dc3a540",
+    "ideas/player-facing-legibility.md.tmp.5425.e72e59aec22b",
+    "daily/2026-05-02.md",
+    "daily/2026-07-21.md",
     "design.md.tmp.5316.0aff72ec1b2d",
     "daily/2026-07-22.md",
     "daily/2026-07-22.md.tmp.5316.01af4e0f5a96",
@@ -214,11 +219,7 @@
     "detailed/character.md.tmp.5316.f1a84b55ebf9",
     "architecture.md.tmp.5775.684d5743cbed",
     "daily/2026-07-21.md.tmp.5775.4231c48e9cb8",
-    "daily/2026-07-21.md.tmp.5775.deab4485b0c3",
-    "daily/2026-07-21.md.tmp.5775.2abfe06fb717",
-    "ideas/attribute-distribution-leveling.md.tmp.5775.59d2c9b4b079",
     "ideas-board.md",
-    "daily/2026-07-21.md",
     "ideas/luck-crit-loot-quality.md",
     "ideas/attribute-distribution-leveling.md",
     "daily/2026-07-18.md",
@@ -240,7 +241,6 @@
     "ideas/equipment-locked-in-dungeons.md",
     "ideas/dungeon-types-and-naming.md",
     "ideas/forgotten-entity-lore.md",
-    "ideas/mcp-content-authoring-server.md",
     "canvas/Untitled 2.canvas",
     "canvas/Untitled 1.canvas",
     "canvas/Untitled.canvas",
