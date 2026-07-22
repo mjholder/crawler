@@ -10,6 +10,7 @@ There's currently no way to learn what an attack does without already knowing it
 2. *Weapon/equipment descriptions* — in the inventory/equip screen, listing the attacks a weapon grants **and its passive procs / on-equip effects / self-costs**, so gear choices are informed by actual combat behavior, not just stat deltas.
 3. *Passive-proc visibility* — the motivating case (2026-07-08): the Assassin's starting **Vorpal Blade** deals `max(5, 25 - agility*0.4)` recoil self-damage on every hit (`player_attack_hit` proc, `apply_to_owner`), which reads as unexplained "5 armor damage when I attack." The player has no surface anywhere — not the weapon screen, not combat — telling them the weapon bites back. Procs, on-equip effects, and self-damage are entirely invisible today.
 4. *In-combat damage-source feedback* — the combat log/HUD should name **where** damage came from (recoil, poison tick, enemy X's move), not just show numbers. `game.gd` already logs "Your armor absorbs N damage" but not the cause; statuses tick silently. This is also the natural payoff surface for the status work (poison/bleed/burn ticks should announce themselves).
+5. *Damage-formula legibility* (2026-07-22): each attack/spell's `DamageEffect.damage_expression` is a free-form string scaling off whatever stat the content author chose (`agility * 0.6`, `20 + strength/2`, `spirit * 0.5` — see `resources/effects/*.tres`), with no in-game surface showing the player which stat a given attack scales from. A player can't tell "this weapon wants AGI" without reading source. Likely the same surface as #1/#2 (action tooltip / weapon description) — show the scaling stat, not necessarily the raw expression.
 
 **Priority:** flagged as the **next thing to tackle after the status-effect groundwork** (user, 2026-07-08). The recoil confusion made it concrete — the game hides too much of its own math from the player, which fights the "readable enemies/state, surprise through mechanics not hidden numbers" goal in [[ideas/combat-feel-and-pacing]].
 
@@ -19,4 +20,4 @@ Design work started, no player-facing surfaces yet. A **"Combat UI Information I
 
 ## Remaining
 
-Sketch a layout against the inventory and pick the surfacing approach, then build the actual surfaces: in-combat action tooltips, weapon/equipment descriptions (incl. procs / on-equip / self-costs), passive-proc visibility, and named damage-source feedback in the combat log.
+Sketch a layout against the inventory and pick the surfacing approach, then build the actual surfaces: in-combat action tooltips, weapon/equipment descriptions (incl. procs / on-equip / self-costs), passive-proc visibility, damage-formula/scaling-stat legibility, and named damage-source feedback in the combat log.

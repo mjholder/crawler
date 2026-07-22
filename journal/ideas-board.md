@@ -30,7 +30,7 @@ kanban-plugin: board
 
 ## In Progress
 
-- [ ] Player-facing information & combat legibility — Surface what attacks/weapons/statuses/procs actually do: tooltips, gear descriptions, proc/self-cost visibility, and damage-source feedback. [[ideas/player-facing-legibility]]
+- [ ] Player-facing information & combat legibility — Surface what attacks/weapons/statuses/procs actually do: tooltips, gear descriptions, proc/self-cost visibility, damage-formula/scaling-stat legibility, and damage-source feedback. [[ideas/player-facing-legibility]]
 
 
 ## In Review
