@@ -5,17 +5,12 @@ extends Resource
 @export var description: String = ""
 
 # --- Starting Stats ---
+## Defense is NOT a class attribute — it's equipment-derived (see character.md).
 @export var strength: float = 50.0
-@export var defense: float = 50.0
 @export var constitution: float = 50.0
 @export var agility: float = 50.0
 @export var spirit: float = 50.0
 @export var luck: float = 50.0
-
-# --- Health ---
-## Flat bonus added on top of CON-derived base max health.
-## max_health = (effective_CON * health_modifier) + class_health_bonus
-@export var class_health_bonus: float = 0.0
 
 # --- Per-Level Growth ---
 ## Stat bonuses automatically applied each level-up. Enums.Stat (int) -> float.
@@ -42,10 +37,6 @@ extends Resource
 @export var starting_blessings: Array[BlessingData] = []
 
 # --- Spells ---
-## Flat bonus added on top of SPI-derived base max mana.
-## max_mana = (effective_SPI * mana_modifier) + class_mana_bonus
-@export var class_mana_bonus: float = 0.0
-
 ## Number of prepared spell slots this class starts with.
 @export var starting_prep_slots: int = 2
 

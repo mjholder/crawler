@@ -13,17 +13,15 @@
 script = ExtResource("1_script")
 class_name_text = "Templar"
 description = "A holy warrior who wades into the fray in full plate. The consecrated Warmace dazes any foe it strikes, and a whispered prayer knits the Templar's own wounds shut over time."
-strength = 60
-defense = 55
-constitution = 55
-agility = 35
-spirit = 45
-luck = 40
-class_health_bonus = 15
-class_mana_bonus = 10
+strength = 25.0
+constitution = 15.0
+agility = 10.0
+spirit = 15.0
+luck = 10.0
 growth_rates = {
-0: 3,
-2: 2
+0: 6.0,
+2: 3.0,
+4: 3.0
 }
 starting_equipped = {
 0: ExtResource("2_new"),

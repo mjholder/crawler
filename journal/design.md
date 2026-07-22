@@ -19,6 +19,42 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Defense is equipment-derived, not a character attribute
+
+**Date:** 2026-07-22
+**Daily:** [[daily/2026-07-22]]
+
+**Decision:** `defense` is no longer one of the character attributes a class assigns.
+The `@export var defense` field is removed from `PlayerClassData`; `Player.defense` base
+value defaults to 0 and is not copied from the class. Defense now comes **entirely from
+equipment** — armor pieces' `stat_modifiers` (`{ Enums.Stat.DEFENSE: X }`), stacked via
+`get_effective_stat`. The `Enums.Stat.DEFENSE = 1` slot and the armor-buffer mechanic
+(`_apply_defense`, `max_armor`, `brace_effect`) are **kept unchanged** — only defense's
+*source* moved from class to gear. The character-creation panel now lists the 5 real
+attributes (STR/CON/AGI/SPI/LCK) and omits defense.
+
+Landed alongside the base-10 stat rebase (all classes 10 across, primary +15/+6,
+2 secondaries +5/+3) — see [[ideas/attribute-distribution-leveling]] and
+[[detailed/character.md]].
+
+**Context:** The 6-stat model conflated defense (a mitigation pool sourced from armor)
+with the 5 build-defining attributes. The base-10 rebalance was the moment to fix it:
+defense reads more like max HP / max mana (derived) than like STR/AGI (chosen).
+
+**Alternatives considered:**
+- *Remove `DEFENSE` from the `Enums.Stat` enum entirely.* Rejected — renumbering the
+  enum breaks `growth_rates` int keys, equipment/effect `stat_modifiers` int keys (armor
+  uses `{ 1: X }`), and serialized saves. High blast radius for no gain; the slot is
+  harmless kept.
+- *Keep defense as a class attribute but zero it everywhere.* Rejected — leaves a
+  meaningless field on the class resource and in the creation UI, exactly the confusion
+  we're removing.
+
+**Trade-offs / risks:** Low-defense classes now have literally 0 mitigation until they
+equip armor — intended (mitigation is a thing you gear/spend for, not a class freebie),
+but it makes early unarmored fights swingier. The `Player.defense` base field is
+retained (defaults 0) only for the armor mechanic and save compat.
+
 ## Statuses unify on stacks; `stack_policy` removed
 
 **Date:** 2026-07-21

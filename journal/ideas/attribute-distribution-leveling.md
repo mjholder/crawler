@@ -40,6 +40,37 @@ Overlaps with [[ideas/balance-legibility-baseline]] (stat → output conversion)
 
 ## Shipped
 
+**2026-07-22 — Base-10 stat rebase + defense out of attributes.** All 8 class `.tres`
+rebased to the scheme above: **10 across the board, primary +15 (→25), 2 secondaries
++5 (→15)**, growth **primary +6/lvl, each secondary +3/lvl** (tertiaries no growth).
+Per-class primary/secondaries were chosen collaboratively (e.g. Warrior STR / CON+LCK,
+Mage SPI / AGI+LCK). Separately, **`defense` was removed as a class attribute** — it's
+now equipment-derived: `PlayerClassData.defense` deleted, `Player.defense` defaults to
+0 and is no longer copied from the class, character-creation panel no longer lists it.
+The `Enums.Stat.DEFENSE` slot and armor-buffer mechanic are untouched (kept for
+equipment `stat_modifiers` + save compat; no enum renumber). Content-editor `schema.json`
+regenerated; tres round-trip 145/145. **Not done this pass** (still remaining): the
+5-free-points/level allocation economy, and the spell/cantrip retune (deferred until
+class numbers settle).
+
+**2026-07-21 — CON/SPI consolidation.** Removed `class_health_bonus` and
+`class_mana_bonus` from `PlayerClassData`; both formulas are now pure-stat:
+`max_health = effective_CON * health_modifier` and
+`max_mana = effective_SPI * mana_modifier` (`player.gd` recalc functions, all 8
+class `.tres` stripped of the fields, `detailed/character.md` updated). Scope-limited
+per session decision: **no base-stat rebase** — classes still start at ~50 base, so
+this shipped as a readability refactor with a modest HP/mana dip (Warrior 130→110 HP,
+Mage 150→140 mana), *not yet* the intended ~4:1 durability spread. That spread is
+gated on the base-10 growth curve below, which is still pending — the "CON 10 = 20 HP"
+numbers only land once that ships.
+
 ## Remaining
 
-Everything — this is a design proposal, not yet implemented.
+- **5-free-points-per-level economy** — base stats and growth now use the base-10
+  model (shipped 2026-07-22), but the 5-points-to-spend-per-level-up allocation system
+  is still unbuilt. This is what lets a focused build push its primary toward 100 and
+  makes the "pay in coverage" min-max tension real.
+- **Spell / cantrip economy** — spells already carry authored `mana_cost` values;
+  the 0-cost cantrip / 8-cost basic anchor retune is a separate task. Now newly relevant:
+  the base-10 rebase dropped the stat baseline from ~50 to ~10–25, so spell/weapon
+  expressions (`spirit * 0.5`, etc.) and enemy numbers likely need a matching retune.

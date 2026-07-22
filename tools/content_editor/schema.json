@@ -783,10 +783,6 @@
 					"type": "float"
 				},
 				{
-					"name": "defense",
-					"type": "float"
-				},
-				{
 					"name": "constitution",
 					"type": "float"
 				},
@@ -800,10 +796,6 @@
 				},
 				{
 					"name": "luck",
-					"type": "float"
-				},
-				{
-					"name": "class_health_bonus",
 					"type": "float"
 				},
 				{
@@ -841,10 +833,6 @@
 					"element_type": "BlessingData",
 					"name": "starting_blessings",
 					"type": "Array"
-				},
-				{
-					"name": "class_mana_bonus",
-					"type": "float"
 				},
 				{
 					"name": "starting_prep_slots",

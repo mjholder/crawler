@@ -212,15 +212,19 @@ func _on_patron_selected(index: int) -> void:
 
 func _build_stats_text(data: PlayerClassData) -> String:
 	var stat_names := Enums.Stat.keys()
-	var base_values := [
-		data.strength, data.defense, data.constitution,
-		data.agility, data.spirit, data.luck
-	]
+	# Defense is equipment-derived, not a class attribute — omit it here.
+	var base_values := {
+		Enums.Stat.STRENGTH: data.strength,
+		Enums.Stat.CONSTITUTION: data.constitution,
+		Enums.Stat.AGILITY: data.agility,
+		Enums.Stat.SPIRIT: data.spirit,
+		Enums.Stat.LUCK: data.luck,
+	}
 	var lines: Array[String] = []
-	for i in Enums.Stat.values().size():
-		var growth: float = data.growth_rates.get(i, 0.0)
+	for stat in base_values:
+		var growth: float = data.growth_rates.get(stat, 0.0)
 		var growth_str: String = " (+%.0f/lvl)" % growth if growth > 0.0 else ""
-		lines.append("%s: %.0f%s" % [stat_names[i], base_values[i], growth_str])
+		lines.append("%s: %.0f%s" % [stat_names[stat], base_values[stat], growth_str])
 	return "\n".join(lines)
 
 

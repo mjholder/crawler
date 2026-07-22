@@ -424,7 +424,6 @@ classDiagram
         +Array starting_blessings
         +Array starting_tomes
         +Dictionary growth_rates
-        +float class_mana_bonus
         +int starting_prep_slots
         +Array starting_learned_spells
         +Array starting_prepared_spells

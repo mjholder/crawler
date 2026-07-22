@@ -12,16 +12,15 @@
 script = ExtResource("1_script")
 class_name_text = "Duelist"
 description = "A nimble swordsman who wins fights with precision, not brute force. The rapier's point slips past armor with a Lunge, while a raking Rend leaves foes bleeding out over the turns to come."
-strength = 45
-defense = 40
-constitution = 40
-agility = 60
-spirit = 25
-luck = 50
-class_health_bonus = 10
+strength = 15.0
+constitution = 15.0
+agility = 25.0
+spirit = 10.0
+luck = 10.0
 growth_rates = {
-0: 2,
-3: 4
+0: 3.0,
+2: 3.0,
+3: 6.0
 }
 starting_equipped = {
 0: ExtResource("2_new"),

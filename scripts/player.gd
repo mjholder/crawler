@@ -43,16 +43,17 @@ signal armor_absorbed(absorbed: float, fully_absorbed: bool)
 # --- Stats ---
 @export var player_name: String = "Player"
 @export var strength: float = 50.0
-@export var defense: float = 50.0
+## Innate armor buffer. Not a class attribute — starts at 0 and comes from equipment.
+@export var defense: float = 0.0
 @export var constitution: float = 50.0
 @export var agility: float = 50.0
 @export var spirit: float = 50.0
 @export var luck: float = 50.0
 
 # --- Health / Mana Tuning ---
-## max_health = (effective_CON * health_modifier) + class_health_bonus
+## max_health = effective_CON * health_modifier
 @export var health_modifier: float = 2.0
-## max_mana = (effective_SPI * mana_modifier) + class_mana_bonus
+## max_mana = effective_SPI * mana_modifier
 @export var mana_modifier: float = 2.0
 
 
@@ -175,7 +176,7 @@ func initialize(p_name: String, class_data: PlayerClassData, background: Backgro
 	_class_data = class_data
 	player_name = p_name
 	strength = class_data.strength
-	defense = class_data.defense
+	defense = 0.0  # Equipment-derived; classes grant no innate armor.
 	constitution = class_data.constitution
 	agility = class_data.agility
 	spirit = class_data.spirit
@@ -697,7 +698,7 @@ func _recalculate_max_health() -> void:
 		return
 	var old_max := max_health
 	var effective_con := get_effective_stat(Enums.Stat.CONSTITUTION)
-	max_health = roundf((effective_con * health_modifier) + _class_data.class_health_bonus)
+	max_health = roundf(effective_con * health_modifier)
 	var delta := max_health - old_max
 	if delta > 0.0:
 		health += delta
@@ -712,7 +713,7 @@ func _recalculate_max_mana() -> void:
 		return
 	var old_max := max_mana
 	var effective_spi := get_effective_stat(Enums.Stat.SPIRIT)
-	max_mana = (effective_spi * mana_modifier) + _class_data.class_mana_bonus
+	max_mana = effective_spi * mana_modifier
 	var delta := max_mana - old_max
 	if delta > 0.0:
 		mana += delta

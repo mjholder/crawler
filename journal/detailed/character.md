@@ -659,16 +659,12 @@ extends Resource    # scripts/player_class_data.gd
 @export var class_name_text: String = ""
 @export var description: String = ""
 
-# Starting Stats
+# Starting Stats — the 5 character attributes (defense is NOT one; see below)
 @export var strength: float = 50.0
-@export var defense: float = 50.0
 @export var constitution: float = 50.0
 @export var agility: float = 50.0
 @export var spirit: float = 50.0
 @export var luck: float = 50.0
-
-# Health — flat bonus on top of CON-derived base max health
-@export var class_health_bonus: float = 0.0
 
 # Per-Level Growth — Enums.Stat -> float; applied automatically each level
 @export var growth_rates: Dictionary = {}
@@ -683,30 +679,39 @@ extends Resource    # scripts/player_class_data.gd
 @export var starting_consumables: Array[ConsumableData] = []
 ```
 
-**File location:** `resources/classes/warrior.tres`, `rogue.tres`, etc.
+**File location:** `resources/classes/warrior.tres`, `mage.tres`, etc.
+
+**Stat scheme (2026-07-22 rebalance).** Every class starts at **10 across all 5
+attributes**, then **1 primary +15 (→25)** and **2 secondaries +5 (→15)**; the other
+two stay at 10. Per-level `growth_rates` mirror the spread: **primary +6/lvl, each
+secondary +3/lvl**, tertiaries no growth. See
+[[ideas/attribute-distribution-leveling]].
 
 **Warrior example:**
 
 | Field | Value |
 |---|---|
 | class_name_text | "Warrior" |
-| strength | 60.0, constitution | 55.0, agility | 40.0 |
-| class_health_bonus | 20.0 |
-| growth_rates | `{ STR: 3.0, CON: 2.0 }` |
-| starting_equipped | `{ WEAPON: battle_axe.tres, TORSO: leather_chest, … }` |
-| starting_consumable_slots | 2 |
-| starting_consumables | `[minor_healing_potion.tres, throwing_bomb.tres]` |
+| stats | STR 25 (primary), CON 15 + LCK 15 (secondary), AGI 10, SPI 10 |
+| growth_rates | `{ STR: 6.0, CON: 3.0, LCK: 3.0 }` |
+| starting_equipped | `{ WEAPON: battle_axe.tres, TORSO: plate_chest, … }` |
+| starting_consumables | `[major_healing_potion.tres, throwing_bomb.tres]` |
+
+**Defense is not an attribute.** It is equipment-derived — classes grant no innate
+defense; the player's base `defense` starts at 0 and rises only from equipped armor's
+`stat_modifiers` (`{ Enums.Stat.DEFENSE: X }`), stacked through `get_effective_stat`.
+The `DEFENSE = 1` enum slot and the armor-buffer mechanic (`_apply_defense`,
+`max_armor`, `brace_effect`) are unchanged; only its *source* moved from class to gear.
 
 ---
 
 ## Max Health Formula
 
 ```
-base_max_health = effective_CON * health_modifier
-max_health = base_max_health + class_health_bonus
+max_health = effective_CON * health_modifier
 ```
 
-`health_modifier` is an exported tuning var on Player (e.g. `2.0`). Max health is recalculated whenever stats change. When max health increases, current health increases by the same delta.
+`health_modifier` is an exported tuning var on Player (e.g. `2.0`). CON is the sole source of max health — there is no flat class bonus. Max health is recalculated whenever stats change. When max health increases, current health increases by the same delta.
 
 ```gdscript
 @export var health_modifier: float = 2.0
@@ -714,7 +719,7 @@ max_health = base_max_health + class_health_bonus
 func _recalculate_max_health() -> void:
     var old_max := max_health
     var effective_con := get_effective_stat(Enums.Stat.CONSTITUTION)
-    max_health = (effective_con * health_modifier) + _class_data.class_health_bonus
+    max_health = roundf(effective_con * health_modifier)
     var delta := max_health - old_max
     if delta > 0.0:
         health += delta
