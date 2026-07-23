@@ -1,6 +1,8 @@
 class_name Game
 extends Node2D
 
+const TARGET_OVERLAY_SCENE := preload("res://scenes/target.tscn")
+
 # --- Screen Transform ---
 var screen_size: Vector2
 var screen_center: Vector2
@@ -81,6 +83,7 @@ func _ready() -> void:
 	$Player.position = screen_center
 	$Player.set_hurt_overlay($HurtOverlay/HurtRect)
 	_gui.setup_inventory($Player.get_node("Inventory") as Inventory)
+	_gui.set_preview_source($Player)
 
 	_gui.character_created.connect(_on_character_created)
 	_gui.continue_requested.connect(_on_continue_requested)
@@ -201,6 +204,13 @@ func _active_target_mode() -> AttackData.TargetMode:
 	return AttackData.TargetMode.SINGLE_ENEMY
 
 
+## The AttackData or SpellData currently being aimed, whichever is set (for the damage preview).
+func _active_action_data() -> Object:
+	if _targeting_attack != null:
+		return _targeting_attack
+	return _targeting_spell
+
+
 func _confirm_targeting() -> void:
 	if _targeting_attack == null and _targeting_spell == null:
 		return
@@ -284,9 +294,13 @@ func _hide_targeting_visuals() -> void:
 
 
 func _spawn_indicator(target: Node) -> void:
-	var ind := TargetIndicator.new()
-	target.add_child(ind)
-	_target_indicators.append(ind)
+	var overlay := TARGET_OVERLAY_SCENE.instantiate() as Control
+	target.add_child(overlay)
+	# Sit the 64-wide overlay centered above the enemy sprite. Offsets are tuned against the
+	# enemy anchor; adjust here if art placement changes.
+	overlay.position = Vector2(-32, -100)
+	overlay.set_preview(AttackPreview.compute(_active_action_data(), player), target)
+	_target_indicators.append(overlay)
 
 
 func _cycle_target(direction: int) -> void:

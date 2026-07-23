@@ -25,12 +25,13 @@ func _ready() -> void:
 
 ## Sets the action name, cost badge (hidden when cost <= 0), and cooldown badge
 ## (a turns-remaining number shown, with the button dimmed, while cooldown > 0).
-func configure(p_hand: int, p_action_name: String, p_cost: float, p_cooldown_remaining: int = 0) -> void:
+func configure(p_hand: int, p_action_name: String, p_cost: float, p_cooldown_remaining: int = 0, p_tooltip: String = "") -> void:
 	hand = p_hand
 	action_name = p_action_name
 	cost = p_cost
 	cooldown_remaining = p_cooldown_remaining
 	_label.text = p_action_name
+	_button.tooltip_text = p_tooltip
 	_cost_container.visible = p_cost > 0.0
 	if p_cost > 0.0:
 		_cost_label.text = str(int(p_cost))

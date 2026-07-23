@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://dnaqjby80p7np"]
+
+[ext_resource type="FontFile" uid="uid://cwmms2slkwg5h" path="res://resources/Lugrasimo/Lugrasimo-Regular.ttf" id="1_b37e2"]
+[ext_resource type="Script" path="res://scripts/target_reticle.gd" id="2_treti"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_b5a2r"]
+font = ExtResource("1_b37e2")
+font_size = 32
+outline_size = 5
+outline_color = Color(0, 0, 0, 1)
+
+[node name="Target" type="Control" unique_id=469423669]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 64.0
+offset_bottom = 64.0
+mouse_filter = 2
+script = ExtResource("2_treti")
+
+[node name="TargetTexture" type="TextureRect" parent="." unique_id=117627942]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TargetLabel" type="Label" parent="." unique_id=1837209740]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+label_settings = SubResource("LabelSettings_b5a2r")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Statuses" type="HBoxContainer" parent="." unique_id=1374602034]
+custom_minimum_size = Vector2(256, 32)
+layout_mode = 1
+offset_left = -96.0
+offset_top = 64.0
+offset_right = 160.0
+offset_bottom = 96.0

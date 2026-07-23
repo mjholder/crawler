@@ -85,6 +85,9 @@ var _oh_used: bool = false
 var _oh_locked: bool = false
 var _action_mana: float = 0.0
 var _player_status_label: Label = null
+# Source combatant (the player) for evaluating action-button damage/status preview tooltips.
+# Read-only stat queries only — the GUI never mutates it.
+var _preview_source: Node = null
 
 
 func _ready() -> void:
@@ -505,18 +508,44 @@ func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spell
 	for atk_res in attacks:
 		var atk := atk_res as AttackData
 		if atk != null:
-			_add_action_button(group, hand, atk.attack_name, 0.0, cooldowns.get(atk.attack_name, 0))
+			_add_action_button(group, hand, atk.attack_name, 0.0, cooldowns.get(atk.attack_name, 0), _build_action_tooltip(atk, atk.attack_name, atk.target_mode, atk.description))
 	for spell_res in spells:
 		var spell := spell_res as SpellData
 		if spell != null:
-			_add_action_button(group, hand, spell.spell_name, spell.mana_cost, cooldowns.get(spell.spell_name, 0))
+			_add_action_button(group, hand, spell.spell_name, spell.mana_cost, cooldowns.get(spell.spell_name, 0), _build_action_tooltip(spell, spell.spell_name, spell.target_mode, spell.description))
 
 
-func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float, cooldown_remaining: int = 0) -> void:
+func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float, cooldown_remaining: int = 0, tooltip: String = "") -> void:
 	var action := ACTION_SCENE.instantiate() as ActionButtonUI
 	group.add_child(action)
-	action.configure(hand, action_name, cost, cooldown_remaining)
+	action.configure(hand, action_name, cost, cooldown_remaining, tooltip)
 	action.pressed.connect(func() -> void: attack_requested.emit(hand, action_name))
+
+
+## Sets the combatant whose stats feed action-button damage/status preview tooltips.
+func set_preview_source(node: Node) -> void:
+	_preview_source = node
+
+
+const _TARGET_MODE_LABEL := {
+	AttackData.TargetMode.SINGLE_ENEMY: "Single enemy",
+	AttackData.TargetMode.ALL_ENEMIES: "All enemies",
+	AttackData.TargetMode.SELF: "Self",
+}
+
+
+## Multi-line hover tooltip for an action: name, target mode, then the per-effect breakdown
+## (humanized scaling expression + computed value) from the shared AttackPreview.
+func _build_action_tooltip(action_data: Object, action_name: String, target_mode: int, description: String) -> String:
+	var text := action_name
+	text += "\nTarget: %s" % _TARGET_MODE_LABEL.get(target_mode, "?")
+	if description != "":
+		text += "\n%s" % description
+	if _preview_source != null:
+		var body := AttackPreview.compute(action_data, _preview_source).tooltip_body()
+		if body != "":
+			text += "\n————\n%s" % body
+	return text
 
 
 ## Recomputes every action button's disabled/focus state from the current gates.
