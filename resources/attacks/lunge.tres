@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="DamageEffect_main"]
 script = ExtResource("2_dmg_script")
 damage_expression = "strength * 0.6"
-pierce_expression = "strength * 0.3"
+pierce_expression = "0.5"
 
 [resource]
 script = ExtResource("1_script")

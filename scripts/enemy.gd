@@ -107,6 +107,9 @@ func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false,
 	# Vulnerable/ward scales the incoming hit before armor soaks it — DoT ticks pass is_attack=false.
 	if is_attack:
 		amount *= get_incoming_attack_multiplier()
+	# Commit the hit to a whole number before the pierce split so the shown damage and the
+	# HP/armor breakdown agree (e.g. 14 at 50% pierce reads as 7 to HP, 7 to armor).
+	amount = roundf(amount)
 	var net_amount: float = amount if bypass_armor else _apply_defense(amount, pierce)
 	net_amount = roundf(net_amount)  # HP is integral — round the applied delta, not the raw math
 	health -= net_amount
@@ -118,14 +121,18 @@ func take_damage(amount: float, pierce: float = 0.0, bypass_armor: bool = false,
 
 
 ## The armor buffer soaks incoming damage before HP; only the overflow bleeds through.
-## `pierce` reduces how much of the buffer can absorb THIS hit (leaves the rest intact).
+## `pierce` is a 0–1 ratio: that share of the hit goes straight to HP and never touches the
+## buffer; the remainder hits armor normally and overflows if the buffer is spent. Armor drains
+## only by what it absorbs, so pierce is a strict upgrade — it can never reduce total HP damage.
 func _apply_defense(amount: float, pierce: float = 0.0) -> float:
-	var effective_armor := maxf(armor - pierce, 0.0)
-	var absorbed := minf(effective_armor, amount)
+	var ratio := clampf(pierce, 0.0, 1.0)
+	var to_hp := floorf(amount * ratio)      # bypasses armor entirely
+	var remainder := amount - to_hp
+	var absorbed := minf(armor, remainder)
 	armor -= absorbed
 	if absorbed > 0.0:
 		armor_changed.emit(armor, max_armor)
-	return amount - absorbed
+	return to_hp + (remainder - absorbed)
 
 
 ## Refills the armor buffer to the current effective DEF. Called at each round start.

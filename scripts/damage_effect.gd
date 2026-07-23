@@ -6,8 +6,10 @@ extends Effect
 ## Examples: "strength * 0.5", "15", "strength + agility * 0.3"
 @export var damage_expression: String = "strength * 0.5"
 
-## Armor pierce: reduces how much of the target's armor buffer can absorb THIS hit (Frost's
-## signature; also a general damage-shape lever). Evaluated against source stats. "0" = none.
+## Armor pierce, as a 0–1 ratio (Frost's signature; also a general damage-shape lever): that
+## share of the hit is sent straight to HP, bypassing the armor buffer; the rest hits armor
+## normally. Author in quarters — 0.5 is the default for a piercing attack, 1.0 ignores armor
+## entirely. Evaluated against source stats and clamped to [0, 1] on use. "0" = none.
 @export var pierce_expression: String = "0"
 
 ## When true, the TICK variant deals damage straight to health, skipping the armor buffer

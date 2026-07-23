@@ -10,6 +10,7 @@ extends Effect
 ## it reaches the roster through the scene tree (target.get_parent()), needing no combat-context
 ## plumbing. The player still picks the primary target through the normal single-target flow.
 @export var damage_expression: String = "spirit * 0.5"
+## Armor pierce as a 0–1 ratio (share of the hit sent straight to HP). See DamageEffect. "0" = none.
 @export var pierce_expression: String = "0"
 ## Fraction of the primary damage dealt to the chained neighbor.
 @export var chain_multiplier: float = 0.5

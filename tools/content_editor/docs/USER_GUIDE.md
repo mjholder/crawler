@@ -471,9 +471,16 @@ Deals damage to the target equal to the result of `damage_expression`.
 | Field | In-game meaning | Widget | Example |
 |---|---|---|---|
 | `damage_expression` | Expression evaluated against the **source** (attacker) stats. | Text | `"strength * 0.5"`, `"20 + (strength / 2)"`, `"15"` |
+| `pierce_expression` | Armor pierce as a **0–1 ratio**: that share of the hit is sent straight to HP, bypassing the armor buffer; the rest hits armor normally. `"0"` = none. | Text | `"0.5"`, `"0.25"`, `"1"` |
 
 Available variables: `strength`, `defense`, `constitution`, `agility`,
 `spirit`, `luck`, `max_health`, `health`.
+
+Pierce is authored in quarters — `0.5` is the default for a piercing attack,
+`1.0` ignores armor entirely. It is a strict upgrade (it can never *lower* total
+damage vs. an unarmored target) and is clamped to `[0, 1]` at runtime. It is a
+ratio, **not** a flat armor amount — e.g. a 20-damage hit at `0.5` against 5
+armor sends 10 straight to HP and lands another 5 in overflow (15 total).
 
 | Expression | Damage dealt |
 |---|---|

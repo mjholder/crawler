@@ -10,6 +10,7 @@ extends Effect
 ## awareness with sibling attack effects is needed. Author `status_data` as a duration:-1,
 ## persistence:COMBAT status (never ticks down, cleared at combat end).
 @export var damage_expression: String = "strength * 0.5"
+## Armor pierce as a 0–1 ratio (share of the hit sent straight to HP). See DamageEffect. "0" = none.
 @export var pierce_expression: String = "0"
 @export var status_data: StatusData = null
 

@@ -35,6 +35,7 @@ kanban-plugin: board
 
 ## In Review
 
+- [ ] Pierce as a percentage split instead of a flat armor reduction — Two-stream ratio split shipped (`floor(amount * pierce)` to HP, remainder to armor) with tooltips + tooling; weapon/enchant pierce-tier authoring and Frost tuning remain. [[ideas/pierce-as-percentage-split]]
 - [ ] Elemental signature identities — Poison, Fire, Lightning, Frost — Concrete mechanics for four elemental signatures; systems shipped, .tres content unauthored. [[ideas/elemental-signature-identities]]
 - [ ] Martial utility verbs — Bleed, Shatter, Brace — Non-magic verb set mirroring the elemental matrix; systems shipped, .tres content and Sentinel kit unauthored. [[ideas/martial-utility-verbs]]
 

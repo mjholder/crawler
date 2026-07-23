@@ -70,6 +70,9 @@ function walk(node: unknown, path: string, errors: LintError[]): void {
     if (EXPRESSION_FIELDS.has(key) && typeof value === "string") {
       const exprErrors = lintExpression(value, childPath);
       errors.push(...exprErrors);
+      if (key === "pierce_expression") {
+        errors.push(...lintPierceRange(value, childPath));
+      }
     } else {
       walk(value, childPath, errors);
     }
@@ -92,6 +95,25 @@ function lintExpression(expr: string, path: string): LintError[] {
     }
   }
   return errors;
+}
+
+// pierce_expression is a 0–1 ratio (the share of a hit that bypasses armor). When it's authored
+// as a plain numeric literal, flag values outside [0, 1] — catches leftover flat-armor pierce
+// values (e.g. "5") from before the percentage-split migration. Non-constant expressions
+// (e.g. "strength * 0.3") are left to the author; only the runtime clamp guards those.
+function lintPierceRange(expr: string, path: string): LintError[] {
+  const trimmed = expr.trim();
+  if (!/^-?\d+(\.\d+)?$/.test(trimmed)) return [];
+  const n = Number(trimmed);
+  if (n < 0 || n > 1) {
+    return [
+      {
+        path,
+        message: `pierce_expression "${expr}" is out of range: it is now a 0–1 ratio (0.25/0.5/0.75/1.0), not a flat armor amount`,
+      },
+    ];
+  }
+  return [];
 }
 
 const MATH_BUILTINS = new Set([

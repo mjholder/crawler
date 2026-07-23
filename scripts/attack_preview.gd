@@ -16,6 +16,7 @@ class Line:
 	var value: float = 0.0          # computed amount (damage/heal/buff magnitude)
 	var status_data: StatusData = null
 	var stacks: int = 1
+	var pierce_ratio: float = 0.0   # DAMAGE lines only: 0–1 share of the hit that bypasses armor
 
 var lines: Array[Line] = []
 
@@ -58,12 +59,12 @@ func _append_effect(effect: Resource, eval: StatExprEval, source: Node) -> void:
 	if effect is StatusEffect:
 		_add_status((effect as StatusEffect).status_data, (effect as StatusEffect).stacks)
 	elif effect is GatedBleedEffect:
-		_add_damage(effect.damage_expression, eval, source)
+		_add_damage(effect.damage_expression, eval, source, effect.pierce_expression)
 		_add_status(effect.status_data, 1)
 	elif effect is ChainDamageEffect:
-		_add_damage(effect.damage_expression, eval, source)
+		_add_damage(effect.damage_expression, eval, source, effect.pierce_expression)
 	elif effect is DamageEffect:
-		_add_damage(effect.damage_expression, eval, source)
+		_add_damage(effect.damage_expression, eval, source, effect.pierce_expression)
 	elif effect is HealEffect:
 		var heal := Line.new()
 		heal.kind = LineKind.HEAL
@@ -85,11 +86,12 @@ func _append_effect(effect: Resource, eval: StatExprEval, source: Node) -> void:
 		lines.append(brace)
 
 
-func _add_damage(expression: String, eval: StatExprEval, source: Node) -> void:
+func _add_damage(expression: String, eval: StatExprEval, source: Node, pierce_expression: String = "0") -> void:
 	var line := Line.new()
 	line.kind = LineKind.DAMAGE
 	line.value = eval.evaluate(expression, source)
 	line.label = humanize_expression(expression)
+	line.pierce_ratio = clampf(eval.evaluate(pierce_expression, source), 0.0, 1.0)
 	lines.append(line)
 
 
@@ -129,10 +131,10 @@ func tooltip_body() -> String:
 			LineKind.DAMAGE:
 				var amount := str(int(round(line.value)))
 				# A flat constant (label already equals the number) reads better without "= N".
-				if line.label == amount:
-					parts.append("%s damage" % amount)
-				else:
-					parts.append("%s = %s damage" % [line.label, amount])
+				var text := "%s damage" % amount if line.label == amount else "%s = %s damage" % [line.label, amount]
+				if line.pierce_ratio > 0.0:
+					text += " · %d%% armor pierce" % int(round(line.pierce_ratio * 100.0))
+				parts.append(text)
 			LineKind.STATUS:
 				parts.append(_status_line_text(line))
 			LineKind.HEAL:

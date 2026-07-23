@@ -19,6 +19,40 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Pierce is a percentage split, not a flat armor reduction
+
+**Date:** 2026-07-23
+**Daily:** [[daily/2026-07-23]]
+
+**Decision:** `pierce` is reinterpreted as a **0–1 ratio** rather than a flat armor-ignore
+amount. `_apply_defense(amount, pierce)` (identical on Player and Enemy) now splits the hit into
+two streams: `to_hp = floor(amount * clamp(pierce, 0, 1))` goes straight to HP and never touches
+the armor buffer; the remainder hits armor normally and overflows to HP if the buffer is spent.
+Armor drains only by what it absorbs. The hit is **rounded to a whole number in `take_damage`
+before the split** (after the incoming-damage multiplier), so the shown damage and the HP/armor
+breakdown always agree — a 14-damage hit at 50% reads as 7 to HP / 7 to armor, not 6/8 off a
+fractional 13.8. `DamageEffect.pierce_expression` (and the same field on `ChainDamageEffect` /
+`GatedBleedEffect`) is now authored in quarters — `0.5` is the default for a piercing attack,
+`1.0` ignores armor entirely.
+
+**Context:** Flat pierce (`effective_armor = max(armor - pierce, 0)`) was backwards — it only paid
+out on hits already near-overflowing the buffer (pierce 5 vs 20 armor on a 10-damage hit = zero
+HP damage), and never auto-scaled across acts, the same failure the DEF refreshing-ward rework
+was meant to avoid. See [[ideas/pierce-as-percentage-split]].
+
+**Alternatives considered:** Percentage *mitigation* on DEF (rejected earlier for the ward rework);
+a dedicated numeric `pierce_ratio: float` field (rejected to avoid a `schema.json` regen and a
+rename cascade — the expression String stays, reinterpreted as a ratio and clamped on use).
+
+**Rationale:** A ratio makes pierce a strict upgrade that can never lower total damage vs. an
+unarmored target, matters *most* against a fat buffer (the opposite of the old behaviour), and
+auto-scales across acts. Reads cleanly as Frost's "cold reaches the bone" signature.
+
+**Trade-offs / risks:** Truncation (`floor`) creates a soft per-tier damage threshold — a flurry
+of 1-damage hits gets no pierce at all — so low-damage multi-hit weapons shouldn't carry low
+pierce tiers (authoring consideration, not a bug). Existing `lunge.tres` migrated from the flat
+`"strength * 0.3"` to `"0.5"`; a sidecar linter warns on out-of-`[0,1]` numeric pierce literals.
+
 ## Defense is equipment-derived, not a character attribute
 
 **Date:** 2026-07-22
@@ -200,8 +234,9 @@ fits it (**hybrid**), rather than forcing everything through one channel:
   `StatusInstance`; `BurstDamageEffect` reads `instance.turns_remaining` (tick fires *before* the
   decrement, so a `duration:3` burn sees 3→2→1).
 - **Frost — armor pierce.** `take_damage(amount, pierce)` / `_apply_defense(amount, pierce)` on
-  Player and Enemy; `effective_armor = max(armor - pierce, 0)`. Pierce reduces only *this* hit's
-  absorption, leaving the buffer otherwise intact. `DamageEffect` gains `pierce_expression`.
+  Player and Enemy; `DamageEffect` gains `pierce_expression`. *(Superseded 2026-07-23: pierce is
+  now a 0–1 ratio split, not a flat `armor - pierce` reduction — see "Pierce is a percentage
+  split" below.)*
 - **Lightning — chain.** `ChainDamageEffect` reaches the array-adjacent enemy via
   `target.get_parent().get_children()` (siblings under `CombatEvent/$Enemies`).
 - **Bleed — gated application.** `GatedBleedEffect` deals damage, compares `target.health`
