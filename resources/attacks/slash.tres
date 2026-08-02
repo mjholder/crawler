@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Slash"
+display_name = "Slash"
 description = "A powerful overhead strike"
 target_mode = 0
 effects = Array[Resource]([ExtResource("2_effect")])

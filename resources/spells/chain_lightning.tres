@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_script")
-spell_name = "Chain Lightning"
+display_name = "Chain Lightning"
 description = "A forking bolt: strikes the target, then arcs to the enemies flanking it for half damage."
 mana_cost = 4.0
 power = 12.0

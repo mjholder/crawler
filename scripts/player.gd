@@ -506,10 +506,10 @@ func execute_action(hand: Hand, action_name: String) -> void:
 ## Returns the authored cooldown of the named action in this hand (0 if none).
 func _action_base_cooldown(hand: Hand, action_name: String) -> int:
 	for atk in _hand_attacks[hand]:
-		if atk != null and atk.attack_name == action_name:
+		if atk != null and atk.display_name == action_name:
 			return atk.cooldown
 	for spell in _hand_spells[hand]:
-		if spell != null and spell.spell_name == action_name:
+		if spell != null and spell.display_name == action_name:
 			return spell.cooldown
 	return 0
 
@@ -580,12 +580,12 @@ func _do_attack() -> void:
 	if attack_data == null:
 		push_warning("[PLAYER] _do_attack() called with no pending payload")
 		return
-	print("  Player performs: %s" % attack_data.attack_name)
+	print("  Player performs: %s" % attack_data.display_name)
 	# Each hand animates its own weapon scene when it holds one; otherwise the hit resolves
 	# immediately. A non-SELF attack defers its hit until the weapon's hit_landed fires.
 	if _pending_hand == Hand.MAINHAND:
 		var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
-		if weapon_data != null and weapon_data.scene != null and attack_data.target_mode != AttackData.TargetMode.SELF:
+		if weapon_data != null and weapon_data.scene != null and attack_data.target_mode != ActionData.TargetMode.SELF:
 			_attack_animation_pending = true
 			_in_flight_attack_data = attack_data
 			_in_flight_targets = targets
@@ -594,7 +594,7 @@ func _do_attack() -> void:
 			attack_hit.emit(attack_data, targets)
 	else:
 		var off_data := _inventory.get_equipped(Enums.Slot.OFFHAND)
-		if off_data is WeaponData and off_data.scene != null and attack_data.target_mode != AttackData.TargetMode.SELF:
+		if off_data is WeaponData and off_data.scene != null and attack_data.target_mode != ActionData.TargetMode.SELF:
 			_offhand_attack_animation_pending = true
 			_offhand_in_flight_attack_data = attack_data
 			_offhand_in_flight_targets = targets
@@ -913,7 +913,7 @@ func _find_spell_by_name(name: String) -> SpellData:
 	if weapon_data is WeaponData:
 		for spell_res in (weapon_data as WeaponData).innate_spells:
 			var spell := spell_res as SpellData
-			if spell != null and spell.spell_name == name:
+			if spell != null and spell.display_name == name:
 				return spell
 	return null
 
@@ -954,14 +954,14 @@ func _do_cast() -> void:
 		return
 	var cost := compute_spell_cost(spell)
 	if not spend_mana(cost):
-		push_warning("[PLAYER] _do_cast() insufficient mana for: %s" % spell.spell_name)
+		push_warning("[PLAYER] _do_cast() insufficient mana for: %s" % spell.display_name)
 		return
-	print("  Player casts: %s" % spell.spell_name)
+	print("  Player casts: %s" % spell.display_name)
 	# Each hand animates its own weapon scene when it holds one; otherwise the cast resolves
 	# immediately. A non-SELF cast defers its hit until the weapon's cast animation finishes.
 	if _pending_hand == Hand.MAINHAND:
 		var weapon_data := _inventory.get_equipped(Enums.Slot.WEAPON)
-		if weapon_data != null and weapon_data.scene != null and spell.target_mode != AttackData.TargetMode.SELF:
+		if weapon_data != null and weapon_data.scene != null and spell.target_mode != ActionData.TargetMode.SELF:
 			_cast_animation_pending = true
 			_in_flight_spell = spell
 			_in_flight_spell_targets = targets
@@ -970,7 +970,7 @@ func _do_cast() -> void:
 			cast_hit.emit(spell, targets)
 	else:
 		var off_data := _inventory.get_equipped(Enums.Slot.OFFHAND)
-		if off_data is WeaponData and off_data.scene != null and spell.target_mode != AttackData.TargetMode.SELF:
+		if off_data is WeaponData and off_data.scene != null and spell.target_mode != ActionData.TargetMode.SELF:
 			_offhand_cast_animation_pending = true
 			_offhand_in_flight_spell = spell
 			_offhand_in_flight_spell_targets = targets
@@ -1066,7 +1066,7 @@ func _build_hand_actions(hand: Hand, slot: Enums.Slot) -> void:
 func _register_hand_attack(hand: Hand, atk: AttackData) -> bool:
 	if atk == null:
 		return false
-	register_action(atk.attack_name, _do_attack, hand)
+	register_action(atk.display_name, _do_attack, hand)
 	_hand_attacks[hand].append(atk)
 	return true
 
@@ -1074,7 +1074,7 @@ func _register_hand_attack(hand: Hand, atk: AttackData) -> bool:
 func _register_hand_spell(hand: Hand, spell: SpellData) -> bool:
 	if spell == null:
 		return false
-	register_action(spell.spell_name, _do_cast, hand)
+	register_action(spell.display_name, _do_cast, hand)
 	_hand_spells[hand].append(spell)
 	return true
 
@@ -1089,7 +1089,7 @@ func _rebuild_innate_spell_names() -> void:
 	for spell_res in wdata.innate_spells:
 		var spell := spell_res as SpellData
 		if spell != null:
-			_innate_spell_names.append(spell.spell_name)
+			_innate_spell_names.append(spell.display_name)
 
 
 func _setup_equipment(slot, data: EquipmentData) -> void:

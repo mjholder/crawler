@@ -508,11 +508,11 @@ func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spell
 	for atk_res in attacks:
 		var atk := atk_res as AttackData
 		if atk != null:
-			_add_action_button(group, hand, atk.attack_name, 0.0, cooldowns.get(atk.attack_name, 0), _build_action_tooltip(atk, atk.attack_name, atk.target_mode, atk.description))
+			_add_action_button(group, hand, atk.display_name, 0.0, cooldowns.get(atk.display_name, 0), _build_action_tooltip(atk, atk.display_name, atk.target_mode, atk.description))
 	for spell_res in spells:
 		var spell := spell_res as SpellData
 		if spell != null:
-			_add_action_button(group, hand, spell.spell_name, spell.mana_cost, cooldowns.get(spell.spell_name, 0), _build_action_tooltip(spell, spell.spell_name, spell.target_mode, spell.description))
+			_add_action_button(group, hand, spell.display_name, spell.mana_cost, cooldowns.get(spell.display_name, 0), _build_action_tooltip(spell, spell.display_name, spell.target_mode, spell.description))
 
 
 func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float, cooldown_remaining: int = 0, tooltip: String = "") -> void:
@@ -528,9 +528,9 @@ func set_preview_source(node: Node) -> void:
 
 
 const _TARGET_MODE_LABEL := {
-	AttackData.TargetMode.SINGLE_ENEMY: "Single enemy",
-	AttackData.TargetMode.ALL_ENEMIES: "All enemies",
-	AttackData.TargetMode.SELF: "Self",
+	ActionData.TargetMode.SINGLE_ENEMY: "Single enemy",
+	ActionData.TargetMode.ALL_ENEMIES: "All enemies",
+	ActionData.TargetMode.SELF: "Self",
 }
 
 

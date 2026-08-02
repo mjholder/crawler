@@ -9,7 +9,7 @@ damage_expression = "power * coeff + scale * scaling"
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Palm Strike"
+display_name = "Palm Strike"
 description = "A swift open-palm blow, striking with trained speed."
 target_mode = 0
 effects = Array[Resource]([SubResource("DamageEffect_main")])

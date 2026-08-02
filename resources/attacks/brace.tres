@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Brace"
+display_name = "Brace"
 description = "A defensive stance"
 target_mode = 2
 cooldown = 3

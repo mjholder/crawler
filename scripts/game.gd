@@ -168,13 +168,13 @@ func _on_action_requested(hand: int, action_name: String) -> void:
 	# Resolve the name within the requesting hand's own action list.
 	for atk_res in player.get_hand_attacks(hand):
 		var atk := atk_res as AttackData
-		if atk != null and atk.attack_name == action_name:
+		if atk != null and atk.display_name == action_name:
 			_targeting_attack = atk
 			break
 	if _targeting_attack == null:
 		for spell_res in player.get_hand_spells(hand):
 			var spell := spell_res as SpellData
-			if spell != null and spell.spell_name == action_name:
+			if spell != null and spell.display_name == action_name:
 				var cost := player.compute_spell_cost(spell)
 				if player.mana < cost:
 					_gui.show_status("Not enough mana")
@@ -196,12 +196,12 @@ func _on_action_requested(hand: int, action_name: String) -> void:
 	_gui.set_targeting_action(_targeting_hand, action_name)
 
 
-func _active_target_mode() -> AttackData.TargetMode:
+func _active_target_mode() -> ActionData.TargetMode:
 	if _targeting_attack != null:
 		return _targeting_attack.target_mode
 	if _targeting_spell != null:
 		return _targeting_spell.target_mode
-	return AttackData.TargetMode.SINGLE_ENEMY
+	return ActionData.TargetMode.SINGLE_ENEMY
 
 
 ## The AttackData or SpellData currently being aimed, whichever is set (for the damage preview).
@@ -216,16 +216,16 @@ func _confirm_targeting() -> void:
 		return
 	var targets: Array = []
 	match _active_target_mode():
-		AttackData.TargetMode.SINGLE_ENEMY:
+		ActionData.TargetMode.SINGLE_ENEMY:
 			if _targeting_index < _targeting_candidates.size():
 				var candidate = _targeting_candidates[_targeting_index]
 				if candidate is Enemy and not (candidate as Enemy).is_dead:
 					targets = [candidate]
-		AttackData.TargetMode.ALL_ENEMIES:
+		ActionData.TargetMode.ALL_ENEMIES:
 			for c in _targeting_candidates:
 				if c is Enemy and not (c as Enemy).is_dead:
 					targets.append(c)
-		AttackData.TargetMode.SELF:
+		ActionData.TargetMode.SELF:
 			targets = [player]
 	if targets.is_empty():
 		_cancel_targeting()
@@ -261,14 +261,14 @@ func _cancel_targeting() -> void:
 	_targeting_index = 0
 
 
-func _build_candidates(mode: AttackData.TargetMode) -> Array:
+func _build_candidates(mode: ActionData.TargetMode) -> Array:
 	match mode:
-		AttackData.TargetMode.SINGLE_ENEMY, AttackData.TargetMode.ALL_ENEMIES:
+		ActionData.TargetMode.SINGLE_ENEMY, ActionData.TargetMode.ALL_ENEMIES:
 			if not current_event is CombatEvent:
 				return []
 			return (current_event as CombatEvent)._enemies.filter(
 				func(e: Enemy) -> bool: return not e.is_dead)
-		AttackData.TargetMode.SELF:
+		ActionData.TargetMode.SELF:
 			return [player]
 	return []
 
@@ -276,12 +276,12 @@ func _build_candidates(mode: AttackData.TargetMode) -> Array:
 func _show_targeting_visuals() -> void:
 	_hide_targeting_visuals()
 	match _active_target_mode():
-		AttackData.TargetMode.SINGLE_ENEMY:
+		ActionData.TargetMode.SINGLE_ENEMY:
 			_spawn_indicator(_targeting_candidates[_targeting_index])
-		AttackData.TargetMode.ALL_ENEMIES:
+		ActionData.TargetMode.ALL_ENEMIES:
 			for c in _targeting_candidates:
 				_spawn_indicator(c)
-		AttackData.TargetMode.SELF:
+		ActionData.TargetMode.SELF:
 			_vignette_layer.visible = true
 
 
@@ -304,7 +304,7 @@ func _spawn_indicator(target: Node) -> void:
 
 
 func _cycle_target(direction: int) -> void:
-	if _active_target_mode() != AttackData.TargetMode.SINGLE_ENEMY or _targeting_action == "":
+	if _active_target_mode() != ActionData.TargetMode.SINGLE_ENEMY or _targeting_action == "":
 		return
 	if _targeting_candidates.is_empty():
 		return
@@ -476,7 +476,7 @@ func _on_player_stats_changed(stats: Dictionary) -> void:
 func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
 	# SELF-mode attacks (e.g. Brace) keep targets=[player] for effect-application below,
 	# but don't fire the bus signal — procs want "hostile hit" semantics, not self-buffs.
-	if attack_data.target_mode != AttackData.TargetMode.SELF:
+	if attack_data.target_mode != ActionData.TargetMode.SELF:
 		player_attack_hit.emit(attack_data, targets)
 	# Weapon-anatomy context (power/scaling/scale) for this attack's damage expressions; the same
 	# for every target of the hit, so resolve it once.
@@ -493,7 +493,7 @@ func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
 			if effect != null:
 				effect.apply(player, target, crit_mult, weapon_ctx)
 				if target is Enemy:
-					print("[PLAYER] %s on %s" % [attack_data.attack_name, (target as Enemy).enemy_name])
+					print("[PLAYER] %s on %s" % [attack_data.display_name, (target as Enemy).enemy_name])
 
 
 func _on_enemy_move_performed(enemy: Enemy, move: EnemyMoveData) -> void:
@@ -529,7 +529,7 @@ func _on_player_hand_actions_changed() -> void:
 func _on_player_action_resolved(_hand: int) -> void:
 	if state != Enums.TurnState.PLAYER_TURN:
 		return
-	if current_event is CombatEvent and _build_candidates(AttackData.TargetMode.SINGLE_ENEMY).is_empty():
+	if current_event is CombatEvent and _build_candidates(ActionData.TargetMode.SINGLE_ENEMY).is_empty():
 		return
 	_refresh_action_bar()
 	_gui.set_player_turn(true)
@@ -568,7 +568,7 @@ func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
 			if effect != null:
 				effect.apply(player, target, crit_mult, spell_ctx)
 				if target is Enemy:
-					print("[PLAYER] %s on %s" % [spell.spell_name, (target as Enemy).enemy_name])
+					print("[PLAYER] %s on %s" % [spell.display_name, (target as Enemy).enemy_name])
 
 
 func _on_player_mana_spent(amount: float) -> void:
@@ -960,7 +960,7 @@ func _on_combat_enemy_added(enemy: Enemy, total_expected: int) -> void:
 	# Refresh targeting candidates if we're mid-targeting for enemies
 	if _targeting_action != "" and _targeting_attack != null:
 		var mode := _targeting_attack.target_mode
-		if mode == AttackData.TargetMode.SINGLE_ENEMY or mode == AttackData.TargetMode.ALL_ENEMIES:
+		if mode == ActionData.TargetMode.SINGLE_ENEMY or mode == ActionData.TargetMode.ALL_ENEMIES:
 			_targeting_candidates = _build_candidates(mode)
 			_show_targeting_visuals()
 

@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Thrust"
+display_name = "Thrust"
 description = "A quick, straightforward jab."
 target_mode = 0
 effects = [ExtResource("2_new")]

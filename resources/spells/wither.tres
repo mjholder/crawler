@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_script")
-spell_name = "Wither"
+display_name = "Wither"
 description = "A bolt of decaying energy that gnaws at the target's flesh."
 mana_cost = 5
 power = 12.0

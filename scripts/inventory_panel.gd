@@ -345,7 +345,7 @@ func _rebuild_prep_ui() -> void:
 		var prepared := _player.get_prepared_spells()
 		var spell: SpellData = prepared[i] if i < prepared.size() else null
 		var btn := Button.new()
-		btn.text = spell.spell_name if spell != null else "—"
+		btn.text = spell.display_name if spell != null else "—"
 		btn.disabled = _dungeon_locked
 		btn.pressed.connect(_on_prep_button_pressed.bind(i))
 		_prep_container.add_child(btn)
@@ -399,7 +399,7 @@ func _show_detail(data: EquipmentData) -> void:
 	_detail_name_label.text = data.item_name
 	if data is TomeData:
 		var tome := data as TomeData
-		var spell_name := tome.spell.spell_name if tome.spell != null else "???"
+		var spell_name := tome.spell.display_name if tome.spell != null else "???"
 		_detail_stats_label.text = "Teaches: %s" % spell_name
 		return
 	var stats_text := _format_stat_modifiers(data.stat_modifiers)

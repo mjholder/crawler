@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_script")
-spell_name = "Flicker"
+display_name = "Flicker"
 description = "Dissolve into heat haze, blurring like a guttering flame. Drastically heightens agility through the coming turn, slipping nearly every blow."
 mana_cost = 6.0
 target_mode = 2

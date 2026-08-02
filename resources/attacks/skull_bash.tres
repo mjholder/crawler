@@ -10,7 +10,7 @@ damage_expression = "power * coeff + scale * scaling"
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Skull Bash"
+display_name = "Skull Bash"
 description = "Bring the mace down on the skull with crushing force, leaving the foe reeling and unable to act."
 target_mode = 0
 cooldown = 3

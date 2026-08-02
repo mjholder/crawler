@@ -6,7 +6,7 @@
 
 [resource]
 script = ExtResource("1_script")
-spell_name = "Lay on Hands"
+display_name = "Lay on Hands"
 description = "Channel divine warmth into your own wounds, mending a little now and steadily over the turns that follow."
 mana_cost = 8
 target_mode = 2

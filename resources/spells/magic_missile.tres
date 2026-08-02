@@ -5,7 +5,7 @@
 
 [resource]
 script = ExtResource("1_script")
-spell_name = "Magic Missile"
+display_name = "Magic Missile"
 description = "A bolt of arcane force."
 mana_cost = 5.0
 power = 12.0

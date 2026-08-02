@@ -6,7 +6,7 @@
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Flail"
+display_name = "Flail"
 description = "A wild spin that strikes all enemies and disperses poison"
 target_mode = 1
 cooldown = 2

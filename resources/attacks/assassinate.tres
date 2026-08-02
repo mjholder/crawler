@@ -6,7 +6,7 @@
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Assassinate"
+display_name = "Assassinate"
 description = "A low-damage strike that saturates the target with powerful poison"
 cooldown = 3
 effects = Array[Resource]([ExtResource("2_dmg"), ExtResource("3_apply_poison"), ExtResource("3_apply_poison"), ExtResource("3_apply_poison")])

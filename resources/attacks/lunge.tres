@@ -10,7 +10,7 @@ pierce_expression = "0.5"
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Lunge"
+display_name = "Lunge"
 description = "A precise thrust that slips between armor plates, ignoring much of the foe's defense."
 target_mode = 0
 effects = Array[Resource]([SubResource("DamageEffect_main")])

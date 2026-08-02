@@ -6,6 +6,6 @@
 
 [resource]
 script = ExtResource("1_script")
-attack_name = "Stab"
+display_name = "Stab"
 description = "A precise thrust that poisons the target"
 effects = Array[Resource]([ExtResource("2_stab_dmg"), ExtResource("3_apply_poison")])
