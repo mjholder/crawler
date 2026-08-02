@@ -106,7 +106,30 @@ Always confirm against `get_schema(class)`, which reports the live enum tables.
   references and unknown variables in expression fields (`damage_expression`,
   `heal_expression`, `amount_expression`, `chance_expression`, `guard_expression`).
   Allowed expression variables: `strength`, `defense`, `constitution`, `agility`,
-  `spirit`, `luck`, `max_health`, `health`, plus standard math builtins.
+  `spirit`, `luck`, `max_health`, `health`, plus the weapon-anatomy context vars
+  `power`, `scaling`, `scale`, `coeff` (weapon attacks only), plus standard math builtins.
+
+## Weapon damage expressions — use the uniform form, tweak the variables
+
+A weapon basic attack's `damage_expression` is **not** authored as a raw stat formula.
+Weapon damage lives on the `WeaponData` (`power`, `scaling`, `scaling_stat`); the attack
+effect only carries the shape. The default and expected form is:
+
+```
+"power * coeff + scale * scaling"
+```
+
+- `power` / `scaling` come from the weapon (composed with smithing / rarity at runtime).
+- `scale` is the bearer's effective value of the weapon's declared `scaling_stat`.
+- `coeff` is the per-attack shape knob — `AttackData.power_coefficient`, **default `1.0`**.
+
+So to make one attack hit harder than another on the same weapon, **don't rewrite the
+expression** — leave it as the uniform form and set `power_coefficient` on the `AttackData`
+(1.0 = flat power as-is; 1.3 = +30% of flat power). `coeff` is also a live buff lever:
+`AttackCoeffBuffEffect` (`mode` ADD/MULTIPLY) grants a decaying status that shifts it.
+
+Only genuinely non-weapon damage uses raw stat expressions: spells (flat authored damage,
+no stat term), self-costs, and status `on_tick`/`on_apply`/`on_expire` bursts (flat).
 
 ## Events & dialogue (JSON, not `.tres`)
 

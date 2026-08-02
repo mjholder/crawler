@@ -1,5 +1,36 @@
 {
 	"classes": {
+		"AttackCoeffBuffEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"enum_values": {
+						"Add": 0,
+						"Multiply": 1
+					},
+					"name": "mode",
+					"type": "enum"
+				},
+				{
+					"name": "amount_expression",
+					"type": "String"
+				},
+				{
+					"name": "duration",
+					"type": "int"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/attack_coeff_buff_effect.gd"
+		},
 		"AttackData": {
 			"extends": "",
 			"properties": [
@@ -23,6 +54,10 @@
 				{
 					"name": "cooldown",
 					"type": "int"
+				},
+				{
+					"name": "power_coefficient",
+					"type": "float"
 				},
 				{
 					"element_type": "Effect",
@@ -1011,6 +1046,14 @@
 					"value_type": "float"
 				},
 				{
+					"name": "coefficient_add",
+					"type": "float"
+				},
+				{
+					"name": "coefficient_mult",
+					"type": "float"
+				},
+				{
 					"name": "prevents_action",
 					"type": "bool"
 				},
@@ -1217,6 +1260,26 @@
 					"type": "bool"
 				},
 				{
+					"name": "power",
+					"type": "float"
+				},
+				{
+					"name": "scaling",
+					"type": "float"
+				},
+				{
+					"enum_values": {
+						"Agility": 3,
+						"Constitution": 2,
+						"Defense": 1,
+						"Luck": 5,
+						"Spirit": 4,
+						"Strength": 0
+					},
+					"name": "scaling_stat",
+					"type": "enum"
+				},
+				{
 					"enum_values": {
 						"Either": 2,
 						"Mainhand Only": 0,
@@ -1377,6 +1440,10 @@
 		}
 	},
 	"enums": {
+		"AttackCoeffBuffEffect.Mode": {
+			"ADD": 0,
+			"MULTIPLY": 1
+		},
 		"AttackData.TargetMode": {
 			"ALL_ENEMIES": 1,
 			"SELF": 2,
@@ -1426,6 +1493,12 @@
 			"DUNGEON": 0,
 			"REST": 2,
 			"SHOP": 1
+		},
+		"Enums.Rarity": {
+			"COMMON": 0,
+			"EPIC": 3,
+			"RARE": 2,
+			"UNCOMMON": 1
 		},
 		"Enums.Slot": {
 			"FEET": 2,

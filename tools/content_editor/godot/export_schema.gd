@@ -20,6 +20,7 @@ const RESOURCE_SCRIPTS: Array[String] = [
 	"res://scripts/chain_damage_effect.gd",
 	"res://scripts/gated_bleed_effect.gd",
 	"res://scripts/brace_effect.gd",
+	"res://scripts/attack_coeff_buff_effect.gd",
 	"res://scripts/equipment_data.gd",
 	"res://scripts/weapon_data.gd",
 	"res://scripts/consumable_data.gd",
@@ -54,6 +55,7 @@ const ENUM_SCRIPTS: Array[String] = [
 	"res://scripts/enemy_move_data.gd",
 	"res://scripts/consumable_data.gd",
 	"res://scripts/status_data.gd",
+	"res://scripts/attack_coeff_buff_effect.gd",
 ]
 
 

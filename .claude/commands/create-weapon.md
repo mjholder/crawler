@@ -71,22 +71,35 @@ What is the weapon's name, and give it a one-line description?
 
 **Group 3 — Combat**
 - Attacks to attach — comma-separated from the existing list, or describe new attacks to create [slash, cleave]
-  - For each new attack: name, target (single/all/self), cooldown (player turns until reusable, 0 = none), and what it does (damage formula, buff, etc.)
+  - For each new attack: name, target (single/all/self), cooldown (player turns until reusable, 0 = none), and what it does.
     - Cooldown: use ≥2 to actually gate; `1` is a no-op given one action per hand per turn.
+    - **Damage attacks do NOT get a hand-written formula.** Every weapon hit uses the one uniform
+      expression `power * coeff + scale * scaling`, which reads the weapon's damage (Group 4) and the
+      bearer's scaling stat. To make one attack hit harder/softer than another on the same weapon, set
+      its **shape knob** `power_coefficient` (float, default `1.0`; 1.3 = +30% of flat power). Ask only
+      if the user wants a non-default shape — otherwise leave it at 1.0 and omit the line.
 - Innate spells (res://resources/spells/ file names, or none)? [none]
 
-**Group 4 — Stats**
+**Group 4 — Weapon damage (the two anatomy axes)**
+Weapon damage is authored on the weapon, not baked into attacks — one change re-tunes all its attacks.
+- `power` — flat damage floor (smithing moves this) [12]
+- `scaling` — stat coefficient (rarity moves this) [0.5]
+- `scaling_stat` — the ONE stat this weapon scales: STR=0, AGI=3, SPI=4 (one weapon, one stat) [STR]
+  - STR for axes/maces/swords, AGI for daggers/rapiers, SPI for caster weapons. Daggers: low `power`,
+    equal `scaling`, payoff in riders (bleed/poison), not raw numbers.
+
+**Group 5 — Stats**
 Stat modifiers? e.g. "STR+10 AGI-5" or none [STR+10]
 
-**Group 5 — Procs**
+**Group 6 — Procs**
 On-hit procs? For each: trigger name, chance (0.0–1.0), effect (existing name or describe new), and target (enemy or wielder). Or none. [none]
 Available triggers: player_attack_hit, player_attack_miss, enemy_attack_hit, enemy_attack_miss
 Example: "player_attack_hit 0.25 poison (enemy)" or "player_attack_hit 1.0 self-damage 20 flat (wielder)"
 
-**Group 6 — Price**
+**Group 7 — Price**
 Price in gold? [80]
 
-**Group 7 — Sprites**
+**Group 8 — Sprites**
 Sprite set: type "battle_axe" to use default sprites, or enter a custom folder path.
 Custom path format: res://assets/sprites/weapons/<folder>/
 Folder must contain: idle.png, swing.png, windup.png, icon.png
@@ -94,8 +107,18 @@ Folder must contain: idle.png, swing.png, windup.png, icon.png
 
 ## Creating new effects
 
-Effect expressions share the same variable set:
-`strength`, `defense`, `constitution`, `agility`, `spirit`, `luck`, `max_health`, `health`
+Effect expressions share a variable set: `strength`, `defense`, `constitution`, `agility`,
+`spirit`, `luck`, `max_health`, `health`.
+
+**Weapon basic-attack damage uses the uniform ratio form, not a stat formula.** A weapon damage
+effect is always:
+```
+damage_expression = "power * coeff + scale * scaling"
+```
+where `power`/`scaling` come from the weapon (Group 4), `scale` is the bearer's scaling stat, and
+`coeff` is the attack's `power_coefficient` (default 1.0). Differentiate attacks via that knob — do
+**not** hand-write `strength * 0.5`. Raw stat expressions are only for non-weapon damage: spell
+effects (flat authored number, no stat term) and status ticks.
 
 **Inline sub_resource** — use when the effect is unique to this attack (never reused).
 **Standalone .tres file** — use when the effect might appear on multiple attacks or spells. Write it first, then reference as a path-only ext_resource. Save to `resources/effects/<snake_name>.tres`.
@@ -117,7 +140,7 @@ Stat int: STR=0  DEF=1  CON=2  AGI=3  SPI=4  LCK=5
 
 [resource]
 script = ExtResource("1_script")
-damage_expression = "strength * 0.75"
+damage_expression = "power * coeff + scale * scaling"
 ```
 
 ### Standalone HealEffect
@@ -147,6 +170,26 @@ duration = 3
 ```
 `duration = -1` for permanent (BuffEffect uses -1, not 0, for permanent).
 
+### Standalone AttackCoeffBuffEffect (buff the damage `coeff`)
+
+Grants a decaying status that shifts the wielder's attack `coeff` — a "focus / empower my next
+hits" lever. `mode` ADD=0 adds to `coeff` (stacks with other adds); MULTIPLY=1 scales it. Put this
+on a SELF-target attack (or a proc) so it buffs the wielder.
+
+```
+[gd_resource type="Resource" script_class="AttackCoeffBuffEffect" format=3]
+
+[ext_resource type="Script" path="res://scripts/attack_coeff_buff_effect.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+mode = 0
+amount_expression = "0.3"
+duration = 3
+```
+`mode = 0` (ADD) with `amount_expression = "0.3"` → next attacks compute `power * 1.3 + …` for the
+duration. Use `mode = 1` (MULTIPLY) to scale instead. `amount_expression` may use the stat vars.
+
 ## Creating a new attack
 
 When a requested attack isn't in the existing list, write a new `AttackData .tres` at `resources/attacks/<snake_name>.tres` **before** the weapon file. Reference it with a path-only ext_resource (no uid).
@@ -154,6 +197,11 @@ When a requested attack isn't in the existing list, write a new `AttackData .tre
 TargetMode: SINGLE_ENEMY=0, ALL_ENEMIES=1, SELF=2
 
 **Cooldown:** add `cooldown = N` (int, player turns until reusable) after `target_mode` **only when N > 0** — omit the line for the default 0 (Godot drops default values). Use ≥2 to actually gate.
+
+**Shape knob:** add `power_coefficient = N` (float) after `cooldown` **only when N ≠ 1.0** — omit for the
+default 1.0 (Godot drops default values). This is the `coeff` in `power * coeff + scale * scaling`, the
+single lever for making an attack hit harder/softer than its weapon's flat power. Don't rewrite the
+damage expression to differentiate attacks — move this number.
 
 ### AttackData template (inline damage effect, single enemy)
 
@@ -165,7 +213,7 @@ TargetMode: SINGLE_ENEMY=0, ALL_ENEMIES=1, SELF=2
 
 [sub_resource type="Resource" id="DamageEffect_main"]
 script = ExtResource("2_dmg_script")
-damage_expression = "strength * 0.5"
+damage_expression = "power * coeff + scale * scaling"
 
 [resource]
 script = ExtResource("1_script")
@@ -191,7 +239,7 @@ Multiple effects are supported — just add more entries to `effects = Array[Res
 
 [sub_resource type="Resource" id="DamageEffect_main"]
 script = ExtResource("2_dmg_script")
-damage_expression = "strength * 0.5"
+damage_expression = "power * coeff + scale * scaling"
 
 [sub_resource type="Resource" id="StatusEffect_poison"]
 script = ExtResource("4_seff")
@@ -361,12 +409,20 @@ paper_doll_front = ExtResource("5_icon")
 stat_modifiers = {
 0: 10.0
 }
+power = 12.0
+scaling = 0.5
+scaling_stat = 0
 slot = 0
 is_two_handed = false
 proc_effects = Array[Resource]([])
 scene = ExtResource("6_scene")
 price = 80
 ```
+
+`power` / `scaling` / `scaling_stat` (Group 4) are what the attack's `power * coeff + scale * scaling`
+expression reads. `scaling_stat` is a Stat int (STR=0, AGI=3, SPI=4). Omit all three only for a
+weapon with no basic attacks (pure spell focus). Smithing later moves `power`, rarity moves `scaling` —
+author the base values here.
 
 ### Additions for proc effects (add before [resource], update proc_effects line)
 

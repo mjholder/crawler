@@ -7,6 +7,7 @@ import { getEntry } from "./resource-index.js";
 
 // Variables available in all expression contexts (from stat_expr_eval.gd)
 const ALLOWED_VARS = new Set([
+  // Bearer stats — present in every expression context.
   "strength",
   "defense",
   "constitution",
@@ -15,6 +16,18 @@ const ALLOWED_VARS = new Set([
   "luck",
   "max_health",
   "health",
+  // Weapon-anatomy context — supplied for weapon basic-attack effects (game.gd builds it
+  // via player.weapon_context_for). The uniform damage form is `power * coeff + scale * scaling`:
+  //   power   — the weapon's flat authored power (WeaponData.power, composed with smithing)
+  //   scaling — the weapon's stat coefficient (WeaponData.scaling, composed with rarity)
+  //   scale   — the bearer's effective value of the weapon's declared scaling_stat
+  //   coeff   — the per-attack shape knob (AttackData.power_coefficient, 1.0 default; buffable)
+  // These are undefined for non-weapon expressions (spells, self-costs, status ticks); the eval
+  // treats a missing var as 0.0 (coeff as 1.0), so only weapon-attack effects should use them.
+  "power",
+  "scaling",
+  "scale",
+  "coeff",
 ]);
 
 // Fields whose values are expression strings that should be linted
