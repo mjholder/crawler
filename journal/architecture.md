@@ -299,6 +299,10 @@ Phase 9 added the **three-layer character identity**: alongside `PlayerClassData
 
 **Phase 16 — action preview (damage/status legibility) (2026-07-22).** First player-facing surfaces for [[ideas/player-facing-legibility]]. A new shared helper `AttackPreview` (`scripts/attack_preview.gd`, `RefCounted`) computes an attack/spell's raw-hit preview from its `effects` against a source node, **reusing `StatExprEval`** so previewed numbers match the runtime hit (non-crit, no armor mitigation). It walks the effects into typed `Line`s (`DAMAGE`/`STATUS`/`HEAL`/`BUFF`) and exposes `total_damage()`, `status_lines()`, and `tooltip_body()`, plus a static `humanize_expression()` (`strength * 0.5` → `STR × 0.5`) that surfaces the scaling stat. Two surfaces consume it: (1) the **target overlay** — the old code-drawn `TargetIndicator` `Node2D` is **removed** and replaced by `scenes/target.tscn` (`Control`, script `target_reticle.gd`); `game._spawn_indicator` instantiates it onto each candidate enemy and calls `set_preview(AttackPreview.compute(active_action, player), enemy)`, filling `TargetLabel` with the computed damage and the `Statuses` strip with status icons (stack badge = existing target stacks + granted); (2) the **action-button tooltip** — `GUI.set_preview_source(player)` gives the GUI a read-only stat source, and `_build_action_tooltip` composes name + target mode + `AttackPreview.tooltip_body()` into each `ActionButtonUI`'s hover tooltip (`configure(..., p_tooltip)`). SELF actions keep the vignette (no overlay); `ALL_ENEMIES` stamps the overlay on every enemy. See [[ideas/player-facing-legibility]].
 
+**Phase 17 — weapon anatomy, item instances & tags (2026-07-31).** Weapon damage splits into two authored axes on `WeaponData`: `power` (flat) and `scaling` (stat coefficient), with a single `scaling_stat` (one-stat-one-job). `StatExprEval` exposes `power`/`scaling`/`scale` variables via an optional `context` dict (defaulting to 0, so stat-only expressions and spells are unaffected); `Effect.apply()` and every override take a trailing `context` and forward it. Shared/inline damage effects are rewritten as ratios `power * K + scale * scaling`; `Player.weapon_context_for(attack_data)` resolves the owning hand's weapon into `{power, scaling, scale, scale_stat}`, built once per hit in `game._on_player_attack_hit`. A new **runtime `ItemInstance`** (`RefCounted`, not on disk) wraps an `EquipmentData` base with `upgrade_level`, `rarity` (`Enums.Rarity`), and rolled `tags` (`TagData`), composing effective power/scaling/modifiers at read time — **THE LAW** (smithing→power, rarity→scaling, tags→both) is enforced in its accessors alone. `Inventory` now stores `ItemInstance` in `_equipped`/`_rings` (bag stays bare `EquipmentData`); `get_equipped()`/`get_all_equipped()`/signals still expose bases for back-compat, while `get_equipped_instance()`/`get_all_equipped_instances()` feed the composition sites (`Player.get_effective_stat`, `weapon_context_for`, `Equipment._on_equipped` procs, `AttackPreview`). Save/load serializes instance dicts with a legacy plain-string fallback. `TagData` reuses the equipment vocabulary plus `power_delta`/`scaling_delta`; mutation is code/debug-only (`smith`/`set_rarity`/`add_tag`) — no loot roll or smithy UI this pass. See [[ideas/weapon-anatomy-power-and-scaling]], [[ideas/equipment-tags-and-riders]].
+
+**Phase 18 — uniform attack anatomy + buffable coefficient (2026-08-01).** A content-migration pass first brought every weapon basic-attack onto Phase 17's ratio form (the mace's `skull_bash` and the rapier's `rend`/`apply_bleed` front hit were still on baked stat expressions; unarmed got a real backing `WeaponData` — `resources/equipment/weapons/fists.tres` — so `Player.weapon_context_for` resolves the empty-hand punch through it; the dead `chop` orphans were deleted). Then the per-attack shape coefficient `K`, previously a literal baked into each expression (`power * 1.2 + …`), was promoted to a real knob: a new `AttackData.power_coefficient` (default 1.0) and a `coeff` variable in `StatExprEval` (whose absent-default is **1.0**, since it multiplies). Every weapon damage expression is now the single uniform form `power * coeff + scale * scaling`. The coefficient is **buffable**: `StatusData` gains `coefficient_add` / `coefficient_mult`, `Combatant` gains `get_attack_coeff_add()` (Σ) / `get_attack_coeff_mult()` (Π), and `weapon_context_for` resolves `coeff = (attack.power_coefficient + add) * mult` per hit — so both additive and multiplicative buffs compose. `AttackCoeffBuffEffect` (`Mode { ADD, MULTIPLY }`) authors such buffs as `stack_decays` statuses, mirroring `BuffEffect`. `AttackPreview.humanize_expression` hides `coeff` at its neutral 1.0 and surfaces it once a buff shifts it (`20 × 1.3 + STR × 0.5`). See [[ideas/weapon-anatomy-power-and-scaling]], [[daily/2026-08-01]].
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -339,6 +343,35 @@ classDiagram
         +HandRestriction hand_restriction
         +Array~Resource~ locked_offhand_attacks
         +Array~Resource~ as_offhand_attacks
+        +float power
+        +float scaling
+        +Enums.Stat scaling_stat
+    }
+    class ItemInstance {
+        <<RefCounted>>
+        +EquipmentData base
+        +int upgrade_level
+        +Enums.Rarity rarity
+        +Array~TagData~ tags
+        +effective_power() float
+        +effective_scaling() float
+        +effective_stat_modifiers() Dictionary
+        +effective_proc_effects() Array
+        +effective_conditional_modifiers() Array
+        +smith(levels)
+        +set_rarity(r)
+        +add_tag(tag)
+        +to_dict() Dictionary
+        +from_dict(d)$ ItemInstance
+    }
+    class TagData {
+        <<Resource>>
+        +String tag_name
+        +float power_delta
+        +float scaling_delta
+        +Dictionary stat_modifiers
+        +Array~Resource~ proc_effects
+        +Array~Resource~ conditional_modifiers
     }
     class TomeData {
         +SpellData spell
@@ -348,6 +381,7 @@ classDiagram
         +String attack_name
         +TargetMode target_mode
         +int cooldown
+        +float power_coefficient
         +Array~Resource~ effects
     }
     class SpellData {
@@ -388,6 +422,11 @@ classDiagram
     }
     class BuffEffect {
         +Enums.Stat stat
+        +String amount_expression
+        +int duration
+    }
+    class AttackCoeffBuffEffect {
+        +Mode mode
         +String amount_expression
         +int duration
     }
@@ -442,6 +481,7 @@ classDiagram
     class Equipment {
         <<Node2D>>
         +EquipmentData data
+        +ItemInstance item_instance
         +Game _game
         +Subscription _subscription
         +get_modifier(stat) float
@@ -465,6 +505,9 @@ classDiagram
         +signal ring_changed
         +signal bag_changed
         +signal consumable_belt_changed
+        +get_equipped(slot) EquipmentData
+        +get_equipped_instance(slot) ItemInstance
+        +get_all_equipped_instances() Array
         +lock_slot(slot)
         +unlock_slot(slot)
         +is_slot_locked(slot) bool
@@ -478,7 +521,11 @@ classDiagram
     EquipmentData o-- ProcDef : proc_effects
     EquipmentData o-- ConditionalModifier : conditional_modifiers
     ProcDef o-- Effect : effect
-    Inventory o-- EquipmentData : stores
+    ItemInstance ..> EquipmentData : wraps base
+    ItemInstance o-- TagData : tags
+    Inventory o-- ItemInstance : equipped/rings
+    Inventory o-- EquipmentData : bag
+    Equipment ..> ItemInstance : item_instance
     PlayerClassData o-- EquipmentData : starting loadout
     PlayerClassData o-- BlessingData : starting_blessings
     PlayerClassData o-- TomeData : starting_tomes
@@ -495,6 +542,7 @@ classDiagram
     Effect <|-- DamageEffect
     Effect <|-- HealEffect
     Effect <|-- BuffEffect
+    Effect <|-- AttackCoeffBuffEffect
     Effect <|-- StatusEffect
     Effect <|-- ChainDamageEffect
     Effect <|-- GatedBleedEffect

@@ -39,8 +39,7 @@
               "title": "2026-07-22"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -203,24 +202,29 @@
       "obsidian-kanban:Create new board": false
     }
   },
-  "active": "3367f3fd0640ef42",
+  "active": "a0611322424ae1bd",
   "lastOpenFiles": [
-    "daily/2026-07-23.md.tmp.5316.1141866f6a38",
-    "design.md.tmp.5316.bb5d70adc951",
-    "daily/2026-07-23.md.tmp.5316.87799a24d25f",
-    "daily/2026-07-23.md.tmp.5316.807c6ffe0feb",
-    "ideas-board.md.tmp.5316.26b9ca75b72d",
-    "ideas-board.md.tmp.5316.e7a8904f09c3",
-    "ideas/pierce-as-percentage-split.md.tmp.5316.4964f409f8d3",
-    "architecture.md.tmp.5316.dcc2370f008c",
-    "design.md.tmp.5316.2cf43248adcc",
-    "design.md.tmp.5316.f6d867e19b0f",
-    "ideas-board.md.tmp.5192.f494bc11ac9d",
+    "daily/2026-08-01.md.tmp.5064.eb267beba00a",
+    "ideas/weapon-anatomy-power-and-scaling.md.tmp.5064.8e86de9522dc",
+    "daily/2026-08-01.md.tmp.5064.678df027e30c",
+    "daily/2026-08-01.md.tmp.5064.95c83e27d71f",
+    "architecture.md.tmp.5064.d55d645604a3",
+    "architecture.md.tmp.5064.1c80baa96c55",
+    "architecture.md.tmp.5064.98c5a5cb3bf6",
+    "architecture.md.tmp.5064.e8214cc3b2c2",
+    "daily/2026-08-01.md.tmp.5064.3a829dcb62d2",
+    "daily/2026-08-01.md.tmp.5064.17cd9d493446",
+    "daily/2026-08-01.md.tmp.5064.9535e6639080",
+    "daily/2026-08-01.md",
+    "daily/2026-07-31.md",
+    "ideas/equipment-tags-and-riders.md",
+    "ideas/weapon-anatomy-power-and-scaling.md",
+    "ideas/mana-as-capacity.md",
+    "daily/2026-07-22.md",
     "ideas/pierce-as-percentage-split.md",
     "daily/2026-07-23.md",
     "daily/2026-05-02.md",
     "daily/2026-07-21.md",
-    "daily/2026-07-22.md",
     "ideas-board.md",
     "ideas/luck-crit-loot-quality.md",
     "ideas/attribute-distribution-leveling.md",
@@ -236,11 +240,6 @@
     "daily/2026-07-10.md",
     "ideas/roguelike-run-structure.md",
     "ideas/group-dialogue-ui-container.md",
-    "ideas/status-effect-consumables.md",
-    "ideas/consumable-belt-growth.md",
-    "ideas/bad-air-lore-thread.md",
-    "ideas/consumable-handling-mid-dungeon.md",
-    "ideas/equipment-locked-in-dungeons.md",
     "canvas/Untitled 2.canvas",
     "canvas/Untitled 1.canvas",
     "canvas/Untitled.canvas",
