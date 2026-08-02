@@ -52,6 +52,9 @@ animations = [{
 [resource]
 script = ExtResource("1_84utr")
 item_name = "Battle Axe"
+power = 20.0
+scaling = 0.5
+scaling_stat = 0
 description = "One Handed axe"
 sprite_frames = SubResource("SpriteFrames_p4cbs")
 paper_doll_front = ExtResource("8_pdf")

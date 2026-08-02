@@ -44,6 +44,9 @@ animations = [{
 [resource]
 script = ExtResource("1_script")
 item_name = "Rapier"
+power = 8.0
+scaling = 0.6
+scaling_stat = 3
 description = "A slender dueling blade. Its needle point slips past armor, and a raking edge leaves lingering wounds."
 sprite_frames = SubResource("SpriteFrames_main")
 paper_doll_front = ExtResource("5_icon")

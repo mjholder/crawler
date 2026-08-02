@@ -15,10 +15,10 @@ var _eval := StatExprEval.new()
 const _DEFAULT_ICON := preload("res://resources/effects/statuses/regen.tres")
 
 
-func apply(source: Node, target: Node, crit_mult: float = 1.0) -> void:
+func apply(source: Node, target: Node, crit_mult: float = 1.0, context: Dictionary = {}) -> void:
 	if target == null or not target.has_method("apply_status"):
 		return
-	var amount := _eval.evaluate(amount_expression, target)
+	var amount := _eval.evaluate(amount_expression, target, context)
 	var data := StatusData.new()
 	data.tag = StringName("buff_" + Enums.Stat.keys()[stat].to_lower())
 	data.display_name = "%s %s" % [_format_amount(amount), Enums.Stat.keys()[stat].capitalize()]

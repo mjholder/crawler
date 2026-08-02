@@ -4,6 +4,16 @@ extends EquipmentData
 @export var attack_sfx: AudioStream
 @export var innate_spells: Array[Resource] = []
 @export var is_two_handed: bool = false
+## --- Weapon anatomy (two tunable damage axes) ---
+## Attacks own only the shape; the weapon owns the numbers. Shared attack effects are authored
+## as ratios ("power * K + scale * scaling"), so one change here re-tunes all of this weapon's
+## attacks coherently. THE LAW: smithing only ever moves `power`, rarity only ever moves
+## `scaling` (see journal/ideas/weapon-anatomy-power-and-scaling.md).
+@export var power: float = 0.0
+@export var scaling: float = 0.0
+## The single stat this weapon scales off — one-stat-one-job. Bound into the neutral `scale`
+## expression variable at eval time, so a STR axe and an AGI dagger can share the same effect.
+@export var scaling_stat: Enums.Stat = Enums.Stat.STRENGTH
 ## Which hand(s) this weapon may be equipped into. Default MAINHAND_ONLY preserves every
 ## existing weapon. EITHER lets the player pick a hand at equip time; OFFHAND_ONLY forces
 ## the offhand.

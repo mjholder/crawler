@@ -44,6 +44,9 @@ animations = [{
 [resource]
 script = ExtResource("1_weapon")
 item_name = "Pyre Scepter"
+power = 12.0
+scaling = 0.5
+scaling_stat = 4
 description = "A blackened rod crowned with a perpetual ember. It hungers to spread its fire — kindle the flame, then unleash it across the field."
 sprite_frames = SubResource("SpriteFrames_main")
 paper_doll_front = ExtResource("8_icon")

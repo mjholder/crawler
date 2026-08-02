@@ -9,7 +9,7 @@ extends Effect
 var _eval := StatExprEval.new()
 
 
-func apply(_source: Node, target: Node, _crit_mult: float = 1.0) -> void:
+func apply(_source: Node, target: Node, _crit_mult: float = 1.0, context: Dictionary = {}) -> void:
 	if target == null or not target.has_method("heal"):
 		return
-	target.heal(_eval.evaluate(heal_expression, target))
+	target.heal(_eval.evaluate(heal_expression, target, context))

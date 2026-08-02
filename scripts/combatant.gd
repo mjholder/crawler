@@ -36,6 +36,24 @@ func get_effective_stat(stat: Enums.Stat) -> float:
 	return base + bonus
 
 
+## Additive attack-coefficient buff from active statuses (0.0 = none). Folded into the `coeff`
+## that Player.weapon_context_for hands each hit: coeff = (base_K + this) * get_attack_coeff_mult().
+func get_attack_coeff_add() -> float:
+	var total: float = 0.0
+	for instance in _active_statuses:
+		total += instance.data.coefficient_add
+	return total
+
+
+## Multiplicative attack-coefficient buff from active statuses (1.0 = none). Product of every
+## active status's `coefficient_mult`; combined with the additive pool and the attack's base K.
+func get_attack_coeff_mult() -> float:
+	var factor: float = 1.0
+	for instance in _active_statuses:
+		factor *= instance.data.coefficient_mult
+	return factor
+
+
 ## Crit chance is effective LUCK as a percent (LCK 45 -> 45%). Linear, no hidden constant —
 ## the crit % literally is the luck number. Enemies with no LUCK never crit (chance 0).
 func roll_crit() -> bool:

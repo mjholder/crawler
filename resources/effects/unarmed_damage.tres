@@ -4,4 +4,4 @@
 
 [resource]
 script = ExtResource("1_script")
-damage_expression = "strength * 0.3"
+damage_expression = "power * coeff + scale * scaling"

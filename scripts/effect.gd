@@ -4,7 +4,9 @@ extends Resource
 ## `crit_mult` scales a critical hit (2.0 on crit, 1.0 otherwise). Rolled once per target by
 ## game.gd and passed to every effect of the hit so damage and stacks double together. Effects
 ## that don't deal damage or apply stacks ignore it.
-func apply(_source: Node, _target: Node, _crit_mult: float = 1.0) -> void:
+## `context` carries weapon-anatomy variables (power/scaling/scale) for expression evaluation;
+## empty for non-weapon sources (spells, statuses, self-buffs), where those vars default to 0.
+func apply(_source: Node, _target: Node, _crit_mult: float = 1.0, _context: Dictionary = {}) -> void:
 	push_warning("Effect.apply not implemented on %s" % get_script().resource_path)
 
 

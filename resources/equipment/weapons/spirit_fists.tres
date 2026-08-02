@@ -43,6 +43,9 @@ animations = [{
 [resource]
 script = ExtResource("1_script")
 item_name = "Spirit Fists"
+power = 10.0
+scaling = 0.5
+scaling_stat = 3
 description = "Wrapped hand-guards channeling inner ki. Strike fast, and step into a flowing haste when the fight demands it."
 sprite_frames = SubResource("SpriteFrames_main")
 paper_doll_front = ExtResource("5_icon")

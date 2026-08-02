@@ -14,8 +14,13 @@ signal belt_size_changed(new_size: int)
 @export var belt_size: int = 2
 
 # --- State ---
-var _equipped: Dictionary = {}       # Enums.Slot -> EquipmentData
-var _rings: Array = []               # Array of EquipmentData or null, length = max_rings
+# Equipped/ring slots hold ItemInstance (base ref + upgrade_level + rarity + tags) so runtime
+# investment survives across a run and round-trips through saves. The bag holds bare
+# EquipmentData bases — bag items carry no runtime state yet (no loot/smithing UI this pass), and
+# equipping one wraps a fresh default instance. Signals and get_equipped()/get_all_equipped()
+# still expose bases for back-compat; composition sites use the *_instance() getters.
+var _equipped: Dictionary = {}       # Enums.Slot -> ItemInstance
+var _rings: Array = []               # Array of ItemInstance or null, length = max_rings
 var _consumable_belt: Array = []     # Array of ConsumableData or null, length = belt_size
 var _bag: Array[EquipmentData] = []
 var _dungeon_locked: bool = false    # true while inside a dungeon; blocks equip/unequip/remove_from_bag
@@ -60,11 +65,11 @@ func equip(slot: Enums.Slot, data: EquipmentData) -> void:
 		return
 	if is_slot_locked(slot):
 		return
-	var old: EquipmentData = _equipped.get(slot, null)
+	var old: ItemInstance = _equipped.get(slot, null)
 	if old != null:
-		add_to_bag(old)
-	_equipped[slot] = data
-	slot_changed.emit(slot, data, old)
+		add_to_bag(old.base)
+	_equipped[slot] = ItemInstance.wrap(data)
+	slot_changed.emit(slot, data, old.base if old != null else null)
 
 
 func unequip(slot: Enums.Slot) -> void:
@@ -72,13 +77,20 @@ func unequip(slot: Enums.Slot) -> void:
 		return
 	if not _equipped.has(slot):
 		return
-	var old: EquipmentData = _equipped[slot]
+	var old: ItemInstance = _equipped[slot]
 	_equipped.erase(slot)
-	add_to_bag(old)
-	slot_changed.emit(slot, null, old)
+	add_to_bag(old.base)
+	slot_changed.emit(slot, null, old.base)
 
 
 func get_equipped(slot: Enums.Slot) -> EquipmentData:
+	var inst: ItemInstance = _equipped.get(slot, null)
+	return inst.base if inst != null else null
+
+
+## The full ItemInstance in a slot (base + upgrade_level + rarity + tags) — for composition sites
+## that need effective power/scaling/modifiers rather than just the base data.
+func get_equipped_instance(slot: Enums.Slot) -> ItemInstance:
 	return _equipped.get(slot, null)
 
 
@@ -89,7 +101,7 @@ func equip_ring(data: EquipmentData) -> bool:
 		return false
 	for i in range(_rings.size()):
 		if _rings[i] == null:
-			_rings[i] = data
+			_rings[i] = ItemInstance.wrap(data)
 			ring_changed.emit(i, data, null)
 			return true
 	return false
@@ -100,11 +112,11 @@ func equip_ring_at(index: int, data: EquipmentData) -> void:
 		return
 	if index < 0 or index >= _rings.size():
 		return
-	var old = _rings[index]
-	_rings[index] = data
+	var old: ItemInstance = _rings[index]
+	_rings[index] = ItemInstance.wrap(data)
 	if old != null:
-		add_to_bag(old)
-	ring_changed.emit(index, data, old)
+		add_to_bag(old.base)
+	ring_changed.emit(index, data, old.base if old != null else null)
 
 
 func unequip_ring(index: int) -> void:
@@ -112,14 +124,18 @@ func unequip_ring(index: int) -> void:
 		return
 	if index < 0 or index >= _rings.size() or _rings[index] == null:
 		return
-	var old = _rings[index]
+	var old: ItemInstance = _rings[index]
 	_rings[index] = null
-	add_to_bag(old)
-	ring_changed.emit(index, null, old)
+	add_to_bag(old.base)
+	ring_changed.emit(index, null, old.base)
 
 
+## Ring bases for display (parallels get_equipped). Length = max_rings, null for empty slots.
 func get_rings() -> Array:
-	return _rings.duplicate()
+	var out: Array = []
+	for inst in _rings:
+		out.append(inst.base if inst != null else null)
+	return out
 
 
 # --- Consumable Belt API ---
@@ -234,12 +250,15 @@ func get_bag() -> Array[EquipmentData]:
 # --- Save / Load ---
 
 func to_save_dict() -> Dictionary:
+	# Equipped/ring slots serialize the full instance (base path + upgrade_level + rarity + tags);
+	# the bag serializes bare base paths. Legacy saves stored plain paths for equipped/rings too —
+	# apply_save_dict still reads those (see _instance_from_save).
 	var equipped: Dictionary = {}
 	for slot in _equipped:
-		equipped[slot as int] = _equipped[slot].resource_path
-	var rings: Array[String] = []
+		equipped[slot as int] = _equipped[slot].to_dict()
+	var rings: Array = []
 	for ring in _rings:
-		rings.append(ring.resource_path if ring != null else "")
+		rings.append(ring.to_dict() if ring != null else {})
 	var belt: Array[String] = []
 	for item in _consumable_belt:
 		belt.append(item.resource_path if item != null else "")
@@ -269,21 +288,17 @@ func apply_save_dict(d: Dictionary) -> void:
 	_rings.resize(saved_rings)
 	_rings.fill(null)
 	for slot_int in d["equipped"]:
-		var path: String = d["equipped"][slot_int]
-		if path.is_empty():
-			continue
-		var data := load(path) as EquipmentData
-		if data != null:
-			_equipped[slot_int] = data
-			slot_changed.emit(slot_int, data, null)
+		var inst := _instance_from_save(d["equipped"][slot_int])
+		if inst != null:
+			_equipped[slot_int] = inst
+			slot_changed.emit(slot_int, inst.base, null)
 	for i in d["rings"].size():
-		var path: String = d["rings"][i]
-		if path.is_empty() or i >= _rings.size():
+		if i >= _rings.size():
 			continue
-		var data := load(path) as EquipmentData
-		if data != null:
-			_rings[i] = data
-			ring_changed.emit(i, data, null)
+		var inst := _instance_from_save(d["rings"][i])
+		if inst != null:
+			_rings[i] = inst
+			ring_changed.emit(i, inst.base, null)
 	for i in d["consumable_belt"].size():
 		var path: String = d["consumable_belt"][i]
 		if path.is_empty() or i >= _consumable_belt.size():
@@ -310,6 +325,20 @@ func apply_save_dict(d: Dictionary) -> void:
 		bag_changed.emit()
 
 
+# Rebuilds an equipped/ring ItemInstance from its saved form. New saves store a dict
+# (ItemInstance.to_dict); legacy saves stored a bare resource-path string — wrap those as a
+# default instance. Empty string / missing base yields null (empty slot).
+func _instance_from_save(entry) -> ItemInstance:
+	if entry is Dictionary:
+		return ItemInstance.from_dict(entry)
+	if entry is String:
+		if (entry as String).is_empty():
+			return null
+		var data := load(entry) as EquipmentData
+		return ItemInstance.wrap(data) if data != null else null
+	return null
+
+
 # --- Utility ---
 
 func clear() -> void:
@@ -323,8 +352,20 @@ func clear() -> void:
 func get_all_equipped() -> Array[EquipmentData]:
 	# Excludes consumables — they grant active effects, not passive stat modifiers
 	var result: Array[EquipmentData] = []
-	for data in _equipped.values():
-		result.append(data)
+	for inst in _equipped.values():
+		result.append(inst.base)
+	for ring in _rings:
+		if ring != null:
+			result.append(ring.base)
+	return result
+
+
+## Every equipped ItemInstance (worn slots + rings), for composition sites that fold effective
+## modifiers (get_effective_stat). Excludes consumables, mirroring get_all_equipped().
+func get_all_equipped_instances() -> Array[ItemInstance]:
+	var result: Array[ItemInstance] = []
+	for inst in _equipped.values():
+		result.append(inst)
 	for ring in _rings:
 		if ring != null:
 			result.append(ring)

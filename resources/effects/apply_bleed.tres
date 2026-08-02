@@ -5,6 +5,6 @@
 
 [resource]
 script = ExtResource("1_script")
-damage_expression = "agility * 0.5"
+damage_expression = "power * coeff + scale * scaling"
 pierce_expression = "0"
 status_data = ExtResource("2_status")

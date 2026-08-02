@@ -11,10 +11,10 @@ extends Effect
 var _eval := StatExprEval.new()
 
 
-func apply(source: Node, target: Node, _crit_mult: float = 1.0) -> void:
+func apply(source: Node, target: Node, _crit_mult: float = 1.0, context: Dictionary = {}) -> void:
 	if target == null or target.get("max_armor") == null:
 		return
-	var amount := _eval.evaluate(amount_expression, source)
+	var amount := _eval.evaluate(amount_expression, source, context)
 	if amount <= 0.0:
 		return
 	var new_max: float = float(target.get("max_armor")) + amount

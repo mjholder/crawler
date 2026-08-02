@@ -478,6 +478,9 @@ func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
 	# but don't fire the bus signal — procs want "hostile hit" semantics, not self-buffs.
 	if attack_data.target_mode != AttackData.TargetMode.SELF:
 		player_attack_hit.emit(attack_data, targets)
+	# Weapon-anatomy context (power/scaling/scale) for this attack's damage expressions; the same
+	# for every target of the hit, so resolve it once.
+	var weapon_ctx := player.weapon_context_for(attack_data)
 	for target in targets:
 		if target == null:
 			continue
@@ -488,7 +491,7 @@ func _on_player_attack_hit(attack_data: AttackData, targets: Array) -> void:
 		for effect_res in attack_data.effects:
 			var effect := effect_res as Effect
 			if effect != null:
-				effect.apply(player, target, crit_mult)
+				effect.apply(player, target, crit_mult, weapon_ctx)
 				if target is Enemy:
 					print("[PLAYER] %s on %s" % [attack_data.attack_name, (target as Enemy).enemy_name])
 

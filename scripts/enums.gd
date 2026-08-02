@@ -48,6 +48,16 @@ enum Slot {
 	# e.g. slot = 5 is HEAD, slot = 6 is OFFHAND
 }
 
+# Item rarity tier. Marks the scaling axis of the anatomy model — rarity only ever moves
+# `scaling` (see journal/ideas/weapon-anatomy-power-and-scaling.md, "THE LAW"). Used by
+# ItemInstance to compose a scaling bonus on top of the weapon's base scaling.
+enum Rarity {
+	COMMON,    # 0
+	UNCOMMON,  # 1
+	RARE,      # 2
+	EPIC       # 3
+}
+
 # Which hand(s) a weapon may be equipped into. Drives the equip UI's slot routing:
 # MAINHAND_ONLY / OFFHAND_ONLY force a slot; EITHER prompts the player to choose.
 enum HandRestriction {

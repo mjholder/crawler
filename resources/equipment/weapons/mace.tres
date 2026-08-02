@@ -43,6 +43,9 @@ animations = [{
 [resource]
 script = ExtResource("1_script")
 item_name = "Warmace"
+power = 24.0
+scaling = 0.4
+scaling_stat = 0
 description = "A blessed flanged mace. Heavy enough to crack a helm and daze the wearer, and consecrated to channel a healer's faith."
 sprite_frames = SubResource("SpriteFrames_main")
 paper_doll_front = ExtResource("5_icon")

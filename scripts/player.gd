@@ -139,6 +139,10 @@ var _cond_eval: StatExprEval = StatExprEval.new()
 
 # Baseline action for an empty hand — a bare-handed punch.
 const _UNARMED: AttackData = preload("res://resources/equipment/weapons/unarmed_strike.tres")
+# The punch is backed by an innate Fists weapon so its power/scaling reach the hit through the
+# same weapon-anatomy path as any equipped weapon (fists aren't equippable, so it stays a bare
+# base — no upgrade/rarity/tags to compose).
+const _FISTS: WeaponData = preload("res://resources/equipment/weapons/fists.tres")
 
 # --- Actions ---
 # Per-hand registries: hand -> {action_name: Callable}. A mainhand "Strike" and an
@@ -417,6 +421,53 @@ func get_hand_attacks(hand: Hand) -> Array:
 
 func get_hand_spells(hand: Hand) -> Array:
 	return _hand_spells[hand]
+
+
+## Weapon-anatomy variables for evaluating an attack's damage expressions: the effective power
+## and scaling of the weapon whose hand owns this attack, plus the live value of that weapon's
+## scaling stat bound to the neutral `scale` var. The empty-hand punch resolves through the innate
+## Fists weapon; other non-weapon attacks (SELF actions with no backing item) return empty, so
+## power/scaling/scale simply default to 0.
+func weapon_context_for(attack_data: AttackData) -> Dictionary:
+	if attack_data == null:
+		return {}
+	var slot := _weapon_slot_owning_attack(attack_data)
+	var ctx: Dictionary
+	if slot == -1:
+		# No equipped weapon owns this attack. The bare-handed punch is still backed by Fists.
+		if attack_data != _UNARMED:
+			return {}
+		ctx = _weapon_context_from(_FISTS.power, _FISTS.scaling, _FISTS.scaling_stat)
+	else:
+		var inst := _inventory.get_equipped_instance(slot)
+		if inst == null or not inst.base is WeaponData:
+			return {}
+		# Effective (composed) power/scaling so smithing, rarity, and tags all reach the hit.
+		ctx = _weapon_context_from(inst.effective_power(), inst.effective_scaling(), inst.scaling_stat())
+	# Per-attack coefficient: the authored base K shifted by any active additive/multiplicative buffs.
+	ctx["coeff"] = (attack_data.power_coefficient + get_attack_coeff_add()) * get_attack_coeff_mult()
+	return ctx
+
+
+## Builds the weapon-anatomy context dict from resolved power/scaling and a scaling stat, binding
+## the neutral `scale` var to that stat's live effective value. Callers add `coeff` per attack.
+func _weapon_context_from(power: float, scaling: float, scale_stat: Enums.Stat) -> Dictionary:
+	return {
+		"power": power,
+		"scaling": scaling,
+		"scale": get_effective_stat(scale_stat),
+		"scale_stat": scale_stat,  # identity, for preview labels (StatExprEval ignores it)
+	}
+
+
+## Which equipped weapon slot's hand holds this attack (WEAPON / OFFHAND), or -1 if neither —
+## unarmed punches and SELF actions from an empty hand have no backing weapon.
+func _weapon_slot_owning_attack(attack_data: AttackData) -> int:
+	if _hand_attacks[Hand.MAINHAND].has(attack_data):
+		return Enums.Slot.WEAPON
+	if _hand_attacks[Hand.OFFHAND].has(attack_data):
+		return Enums.Slot.OFFHAND
+	return -1
 
 
 func execute_action(hand: Hand, action_name: String) -> void:
@@ -1032,6 +1083,9 @@ func _setup_equipment(slot, data: EquipmentData) -> void:
 	if data.scene != null:
 		var node := data.scene.instantiate() as Equipment
 		node.data = data
+		# Named slots carry an ItemInstance so tag-composed procs subscribe; rings pass slot=null.
+		if slot != null:
+			node.item_instance = _inventory.get_equipped_instance(slot)
 		node._game = get_parent() as Game
 		add_child(node)
 		node.play_equip()
@@ -1251,13 +1305,16 @@ func _clear_equipment_nodes() -> void:
 
 func get_effective_stat(stat: Enums.Stat) -> float:
 	var value: float = super.get_effective_stat(stat)
-	for equip_data in _inventory.get_all_equipped():
-		if equip_data.stat_modifiers.has(stat):
-			value += equip_data.stat_modifiers[stat]
+	# Effective modifiers = base + tags, composed per instance (ItemInstance folds tag deltas on
+	# top of the base's stat_modifiers / conditional_modifiers).
+	for inst in _inventory.get_all_equipped_instances():
+		var mods := inst.effective_stat_modifiers()
+		if mods.has(stat):
+			value += mods[stat]
 	if not _evaluating_conditionals:
 		_evaluating_conditionals = true
-		for equip_data in _inventory.get_all_equipped():
-			for cm_res in equip_data.conditional_modifiers:
+		for inst in _inventory.get_all_equipped_instances():
+			for cm_res in inst.effective_conditional_modifiers():
 				var cm := cm_res as ConditionalModifier
 				if cm == null or cm.stat != stat:
 					continue

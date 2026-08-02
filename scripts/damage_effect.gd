@@ -21,11 +21,11 @@ extends Effect
 var _eval := StatExprEval.new()
 
 
-func apply(source: Node, target: Node, crit_mult: float = 1.0) -> void:
+func apply(source: Node, target: Node, crit_mult: float = 1.0, context: Dictionary = {}) -> void:
 	if target == null or not target.has_method("take_damage"):
 		return
-	var dmg := _eval.evaluate(damage_expression, source) * crit_mult
-	target.take_damage(dmg, _eval.evaluate(pierce_expression, source), false, true, crit_mult > 1.0)
+	var dmg := _eval.evaluate(damage_expression, source, context) * crit_mult
+	target.take_damage(dmg, _eval.evaluate(pierce_expression, source, context), false, true, crit_mult > 1.0)
 
 
 ## Tick variant: one scaled hit per turn, multiplied by the status's stack count (poison/bleed/

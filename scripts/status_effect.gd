@@ -8,7 +8,7 @@ extends Effect
 @export var stacks: int = 1
 
 
-func apply(source: Node, target: Node, crit_mult: float = 1.0) -> void:
+func apply(source: Node, target: Node, crit_mult: float = 1.0, _context: Dictionary = {}) -> void:
 	if target == null or status_data == null or not target.has_method("apply_status"):
 		return
 	# A crit doubles applied stacks. apply_status ignores the count for non-STACK policies,

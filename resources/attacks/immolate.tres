@@ -7,7 +7,7 @@
 
 [sub_resource type="Resource" id="DamageEffect_main"]
 script = ExtResource("2_dmg_script")
-damage_expression = "spirit * 0.25"
+damage_expression = "power * coeff + scale * scaling"
 
 [sub_resource type="Resource" id="StatusEffect_burn"]
 script = ExtResource("4_seff")

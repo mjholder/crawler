@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3]
+
+[ext_resource type="Script" path="res://scripts/weapon_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/equipment/weapons/unarmed_strike.tres" id="2_attack"]
+
+[resource]
+script = ExtResource("1_script")
+item_name = "Fists"
+description = "Bare hands — the innate fallback when a hand holds no weapon. Carries the power/scaling that back the unarmed punch."
+slot = 0
+attacks = Array[Resource]([ExtResource("2_attack")])
+power = 0.0
+scaling = 0.3
+scaling_stat = 0

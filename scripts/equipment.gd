@@ -4,6 +4,9 @@ extends Node2D
 # --- Data ---
 
 @export var data: EquipmentData
+## The runtime instance backing this node, set at equip time. When present, procs are drawn from
+## its composed (base + tags) list so tag-added procs subscribe; null falls back to base data.
+var item_instance: ItemInstance = null
 
 # --- Passive State ---
 
@@ -47,11 +50,13 @@ func play_unequip() -> void:
 
 func _on_equipped() -> void:
 	_scale_sprite_to_viewport()
-	if data == null or _game == null or data.proc_effects.is_empty():
+	# Effective procs = base + tags (via the instance); fall back to base data when unwrapped.
+	var procs: Array = item_instance.effective_proc_effects() if item_instance != null else (data.proc_effects if data != null else [])
+	if data == null or _game == null or procs.is_empty():
 		return
 	var owner_node := get_parent()
 	_subscription = Subscription.new()
-	for proc_res in data.proc_effects:
+	for proc_res in procs:
 		var proc := proc_res as ProcDef
 		if proc == null or proc.effect == null or proc.trigger == &"":
 			continue

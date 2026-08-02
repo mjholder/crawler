@@ -10,6 +10,9 @@
 script = ExtResource("1_gjs71")
 attacks = Array[Resource]([ExtResource("2_slash"), ExtResource("3_cleave"), ExtResource("4_flail")])
 item_name = "war_axe"
+power = 20.0
+scaling = 0.5
+scaling_stat = 0
 description = "ware "
 stat_modifiers = {
 0: 20.0

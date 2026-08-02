@@ -8,6 +8,11 @@ enum Persistence { COMBAT, PERSISTENT }
 @export var icon: Texture2D = null
 @export var duration: int = 3
 @export var stat_modifiers: Dictionary = {}
+# Attack-coefficient buff — the `coeff` in `power * coeff + scale * scaling`. While active, the
+# bearer's attacks resolve coeff as (base_K + Σ coefficient_add) * Π coefficient_mult. 0.0 and 1.0
+# are the no-op identities. See Combatant.get_attack_coeff_add / _mult and AttackCoeffBuffEffect.
+@export var coefficient_add: float = 0.0
+@export var coefficient_mult: float = 1.0
 @export var prevents_action: bool = false
 @export var on_apply: Resource = null
 @export var on_tick: Resource = null
