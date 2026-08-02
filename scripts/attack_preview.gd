@@ -43,12 +43,14 @@ static func compute(action: Object, source: Node) -> AttackPreview:
 	var effects: Array = action.get("effects")
 	if effects == null:
 		return preview
-	# Weapon-anatomy context so previewed damage matches the real hit: the composed power/scaling
-	# expressions ("power + scale * scaling") need the acting weapon's numbers. Spells carry no
-	# weapon context and evaluate flat, so only resolve it for weapon attacks.
+	# Anatomy context so previewed damage matches the real hit. Weapon attacks resolve the acting
+	# weapon's power/scaling; spells resolve a flat `power` with no stat term (scale/scaling = 0).
+	# Both feed the same uniform form "power * coeff + scale * scaling".
 	var context: Dictionary = {}
 	if action is AttackData and source != null and source.has_method("weapon_context_for"):
 		context = source.weapon_context_for(action)
+	elif action is SpellData and source != null and source.has_method("spell_context_for"):
+		context = source.spell_context_for(action)
 	var eval := StatExprEval.new()
 	for effect in effects:
 		preview._append_effect(effect, eval, source, context)
@@ -178,6 +180,10 @@ static func humanize_expression(expression: String, context: Dictionary = {}) ->
 			out = out.replace(" * coeff", "").replace(" *coeff", "").replace("* coeff", "").replace("*coeff", "")
 		else:
 			out = _replace_word(out, "coeff", _fmt_num(coeff_val))
+		# A zero scaling coefficient (spells — flat authored power, no stat term) drops the whole
+		# stat term so the label reads as a plain number ("12"), not "12 + scale × 0".
+		if is_equal_approx(context.get("scaling", 0.0), 0.0):
+			out = out.replace(" + scale * scaling", "")
 		# `scaling` before `scale` so the shorter name never clobbers the longer one.
 		out = _replace_word(out, "scaling", _fmt_num(context.get("scaling", 0.0)))
 		out = _replace_word(out, "scale", _ENUM_ABBR.get(context.get("scale_stat", -1), "scale"))

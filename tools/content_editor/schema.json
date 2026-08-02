@@ -989,6 +989,10 @@
 					"type": "float"
 				},
 				{
+					"name": "power",
+					"type": "float"
+				},
+				{
 					"enum_values": {
 						"All Enemies": 1,
 						"Self": 2,

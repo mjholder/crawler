@@ -57,8 +57,8 @@ favorite into a decision rather than a loss.
 **Open:** whether ratio-per-attack lives on `AttackData` or stays embedded in the
 effect expression string.
 
-**Open:** spells sit outside this entirely (flat authored damage, no stat term) — see
-[[ideas/mana-as-capacity]].
+**Resolved (2026-08-01):** spells share the *form* but not the *scaling* — flat authored `power`, stat
+term zeroed. See the Shipped section and [[ideas/mana-as-capacity]].
 
 ## Shipped
 Phase 17 (2026-07-31) — see [[architecture.md]] §4, [[daily/2026-07-31]].
@@ -86,5 +86,7 @@ Phase 17 (2026-07-31) — see [[architecture.md]] §4, [[daily/2026-07-31]].
   old. Still open (needs the smithy UI + economy hook, deliberately parked).
 - Loot-quality (LCK) roll odds that would populate rolled tags on drops — parked in
   [[ideas/luck-crit-loot-quality]]; nothing generates non-default instances yet.
-- Spells stay outside this system (flat authored damage, no stat term) — see
-  [[ideas/mana-as-capacity]].
+- **Spells joined the *form*, not the *scaling* (2026-08-01).** Spells now evaluate the same uniform
+  `power * coeff + scale * scaling`, but with the stat term zeroed — flat authored `power` on
+  `SpellData`, no SPI scaling. One expression for weapons and spells; the difference is that a spell's
+  `scale`/`scaling` are 0. See [[ideas/mana-as-capacity]] and [[daily/2026-08-01]].

@@ -448,6 +448,23 @@ func weapon_context_for(attack_data: AttackData) -> Dictionary:
 	return ctx
 
 
+## Damage-expression variables for a spell cast. Spells share the uniform form
+## `power * coeff + scale * scaling` with weapons, but carry no stat term: `scale`/`scaling` are 0,
+## so a spell's damage is its flat authored `power`. SPI gates mana, not spell power — see
+## journal/ideas/mana-as-capacity.md. `coeff` stays neutral (1.0); spells are flat-authored, not
+## buffed through the attack-coefficient knob.
+func spell_context_for(spell: SpellData) -> Dictionary:
+	if spell == null:
+		return {}
+	return {
+		"power": spell.power,
+		"scaling": 0.0,
+		"scale": 0.0,
+		"scale_stat": -1,  # no scaling stat; keeps the preview label from naming one
+		"coeff": 1.0,
+	}
+
+
 ## Builds the weapon-anatomy context dict from resolved power/scaling and a scaling stat, binding
 ## the neutral `scale` var to that stat's live effective value. Callers add `coeff` per attack.
 func _weapon_context_from(power: float, scaling: float, scale_stat: Enums.Stat) -> Dictionary:

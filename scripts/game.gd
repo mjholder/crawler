@@ -553,6 +553,9 @@ func _refresh_action_bar() -> void:
 
 
 func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
+	# Spell-anatomy context (flat `power`, no stat term) so cast damage expressions resolve to the
+	# spell's authored power; the same for every target, so resolve it once.
+	var spell_ctx := player.spell_context_for(spell)
 	for target in targets:
 		if target == null:
 			continue
@@ -563,7 +566,7 @@ func _on_player_cast_hit(spell: SpellData, targets: Array) -> void:
 		for effect_res in spell.effects:
 			var effect := effect_res as Effect
 			if effect != null:
-				effect.apply(player, target, crit_mult)
+				effect.apply(player, target, crit_mult, spell_ctx)
 				if target is Enemy:
 					print("[PLAYER] %s on %s" % [spell.spell_name, (target as Enemy).enemy_name])
 

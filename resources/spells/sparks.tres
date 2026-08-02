@@ -8,5 +8,6 @@ script = ExtResource("1_script")
 spell_name = "Sparks"
 description = "A free cantrip. Costs no mana but still ends your turn."
 mana_cost = 0.0
+power = 12.0
 target_mode = 0
 effects = Array[Resource]([ExtResource("2_effect")])

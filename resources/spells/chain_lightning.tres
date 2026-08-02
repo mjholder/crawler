@@ -8,6 +8,7 @@ script = ExtResource("1_script")
 spell_name = "Chain Lightning"
 description = "A forking bolt: strikes the target, then arcs to the enemies flanking it for half damage."
 mana_cost = 4.0
+power = 12.0
 target_mode = 0
 cooldown = 2
 effects = Array[Resource]([ExtResource("2_effect")])

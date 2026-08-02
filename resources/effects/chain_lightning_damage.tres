@@ -4,6 +4,6 @@
 
 [resource]
 script = ExtResource("1_script")
-damage_expression = "spirit * 0.5"
+damage_expression = "power * coeff + scale * scaling"
 pierce_expression = "0"
 chain_multiplier = 0.5
