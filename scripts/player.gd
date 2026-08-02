@@ -457,7 +457,10 @@ func spell_context_for(spell: SpellData) -> Dictionary:
 	if spell == null:
 		return {}
 	return {
-		"power": spell.power,
+		# Flat power buffs (get_power_add) apply to casts too — the uniform term is (power + add) * coeff
+		# + scale*scaling. This is a temporary combat buff, NOT SPI scaling, so it does not conflict with
+		# mana-as-capacity's "SPI doesn't scale spell damage" (see journal/ideas/mana-as-capacity.md).
+		"power": spell.power + get_power_add(),
 		"scaling": 0.0,
 		"scale": 0.0,
 		"scale_stat": -1,  # no scaling stat; keeps the preview label from naming one
@@ -469,7 +472,8 @@ func spell_context_for(spell: SpellData) -> Dictionary:
 ## the neutral `scale` var to that stat's live effective value. Callers add `coeff` per attack.
 func _weapon_context_from(power: float, scaling: float, scale_stat: Enums.Stat) -> Dictionary:
 	return {
-		"power": power,
+		# Flat power buffs fold into the base here, so the hit resolves (power + add) * coeff + scale*scaling.
+		"power": power + get_power_add(),
 		"scaling": scaling,
 		"scale": get_effective_stat(scale_stat),
 		"scale_stat": scale_stat,  # identity, for preview labels (StatExprEval ignores it)

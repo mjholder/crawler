@@ -80,6 +80,15 @@ Phase 17 (2026-07-31) — see [[architecture.md]] §4, [[daily/2026-07-31]].
   hit as `(power_coefficient + Σ coefficient_add) * Π coefficient_mult` from active statuses
   (`Combatant.get_attack_coeff_add`/`_mult`). `AttackCoeffBuffEffect` (`ADD`/`MULTIPLY`) authors both
   buff kinds; preview hides `coeff` at 1.0 and shows it when buffed. See [[daily/2026-08-01]].
+- **Shipped 2026-08-02 — `ActionData` base + `power` fully buffable.** Attacks and spells now share an
+  `ActionData` base (`display_name`, `description`, `target_mode`, `cooldown`, `effects`, `icon`,
+  `sound`); the subclass adds only its anatomy knob. `power` gained its missing lever: the term is now
+  `(power + Σ power_add) * coeff + scale * scaling`. **`coeff` IS the multiplicative power lever**
+  (unchanged — reused, not duplicated); the new flat additive `StatusData.power_add` /
+  `Combatant.get_power_add()` folds into the injected `power` var (so no `.tres` expressions changed).
+  `AttackCoeffBuffEffect` generalized to `PowerBuffEffect` (`POWER_ADD` / `COEFF_ADD` / `COEFF_MULT`).
+  The flat buff applies to spells too — a temporary combat buff, not SPI scaling (mild tension with
+  [[ideas/mana-as-capacity]], noted). See [[daily/2026-08-02]].
 
 ## Remaining
 - **Smith transfer/reforge** — move a tag from an old weapon into a higher-tier one, consuming the

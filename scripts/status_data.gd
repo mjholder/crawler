@@ -8,9 +8,12 @@ enum Persistence { COMBAT, PERSISTENT }
 @export var icon: Texture2D = null
 @export var duration: int = 3
 @export var stat_modifiers: Dictionary = {}
-# Attack-coefficient buff — the `coeff` in `power * coeff + scale * scaling`. While active, the
-# bearer's attacks resolve coeff as (base_K + Σ coefficient_add) * Π coefficient_mult. 0.0 and 1.0
-# are the no-op identities. See Combatant.get_attack_coeff_add / _mult and AttackCoeffBuffEffect.
+# Damage buffs on the uniform form `(power + Σ power_add) * coeff + scale * scaling`, where
+# `coeff = (base_K + Σ coefficient_add) * Π coefficient_mult`. power_add is a FLAT bonus added to
+# the base power (independent of weapon power); coefficient_add/_mult are the additive/multiplicative
+# levers on the coefficient (so coeff is the multiplicative power lever). 0.0 and 1.0 are the no-op
+# identities. See Combatant.get_power_add / get_attack_coeff_add / _mult and PowerBuffEffect.
+@export var power_add: float = 0.0
 @export var coefficient_add: float = 0.0
 @export var coefficient_mult: float = 1.0
 @export var prevents_action: bool = false

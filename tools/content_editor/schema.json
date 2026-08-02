@@ -1,41 +1,10 @@
 {
 	"classes": {
-		"AttackCoeffBuffEffect": {
-			"extends": "Effect",
-			"properties": [
-				{
-					"enum_values": {
-						"Add": 0,
-						"Multiply": 1
-					},
-					"name": "mode",
-					"type": "enum"
-				},
-				{
-					"name": "amount_expression",
-					"type": "String"
-				},
-				{
-					"name": "duration",
-					"type": "int"
-				},
-				{
-					"name": "icon",
-					"resource_type": "Texture2D",
-					"type": "Resource"
-				},
-				{
-					"name": "_eval",
-					"type": "Object"
-				}
-			],
-			"script": "res://scripts/attack_coeff_buff_effect.gd"
-		},
-		"AttackData": {
+		"ActionData": {
 			"extends": "",
 			"properties": [
 				{
-					"name": "attack_name",
+					"name": "display_name",
 					"type": "String"
 				},
 				{
@@ -56,8 +25,50 @@
 					"type": "int"
 				},
 				{
+					"element_type": "",
+					"name": "effects",
+					"type": "Array"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "sound",
+					"resource_type": "AudioStream",
+					"type": "Resource"
+				}
+			],
+			"script": "res://scripts/action_data.gd"
+		},
+		"AttackData": {
+			"extends": "ActionData",
+			"properties": [
+				{
 					"name": "power_coefficient",
 					"type": "float"
+				},
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"enum_values": {
+						"All Enemies": 1,
+						"Self": 2,
+						"Single Enemy": 0
+					},
+					"name": "target_mode",
+					"type": "enum"
+				},
+				{
+					"name": "cooldown",
+					"type": "int"
 				},
 				{
 					"element_type": "Effect",
@@ -899,6 +910,38 @@
 			],
 			"script": "res://scripts/player_class_data.gd"
 		},
+		"PowerBuffEffect": {
+			"extends": "Effect",
+			"properties": [
+				{
+					"enum_values": {
+						"Coeff Add": 1,
+						"Coeff Mult": 2,
+						"Power Add": 0
+					},
+					"name": "mode",
+					"type": "enum"
+				},
+				{
+					"name": "amount_expression",
+					"type": "String"
+				},
+				{
+					"name": "duration",
+					"type": "int"
+				},
+				{
+					"name": "icon",
+					"resource_type": "Texture2D",
+					"type": "Resource"
+				},
+				{
+					"name": "_eval",
+					"type": "Object"
+				}
+			],
+			"script": "res://scripts/power_buff_effect.gd"
+		},
 		"ProcDef": {
 			"extends": "",
 			"properties": [
@@ -974,16 +1017,8 @@
 			"script": "res://scripts/skill_check_event_data.gd"
 		},
 		"SpellData": {
-			"extends": "",
+			"extends": "ActionData",
 			"properties": [
-				{
-					"name": "spell_name",
-					"type": "String"
-				},
-				{
-					"name": "description",
-					"type": "String"
-				},
 				{
 					"name": "mana_cost",
 					"type": "float"
@@ -991,6 +1026,14 @@
 				{
 					"name": "power",
 					"type": "float"
+				},
+				{
+					"name": "display_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
 				},
 				{
 					"enum_values": {
@@ -1016,7 +1059,7 @@
 					"type": "Resource"
 				},
 				{
-					"name": "cast_sfx",
+					"name": "sound",
 					"resource_type": "AudioStream",
 					"type": "Resource"
 				}
@@ -1048,6 +1091,10 @@
 					"name": "stat_modifiers",
 					"type": "Dictionary",
 					"value_type": "float"
+				},
+				{
+					"name": "power_add",
+					"type": "float"
 				},
 				{
 					"name": "coefficient_add",
@@ -1444,11 +1491,7 @@
 		}
 	},
 	"enums": {
-		"AttackCoeffBuffEffect.Mode": {
-			"ADD": 0,
-			"MULTIPLY": 1
-		},
-		"AttackData.TargetMode": {
+		"ActionData.TargetMode": {
 			"ALL_ENEMIES": 1,
 			"SELF": 2,
 			"SINGLE_ENEMY": 0
@@ -1529,6 +1572,11 @@
 			"NO_TURN": 0,
 			"PLAYER_TURN": 1,
 			"VICTORY": 6
+		},
+		"PowerBuffEffect.Mode": {
+			"COEFF_ADD": 1,
+			"COEFF_MULT": 2,
+			"POWER_ADD": 0
 		},
 		"StatusData.Persistence": {
 			"COMBAT": 0,

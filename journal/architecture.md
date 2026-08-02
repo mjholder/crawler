@@ -303,6 +303,8 @@ Phase 9 added the **three-layer character identity**: alongside `PlayerClassData
 
 **Phase 18 — uniform attack anatomy + buffable coefficient (2026-08-01).** A content-migration pass first brought every weapon basic-attack onto Phase 17's ratio form (the mace's `skull_bash` and the rapier's `rend`/`apply_bleed` front hit were still on baked stat expressions; unarmed got a real backing `WeaponData` — `resources/equipment/weapons/fists.tres` — so `Player.weapon_context_for` resolves the empty-hand punch through it; the dead `chop` orphans were deleted). Then the per-attack shape coefficient `K`, previously a literal baked into each expression (`power * 1.2 + …`), was promoted to a real knob: a new `AttackData.power_coefficient` (default 1.0) and a `coeff` variable in `StatExprEval` (whose absent-default is **1.0**, since it multiplies). Every weapon damage expression is now the single uniform form `power * coeff + scale * scaling`. The coefficient is **buffable**: `StatusData` gains `coefficient_add` / `coefficient_mult`, `Combatant` gains `get_attack_coeff_add()` (Σ) / `get_attack_coeff_mult()` (Π), and `weapon_context_for` resolves `coeff = (attack.power_coefficient + add) * mult` per hit — so both additive and multiplicative buffs compose. `AttackCoeffBuffEffect` (`Mode { ADD, MULTIPLY }`) authors such buffs as `stack_decays` statuses, mirroring `BuffEffect`. `AttackPreview.humanize_expression` hides `coeff` at its neutral 1.0 and surfaces it once a buff shifts it (`20 × 1.3 + STR × 0.5`). See [[ideas/weapon-anatomy-power-and-scaling]], [[daily/2026-08-01]].
 
+**Phase 19 — `ActionData` base + flat power buff (2026-08-02).** The two things the player can do on a turn are unified: a new `ActionData` (`Resource`) base carries the shared carrier — `display_name`, `description`, `target_mode` (+ the `TargetMode` enum, moved here from `AttackData`), `cooldown`, `effects`, `icon`, `sound` — and `AttackData` / `SpellData` slim to `extends ActionData` plus their one anatomy knob (`power_coefficient`; `power` + `mana_cost`). Content renamed `attack_name`/`spell_name` → `display_name` and `cast_sfx` → `sound` across 25 `.tres`; call sites collapse to a single `.display_name` path and `ActionData.TargetMode`. Damage gains its missing buff lever: the term is now `(power + Σ power_add) * coeff + scale * scaling`, where `coeff` (the multiplicative power lever) is unchanged. `StatusData` gains `power_add`, `Combatant` gains `get_power_add()` (Σ), and `Player.weapon_context_for` / `spell_context_for` fold it into the injected `power` var (so `.tres` expressions are untouched, and the buff reaches both attacks and casts). `AttackCoeffBuffEffect` is generalized to `PowerBuffEffect` (`Mode { POWER_ADD, COEFF_ADD, COEFF_MULT }`). See [[ideas/weapon-anatomy-power-and-scaling]], [[daily/2026-08-02]].
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -376,21 +378,22 @@ classDiagram
     class TomeData {
         +SpellData spell
     }
-    class AttackData {
+    class ActionData {
         <<Resource>>
-        +String attack_name
+        +String display_name
+        +String description
         +TargetMode target_mode
         +int cooldown
-        +float power_coefficient
         +Array~Resource~ effects
+        +Texture2D icon
+        +AudioStream sound
+    }
+    class AttackData {
+        +float power_coefficient
     }
     class SpellData {
-        <<Resource>>
-        +String spell_name
         +float mana_cost
-        +AttackData.TargetMode target_mode
-        +int cooldown
-        +Array~Resource~ effects
+        +float power
     }
     class Effect {
         <<Resource>>
@@ -516,6 +519,8 @@ classDiagram
     EquipmentData <|-- WeaponData
     EquipmentData <|-- ConsumableData
     EquipmentData <|-- TomeData
+    ActionData <|-- AttackData
+    ActionData <|-- SpellData
     Equipment <|-- Weapon
     EquipmentData ..> Equipment : scene instantiates
     EquipmentData o-- ProcDef : proc_effects
@@ -536,8 +541,7 @@ classDiagram
     WeaponData o-- AttackData : attacks
     WeaponData o-- SpellData : innate_spells
     TomeData o-- SpellData : spell
-    AttackData o-- Effect : effects
-    SpellData o-- Effect : effects
+    ActionData o-- Effect : effects
     ConsumableData o-- Effect : effects
     Effect <|-- DamageEffect
     Effect <|-- HealEffect

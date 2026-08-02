@@ -20,10 +20,11 @@ const RESOURCE_SCRIPTS: Array[String] = [
 	"res://scripts/chain_damage_effect.gd",
 	"res://scripts/gated_bleed_effect.gd",
 	"res://scripts/brace_effect.gd",
-	"res://scripts/attack_coeff_buff_effect.gd",
+	"res://scripts/power_buff_effect.gd",
 	"res://scripts/equipment_data.gd",
 	"res://scripts/weapon_data.gd",
 	"res://scripts/consumable_data.gd",
+	"res://scripts/action_data.gd",
 	"res://scripts/attack_data.gd",
 	"res://scripts/enemy_move_data.gd",
 	"res://scripts/enemy_pattern_data.gd",
@@ -51,11 +52,11 @@ const RESOURCE_SCRIPTS: Array[String] = [
 # Scripts whose class-level constants contain enum declarations.
 const ENUM_SCRIPTS: Array[String] = [
 	"res://scripts/enums.gd",
-	"res://scripts/attack_data.gd",
+	"res://scripts/action_data.gd",
 	"res://scripts/enemy_move_data.gd",
 	"res://scripts/consumable_data.gd",
 	"res://scripts/status_data.gd",
-	"res://scripts/attack_coeff_buff_effect.gd",
+	"res://scripts/power_buff_effect.gd",
 ]
 
 

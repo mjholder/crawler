@@ -36,6 +36,17 @@ func get_effective_stat(stat: Enums.Stat) -> float:
 	return base + bonus
 
 
+## Flat additive power buff from active statuses (0.0 = none). Folded into the `power` var that
+## Player.weapon_context_for / spell_context_for hand each hit, so the term resolves as
+## (base_power + this) * coeff + scale * scaling. Independent of weapon power (a flat +N), unlike
+## coefficient_add which scales the coefficient. The additive half of the buffable power lever.
+func get_power_add() -> float:
+	var total: float = 0.0
+	for instance in _active_statuses:
+		total += instance.data.power_add
+	return total
+
+
 ## Additive attack-coefficient buff from active statuses (0.0 = none). Folded into the `coeff`
 ## that Player.weapon_context_for hands each hit: coeff = (base_K + this) * get_attack_coeff_mult().
 func get_attack_coeff_add() -> float:

@@ -125,8 +125,13 @@ effect only carries the shape. The default and expected form is:
 
 So to make one attack hit harder than another on the same weapon, **don't rewrite the
 expression** — leave it as the uniform form and set `power_coefficient` on the `AttackData`
-(1.0 = flat power as-is; 1.3 = +30% of flat power). `coeff` is also a live buff lever:
-`AttackCoeffBuffEffect` (`mode` ADD/MULTIPLY) grants a decaying status that shifts it.
+(1.0 = flat power as-is; 1.3 = +30% of flat power). Damage is live-buffable via `PowerBuffEffect`:
+`POWER_ADD` grants a flat power bonus (folded into `power`), while `COEFF_ADD`/`COEFF_MULT` shift
+`coeff` — each a decaying status.
+
+`AttackData` and `SpellData` share the `ActionData` base (`display_name`, `description`,
+`target_mode`, `cooldown`, `effects`, `icon`, `sound`); the subclass only adds its anatomy knob
+(`power_coefficient` for attacks, flat `power` + `mana_cost` for spells).
 
 Only genuinely non-weapon damage uses raw stat expressions: spells (flat authored damage,
 no stat term), self-costs, and status `on_tick`/`on_apply`/`on_expire` bursts (flat).
