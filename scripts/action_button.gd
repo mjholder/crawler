@@ -17,6 +17,8 @@ var hand: int = -1
 var action_name: String = ""
 var cost: float = 0.0
 var cooldown_remaining: int = 0
+var _disabled: bool = false
+var _highlighted: bool = false
 
 
 func _ready() -> void:
@@ -38,19 +40,32 @@ func configure(p_hand: int, p_action_name: String, p_cost: float, p_cooldown_rem
 	_cooldown_container.visible = p_cooldown_remaining > 0
 	if p_cooldown_remaining > 0:
 		_cooldown_label.text = str(p_cooldown_remaining)
-	# Dim a cooling-down action so it reads distinctly from a plain disabled button.
-	modulate = Color(0.6, 0.6, 0.6) if p_cooldown_remaining > 0 else Color.WHITE
+	_update_visual()
 
 
 func set_disabled(value: bool) -> void:
+	_disabled = value
 	_button.disabled = value
+	_update_visual()
 
 
 func set_highlighted(value: bool) -> void:
-	if value:
+	_highlighted = value
+	_update_visual()
+
+
+## Single source of truth for the button tint. The overlaid label hides the Button's own
+## disabled shading, so dim the whole control instead: highlighted wins, then a cooling-down
+## action reads at 0.6, then a plain disabled action (e.g. its hand is spent) reads darker.
+func _update_visual() -> void:
+	if _highlighted:
 		modulate = Color(1.4, 1.4, 0.6)
+	elif cooldown_remaining > 0:
+		modulate = Color(0.6, 0.6, 0.6)
+	elif _disabled:
+		modulate = Color(0.45, 0.45, 0.45)
 	else:
-		modulate = Color(0.6, 0.6, 0.6) if cooldown_remaining > 0 else Color.WHITE
+		modulate = Color.WHITE
 
 
 func set_focus_enabled(value: bool) -> void:

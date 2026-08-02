@@ -508,11 +508,13 @@ func _populate_hand_group(group: HBoxContainer, hand: int, attacks: Array, spell
 	for atk_res in attacks:
 		var atk := atk_res as AttackData
 		if atk != null:
-			_add_action_button(group, hand, atk.display_name, 0.0, cooldowns.get(atk.display_name, 0), _build_action_tooltip(atk, atk.display_name, atk.target_mode, atk.description))
+			var atk_cd: int = cooldowns.get(atk.display_name, 0)
+			_add_action_button(group, hand, atk.display_name, 0.0, atk_cd, _build_action_tooltip(atk, atk.display_name, atk.target_mode, atk.description, atk_cd))
 	for spell_res in spells:
 		var spell := spell_res as SpellData
 		if spell != null:
-			_add_action_button(group, hand, spell.display_name, spell.mana_cost, cooldowns.get(spell.display_name, 0), _build_action_tooltip(spell, spell.display_name, spell.target_mode, spell.description))
+			var spell_cd: int = cooldowns.get(spell.display_name, 0)
+			_add_action_button(group, hand, spell.display_name, spell.mana_cost, spell_cd, _build_action_tooltip(spell, spell.display_name, spell.target_mode, spell.description, spell_cd))
 
 
 func _add_action_button(group: HBoxContainer, hand: int, action_name: String, cost: float, cooldown_remaining: int = 0, tooltip: String = "") -> void:
@@ -534,11 +536,16 @@ const _TARGET_MODE_LABEL := {
 }
 
 
-## Multi-line hover tooltip for an action: name, target mode, then the per-effect breakdown
-## (humanized scaling expression + computed value) from the shared AttackPreview.
-func _build_action_tooltip(action_data: Object, action_name: String, target_mode: int, description: String) -> String:
+## Multi-line hover tooltip for an action: name, target mode, cooldown, then the per-effect
+## breakdown (humanized scaling expression + computed value) from the shared AttackPreview.
+func _build_action_tooltip(action_data: Object, action_name: String, target_mode: int, description: String, cooldown_remaining: int = 0) -> String:
 	var text := action_name
 	text += "\nTarget: %s" % _TARGET_MODE_LABEL.get(target_mode, "?")
+	var cooldown: int = action_data.cooldown if "cooldown" in action_data else 0
+	if cooldown > 0:
+		text += "\nCooldown: %d turn%s" % [cooldown, "" if cooldown == 1 else "s"]
+		if cooldown_remaining > 0:
+			text += " (%d remaining)" % cooldown_remaining
 	if description != "":
 		text += "\n%s" % description
 	if _preview_source != null:
