@@ -22,7 +22,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 
 import { readResource, writeResource } from "./godot.js";
-import { getSchema, getAllProperties, type PropDescriptor } from "./schema.js";
+import { getSchema, getAllProperties, invalidateSchema, type PropDescriptor } from "./schema.js";
 import {
   buildIndex,
   listByClassWithSubclasses,
@@ -129,6 +129,27 @@ server.registerTool(
     if (!schema.classes[cls]) return fail(`Unknown class: ${cls}`);
     const properties = getAllProperties(cls, schema);
     return json({ class: cls, script: schema.classes[cls].script, properties, enums: referencedEnums(properties) });
+  }
+);
+
+server.registerTool(
+  "refresh_schema",
+  {
+    title: "Refresh schema from disk",
+    description:
+      "Reload schema.json from disk, picking up classes/fields added since the server started (e.g. after " +
+      "running `make schema`). No Godot on the hot path — this only re-reads the cached file. Run this if " +
+      "get_schema / write_resource reports 'Unknown class' for a class you just added. Returns the class count.",
+    inputSchema: {},
+  },
+  async () => {
+    invalidateSchema();
+    const schema = getSchema();
+    return json({
+      ok: true,
+      classes: Object.keys(schema.classes).length,
+      enums: Object.keys(schema.enums).length,
+    });
   }
 );
 

@@ -30,8 +30,12 @@ func apply(source: Node, target: Node, crit_mult: float = 1.0, context: Dictiona
 
 ## Tick variant: one scaled hit per turn, multiplied by the status's stack count (poison/bleed/
 ## burn). A 3-damage poison at 3 stacks deals 9 in a single take_damage call — not three ticks.
+## A PotencyRider's `potency` adds flat per-stack damage before the stack multiply, so it deepens
+## every tick (harder ticks) without touching lifetime (stacks) — the orthogonal DoT lever.
 func apply_tick(source: Node, target: Node, instance: StatusInstance) -> void:
 	if target == null or not target.has_method("take_damage"):
 		return
 	var stacks: int = instance.stacks if instance != null else 1
-	target.take_damage(_eval.evaluate(damage_expression, source) * float(stacks), _eval.evaluate(pierce_expression, source), bypass_armor, false)
+	var potency: int = instance.potency if instance != null else 0
+	var per_stack := _eval.evaluate(damage_expression, source) + float(potency)
+	target.take_damage(per_stack * float(stacks), _eval.evaluate(pierce_expression, source), bypass_armor, false)

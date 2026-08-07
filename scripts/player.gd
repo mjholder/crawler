@@ -445,6 +445,11 @@ func weapon_context_for(attack_data: AttackData) -> Dictionary:
 		return {}
 	# Per-attack coefficient: the authored base K shifted by any active additive/multiplicative buffs.
 	ctx["coeff"] = (attack_data.power_coefficient + get_attack_coeff_add()) * get_attack_coeff_mult()
+	# Stack-bonus riders add flat stacks to STACK-policy statuses this hit applies; potency riders add
+	# flat per-stack tick damage. StatusEffect reads both off the context and threads them onto the
+	# StatusInstance. StatExprEval ignores the extra keys, so damage expressions are unaffected.
+	ctx["bonus_stacks"] = inst.stack_bonus() if inst != null else 0
+	ctx["potency_bonus"] = inst.potency_bonus() if inst != null else 0
 	return ctx
 
 
@@ -1063,6 +1068,12 @@ func _build_hand_actions(hand: Hand, slot: Enums.Slot) -> void:
 	elif data is WeaponData:
 		for spell_res in (data as WeaponData).innate_spells:
 			granted = _register_hand_spell(hand, spell_res as SpellData) or granted
+	# Innate-spell riders grant a hand-local castable that bypasses prep slots (rarity-gated inside
+	# the instance). _do_cast resolves from _hand_spells[hand], so registering here is sufficient.
+	var inst := _inventory.get_equipped_instance(slot)
+	if inst != null:
+		for spell in inst.granted_innate_spells():
+			granted = _register_hand_spell(hand, spell as SpellData) or granted
 	if not granted:
 		_register_hand_attack(hand, _UNARMED)
 

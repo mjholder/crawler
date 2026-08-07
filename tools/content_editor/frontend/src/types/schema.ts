@@ -19,6 +19,9 @@ export interface ClassDescriptor {
 export interface GameSchema {
   classes: Record<string, ClassDescriptor>;
   enums: Record<string, Record<string, number>>;
+  // Names of the lifecycle-bus signals declared on game.gd; drives the
+  // subscriptions widget's signal dropdown.
+  lifecycle_signals?: string[];
 }
 
 /** All properties for a class, parent props first (matches get_property_list). */
@@ -41,6 +44,8 @@ export function getAllProperties(
 export const CONTENT_TYPES = [
   { label: "Weapons",      cls: "WeaponData",      dir: "res://resources/equipment/weapons/" },
   { label: "Armor & Rings",cls: "EquipmentData",   dir: "res://resources/equipment/armor/" },
+  { label: "Tags",         cls: "TagData",          dir: "res://resources/tags/" },
+  { label: "Riders",       cls: "RiderData",        dir: "res://resources/riders/" },
   { label: "Attacks",      cls: "AttackData",       dir: "res://resources/attacks/" },
   { label: "Enemy Patterns",cls: "EnemyPatternData", dir: "res://resources/enemy_patterns/" },
   { label: "Enemy Moves",  cls: "EnemyMoveData",    dir: "res://resources/enemy_moves/" },
@@ -48,6 +53,7 @@ export const CONTENT_TYPES = [
   { label: "Classes",      cls: "PlayerClassData",  dir: "res://resources/classes/" },
   { label: "Backgrounds",  cls: "BackgroundData",   dir: "res://resources/backgrounds/" },
   { label: "Patron Saints",cls: "PatronSaintData",  dir: "res://resources/patron_saints/" },
+  { label: "Blessings",    cls: "BlessingData",     dir: "res://resources/blessings/" },
   { label: "Shops",        cls: "ShopData",         dir: "res://resources/shops/" },
   { label: "Dialogues",    cls: "DialogueData",     dir: "res://resources/dialogue/" },
   { label: "Combat Events",  cls: "CombatEventData",    dir: "res://resources/events/combat/" },

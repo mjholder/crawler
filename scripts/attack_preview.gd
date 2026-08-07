@@ -65,7 +65,10 @@ func _append_effect(effect: Resource, eval: StatExprEval, source: Node, context:
 	if effect is BurstDamageEffect:
 		return
 	if effect is StatusEffect:
-		_add_status((effect as StatusEffect).status_data, (effect as StatusEffect).stacks)
+		# Fold in the equipped weapon's stack-bonus riders so the preview reflects the real applied
+		# count (a Venomous +1 turns a 1-stack poison into 2), matching StatusEffect.apply.
+		var stack_bonus := int(context.get("bonus_stacks", 0))
+		_add_status((effect as StatusEffect).status_data, (effect as StatusEffect).stacks + stack_bonus)
 	elif effect is GatedBleedEffect:
 		_add_damage(effect.damage_expression, eval, source, effect.pierce_expression, context)
 		_add_status(effect.status_data, 1)
@@ -160,7 +163,12 @@ func _status_line_text(line: Line) -> String:
 	var text := "Applies %s" % line.status_data.display_name
 	if line.stacks > 1:
 		text += " x%d" % line.stacks
-	if line.status_data.duration != -1:
+	# A stack-decaying DoT's lifetime IS its stack count (poison: 2 stacks -> 2 turns), so preview the
+	# stacks, not the authored `duration` (which such statuses ignore). Non-decaying statuses live for
+	# `duration`. Mirrors the live status readout (gui._status_tooltip) so the two never disagree.
+	if line.status_data.stack_decays:
+		text += " (%d)" % maxi(line.stacks, 1)
+	elif line.status_data.duration != -1:
 		text += " (%d)" % line.status_data.duration
 	return text
 

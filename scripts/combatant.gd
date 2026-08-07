@@ -75,13 +75,16 @@ func roll_crit() -> bool:
 ## instance per tag: re-applying bumps that instance's intensity rather than adding a parallel one.
 ## A stack-decaying status's lifetime IS its stack count (3 stacks -> 3 turns); others live for
 ## `duration` and let stacks scale per-tick strength. A 3-stack burn lands as one instance at 3.
-func apply_status(data: StatusData, source: Node, stacks: int = 1) -> void:
+func apply_status(data: StatusData, source: Node, stacks: int = 1, potency: int = 0) -> void:
 	if data == null:
 		return
 	var grant: int = maxi(stacks, 1)
 	for instance in _active_statuses:
 		if instance.data.tag == data.tag:
 			instance.stacks += grant
+			# Potency is a per-application intensity, not a pool: keep the strongest edge that hit,
+			# rather than summing (two poison weapons shouldn't stack per-tick damage without limit).
+			instance.potency = maxi(instance.potency, potency)
 			# Decaying statuses are drained by ticks, so their lifetime tracks the stack count;
 			# others refresh their fixed duration.
 			instance.turns_remaining = instance.stacks if data.stack_decays else data.duration
@@ -92,6 +95,7 @@ func apply_status(data: StatusData, source: Node, stacks: int = 1) -> void:
 	var entry := StatusInstance.new()
 	entry.data = data
 	entry.stacks = grant
+	entry.potency = potency
 	# A stack-decaying status lives one tick per stack (fresh = stacks); others use `duration`.
 	entry.turns_remaining = entry.stacks if data.stack_decays else data.duration
 	entry.source = source

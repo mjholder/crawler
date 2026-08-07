@@ -15,6 +15,8 @@ extends DamageEffect
 func apply_tick(source: Node, target: Node, instance: StatusInstance) -> void:
 	if instance == null or target == null or not target.has_method("take_damage"):
 		return
-	var per_turn := _eval.evaluate(damage_expression, source)
+	# Potency deepens each per-turn bite (harder ticks), same as the poison/bleed tick — added before
+	# the turn/stack multiplies so a PotencyRider raises the whole burst without extending it.
+	var per_turn := _eval.evaluate(damage_expression, source) + float(instance.potency)
 	var pierce := _eval.evaluate(pierce_expression, source)
 	target.take_damage(per_turn * float(instance.turns_remaining) * float(instance.stacks), pierce, false, false)

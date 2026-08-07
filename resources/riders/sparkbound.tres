@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="InnateSpellRider" format=3]
+
+[ext_resource type="Script" path="res://scripts/innate_spell_rider.gd" id="1_script"]
+[ext_resource type="Resource" path="res://resources/spells/sparks.tres" id="2_spell"]
+
+[resource]
+script = ExtResource("1_script")
+rider_name = "Sparkbound"
+description = "A restless charge lives in the metal. It answers your hand with a spark you never had to prepare."
+min_rarity = 2
+spell = ExtResource("2_spell")

@@ -33,6 +33,9 @@ export interface ClassDescriptor {
 export interface GameSchema {
   classes: Record<string, ClassDescriptor>;
   enums: Record<string, Record<string, number>>;
+  // Names of the lifecycle-bus signals declared on game.gd; drives the
+  // subscriptions widget's signal dropdown in the editor.
+  lifecycle_signals?: string[];
 }
 
 const SCHEMA_PATH = join(PROJECT_ROOT, "tools/content_editor/schema.json");

@@ -305,6 +305,12 @@ Phase 9 added the **three-layer character identity**: alongside `PlayerClassData
 
 **Phase 19 — `ActionData` base + flat power buff (2026-08-02).** The two things the player can do on a turn are unified: a new `ActionData` (`Resource`) base carries the shared carrier — `display_name`, `description`, `target_mode` (+ the `TargetMode` enum, moved here from `AttackData`), `cooldown`, `effects`, `icon`, `sound` — and `AttackData` / `SpellData` slim to `extends ActionData` plus their one anatomy knob (`power_coefficient`; `power` + `mana_cost`). Content renamed `attack_name`/`spell_name` → `display_name` and `cast_sfx` → `sound` across 25 `.tres`; call sites collapse to a single `.display_name` path and `ActionData.TargetMode`. Damage gains its missing buff lever: the term is now `(power + Σ power_add) * coeff + scale * scaling`, where `coeff` (the multiplicative power lever) is unchanged. `StatusData` gains `power_add`, `Combatant` gains `get_power_add()` (Σ), and `Player.weapon_context_for` / `spell_context_for` fold it into the injected `power` var (so `.tres` expressions are untouched, and the buff reaches both attacks and casts). `AttackCoeffBuffEffect` is generalized to `PowerBuffEffect` (`Mode { POWER_ADD, COEFF_ADD, COEFF_MULT }`). See [[ideas/weapon-anatomy-power-and-scaling]], [[daily/2026-08-02]].
 
+**Phase 20 — equipment riders (2026-08-03).** The rider half of [[ideas/equipment-tags-and-riders]] — binary, rarity-gated behavior, the non-numeric counterpart to `TagData`. A polymorphic `RiderData` family: the base carries `rider_name` / `description` / `min_rarity` (default `RARE`), and two subclasses carry behavior — `StackBonusRider` (`bonus_stacks`) and `InnateSpellRider` (`spell`). `ItemInstance` gains a `riders` array composed like `tags`, but the **rarity gate is enforced in one accessor**: `effective_riders()` returns only riders whose `min_rarity <= rarity`, and `stack_bonus()` (Σ `StackBonusRider.bonus_stacks`) / `granted_innate_spells()` (Σ `InnateSpellRider.spell`) read only through it — a smithed common never gains a rider. **Stack rider** threads through the weapon context: `Player.weapon_context_for` sets `ctx["bonus_stacks"] = inst.stack_bonus()`, and `StatusEffect.apply` folds it in *before* the crit multiply (`int((stacks + bonus) * crit_mult)`), so a crit doubles `(base + bonus)` together; scope is statuses applied through the weapon's *attack* effects (proc-applied statuses carry no context, unaffected). **Innate-spell rider** is hand-local: `Player._build_hand_actions` registers `granted_innate_spells()` into `_hand_spells[hand]` (where `_do_cast` resolves), bypassing prep slots with no repertoire changes. Save/load serializes rider resource-paths alongside tags (legacy saves without the key load fine). Mutation is code/debug-only (`add_rider`) — no loot roll or UI. Examples: `resources/riders/venomous.tres`, `resources/riders/sparkbound.tres`. See [[ideas/equipment-tags-and-riders]], [[daily/2026-08-03]].
+
+**Phase 21 — baked equipment payload + tag/rider tooling (2026-08-04).** `EquipmentData` gains three authoring-time fields — `base_rarity` (`Enums.Rarity`), `default_tags: Array[TagData]`, `default_riders: Array[RiderData]` — so a specific piece of gear can ship as a fixed / named magic item. `ItemInstance.wrap()` (the fresh-item factory) seeds them onto the new instance (`rarity = base.base_rarity`; `tags`/`riders` = duplicated base defaults); seeding lives **only** in `wrap()`, never in `_init()`/`from_dict()`, so a reloaded save stays authoritative and never double-applies. `base_rarity` exists because riders are rarity-gated — a fixed item must declare the rarity that unlocks its baked riders. Seeded payload is indistinguishable from rolled payload downstream, so THE LAW is unchanged. Content tooling caught up in the same pass: `TagData` was missing from `schema.json` (never added to the `export_schema.gd` allowlist) — added, plus a `TagData` annotations entry, `CONTENT_TYPES` rows for Tags/Riders, a rider-subclass picker in the editor's ＋New flow, and a `refresh_schema` MCP tool that re-reads `schema.json` from disk without restarting the sidecar. Example fixed item: `resources/equipment/weapons/serpents_kiss.tres` (RARE, bakes Venomous). See [[design.md]] — Equipment may bake fixed tags/riders, [[daily/2026-08-04]].
+
+**Phase 22 — DoT riders split into two orthogonal levers (2026-08-04).** On a `stack_decays` DoT the single `stacks` number is both lifetime and per-tick multiplier, so `StackBonusRider` (`bonus_stacks`) read as both "longer" and "harder." Added **`PotencyRider`** (`potency_bonus`) as the second lever: flat **per-stack tick damage**, same duration. `ItemInstance.potency_bonus()` (Σ through the same `effective_riders()` gate) feeds `Player.weapon_context_for` → `ctx["potency_bonus"]` → `StatusEffect.apply` → `Combatant.apply_status(…, potency)`, which stores it on a new persistent `StatusInstance.potency` (weapon context is gone by tick time). `DamageEffect`/`BurstDamageEffect.apply_tick` add it per stack **before** the stack multiply; it is *not* crit-scaled (crit deepens stacks) and re-application keeps the max. The attack preview (`AttackPreview`) was also corrected to fold the weapon's `bonus_stacks` into the shown count and to display a `stack_decays` status's real lifetime (= stacks) rather than its authored `duration`, matching the live `gui._status_tooltip` readout. Content: `resources/riders/virulent.tres` (PotencyRider), now baked on Serpent's Kiss; `venomous.tres` stays a StackBonusRider (the "longer" lever). See [[design.md]] — DoT riders split, [[daily/2026-08-04]].
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -325,6 +331,9 @@ classDiagram
         +int bonus_prep_slots
         +float bonus_mana_regen
         +Array~StringName~ affinity_tags
+        +Enums.Rarity base_rarity
+        +Array~TagData~ default_tags
+        +Array~RiderData~ default_riders
     }
     class ProcDef {
         <<Resource>>
@@ -355,14 +364,19 @@ classDiagram
         +int upgrade_level
         +Enums.Rarity rarity
         +Array~TagData~ tags
+        +Array~RiderData~ riders
         +effective_power() float
         +effective_scaling() float
         +effective_stat_modifiers() Dictionary
         +effective_proc_effects() Array
         +effective_conditional_modifiers() Array
+        +effective_riders() Array
+        +stack_bonus() int
+        +granted_innate_spells() Array
         +smith(levels)
         +set_rarity(r)
         +add_tag(tag)
+        +add_rider(rider)
         +to_dict() Dictionary
         +from_dict(d)$ ItemInstance
     }
@@ -374,6 +388,20 @@ classDiagram
         +Dictionary stat_modifiers
         +Array~Resource~ proc_effects
         +Array~Resource~ conditional_modifiers
+    }
+    class RiderData {
+        <<Resource>>
+        +String rider_name
+        +Enums.Rarity min_rarity
+    }
+    class StackBonusRider {
+        +int bonus_stacks
+    }
+    class PotencyRider {
+        +int potency_bonus
+    }
+    class InnateSpellRider {
+        +SpellData spell
     }
     class TomeData {
         +SpellData spell
@@ -525,9 +553,16 @@ classDiagram
     EquipmentData ..> Equipment : scene instantiates
     EquipmentData o-- ProcDef : proc_effects
     EquipmentData o-- ConditionalModifier : conditional_modifiers
+    EquipmentData o-- TagData : default_tags
+    EquipmentData o-- RiderData : default_riders
     ProcDef o-- Effect : effect
     ItemInstance ..> EquipmentData : wraps base
     ItemInstance o-- TagData : tags
+    ItemInstance o-- RiderData : riders
+    RiderData <|-- StackBonusRider
+    RiderData <|-- PotencyRider
+    RiderData <|-- InnateSpellRider
+    InnateSpellRider ..> SpellData : grants
     Inventory o-- ItemInstance : equipped/rings
     Inventory o-- EquipmentData : bag
     Equipment ..> ItemInstance : item_instance
@@ -573,6 +608,8 @@ classDiagram
         <<Resource>>
         +StatusData data
         +int turns_remaining
+        +int stacks
+        +int potency
         +Node source
         +Subscription _subscription
     }

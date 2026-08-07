@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="PlayerClassData" format=3]
 
 [ext_resource type="Script" path="res://scripts/player_class_data.gd" id="1_script"]
-[ext_resource type="Resource" path="res://resources/equipment/weapons/rapier.tres" id="2_new"]
+[ext_resource type="Resource" path="res://resources/equipment/weapons/serpents_kiss.tres" id="2_new"]
 [ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_gauntlets.tres" id="3_new"]
 [ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_sabatons.tres" id="4_new"]
 [ext_resource type="Resource" path="res://resources/equipment/armor/leather/leather_greaves.tres" id="5_new"]

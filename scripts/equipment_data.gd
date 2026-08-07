@@ -13,6 +13,15 @@ extends Resource
 @export var slot: Enums.Slot = Enums.Slot.WEAPON
 @export var is_ring: bool = false
 @export var price: int = 0
+## Fixed / named magic items: baked-in payload seeded onto a fresh ItemInstance (ItemInstance.wrap).
+## These are authoring-time defaults, not rolled loot — but seeded tags/riders behave identically to
+## rolled ones (compose at read time; the rider rarity gate is unchanged). Seeding happens for fresh
+## items only; save/load stays authoritative, so it never double-applies. See item_instance.gd.
+## base_rarity is the fresh-item rarity floor — required so a baked rider clears its min_rarity gate
+## (a RARE rider on a COMMON item is inert).
+@export var base_rarity: Enums.Rarity = Enums.Rarity.COMMON
+@export var default_tags: Array[TagData] = []
+@export var default_riders: Array[RiderData] = []
 ## Hand actions this item grants when equipped. In dual-action combat these become the
 ## action group for the hand holding this item (mainhand = WEAPON slot, offhand = OFFHAND).
 @export var attacks: Array[Resource] = []  # Array[AttackData]

@@ -12,6 +12,11 @@
     "locked_offhand_attacks": { "element_type": "AttackData" },
     "as_offhand_attacks": { "element_type": "AttackData" }
   },
+  "TagData": {
+    "stat_modifiers": { "key_type": "Enums.Stat", "value_type": "float" },
+    "proc_effects": { "element_type": "ProcDef" },
+    "conditional_modifiers": { "element_type": "ConditionalModifier" }
+  },
   "ConsumableData": {
     "effects": { "element_type": "Effect" }
   },

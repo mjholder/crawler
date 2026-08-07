@@ -4,6 +4,7 @@ import { getAllProperties } from "../types/schema.js";
 import { FIELD_VISIBILITY } from "../types/fieldVisibility.js";
 import { api } from "../api.js";
 import { FieldRenderer, FormRow } from "./FieldRenderer.js";
+import { LineageBuilder } from "./LineageBuilder.js";
 import { WhereUsed } from "./WhereUsed.js";
 
 interface Props {
@@ -117,6 +118,14 @@ export function ResourceForm({ resPath, schema, onNavigate }: Props) {
 
       {/* Fields */}
       <div style={styles.fields}>
+        {cls === "PatronSaintData" && (
+          <LineageBuilder
+            data={data}
+            updateField={updateField}
+            schema={schema}
+            onNavigate={onNavigate}
+          />
+        )}
         {props.map((prop) => (
           <FormRow key={prop.name} label={prop.name}>
             <FieldRenderer
@@ -125,6 +134,7 @@ export function ResourceForm({ resPath, schema, onNavigate }: Props) {
               onChange={(v) => updateField(prop.name, v)}
               schema={schema}
               onNavigate={onNavigate}
+              ownerClass={cls}
             />
           </FormRow>
         ))}

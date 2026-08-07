@@ -9,6 +9,12 @@ extends Resource
 # the remaining lifetime (a crit doubles it, so a crit stun lasts twice as long).
 @export var stacks: int = 1
 
+# Flat per-stack bonus added to this DoT's tick damage, seeded from a PotencyRider at apply time and
+# kept here so it survives across ticks (the weapon context is gone by tick time). 0 = plain. On
+# re-application the strongest potency seen wins (the deepest venom stays in the wound). Orthogonal to
+# stacks: potency raises how hard each tick bites, stacks how long it bites for. See DamageEffect.apply_tick.
+@export var potency: int = 0
+
 # Not exported — Node refs can't be serialized. After a save/load, source is null
 # and StatExprEval falls back to zeros for source stats. Current tick effects
 # (poison "3", regen "5") use flat expressions, so this is safe for all authored statuses.

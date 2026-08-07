@@ -36,13 +36,35 @@ export const FIELD_VISIBILITY: Record<string, FieldPredicate> = {
       default:                       return true;
     }
   },
+
+  PatronSaintData: (propName) => {
+    // A saint's lineage_id and tiers are owned by the dedicated LineageBuilder
+    // panel (rendered above the generic fields), so hide them from the generic
+    // form to avoid double-editing.
+    return propName !== "lineage_id" && propName !== "tiers";
+  },
 };
+
+// Override the widget used for a specific field, bypassing the type-based
+// dispatch in FieldRenderer.  Key format: "ClassName.propName"  Value: a widget
+// id the renderer knows how to build.  Registered here (as plain strings, not
+// components) so this module stays free of import cycles with FieldRenderer.
+export const WIDGET_OVERRIDES: Record<string, string> = {
+  "BlessingData.subscriptions": "subscriptions",
+  "StatusData.subscriptions": "subscriptions",
+};
+
+export function getWidgetOverride(cls: string | undefined, propName: string): string | undefined {
+  if (!cls) return undefined;
+  return WIDGET_OVERRIDES[`${cls}.${propName}`];
+}
 
 // Override the directory scanned for a Resource-typed field.
 // Key format: "ClassName.propName"  Value: res:// directory path (trailing slash).
 export const FIELD_DIR_OVERRIDES: Record<string, string> = {
   "FloorSlot.event": "res://resources/events/",
   "WeightedEntry.event": "res://resources/events/",
+  "PatronSaintData.tiers": "res://resources/patron_saints/tiers/",
 };
 
 export function getFieldDirOverride(cls: string, propName: string): string | undefined {

@@ -407,6 +407,26 @@
 					"type": "int"
 				},
 				{
+					"enum_values": {
+						"Common": 0,
+						"Epic": 3,
+						"Rare": 2,
+						"Uncommon": 1
+					},
+					"name": "base_rarity",
+					"type": "enum"
+				},
+				{
+					"element_type": "TagData",
+					"name": "default_tags",
+					"type": "Array"
+				},
+				{
+					"element_type": "RiderData",
+					"name": "default_riders",
+					"type": "Array"
+				},
+				{
 					"element_type": "AttackData",
 					"name": "attacks",
 					"type": "Array"
@@ -664,6 +684,26 @@
 					"type": "int"
 				},
 				{
+					"enum_values": {
+						"Common": 0,
+						"Epic": 3,
+						"Rare": 2,
+						"Uncommon": 1
+					},
+					"name": "base_rarity",
+					"type": "enum"
+				},
+				{
+					"element_type": "TagData",
+					"name": "default_tags",
+					"type": "Array"
+				},
+				{
+					"element_type": "RiderData",
+					"name": "default_riders",
+					"type": "Array"
+				},
+				{
 					"element_type": "AttackData",
 					"name": "attacks",
 					"type": "Array"
@@ -784,6 +824,35 @@
 				}
 			],
 			"script": "res://scripts/heal_effect.gd"
+		},
+		"InnateSpellRider": {
+			"extends": "RiderData",
+			"properties": [
+				{
+					"name": "spell",
+					"resource_type": "SpellData",
+					"type": "Resource"
+				},
+				{
+					"name": "rider_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"enum_values": {
+						"Common": 0,
+						"Epic": 3,
+						"Rare": 2,
+						"Uncommon": 1
+					},
+					"name": "min_rarity",
+					"type": "enum"
+				}
+			],
+			"script": "res://scripts/innate_spell_rider.gd"
 		},
 		"PatronSaintData": {
 			"extends": "",
@@ -910,6 +979,34 @@
 			],
 			"script": "res://scripts/player_class_data.gd"
 		},
+		"PotencyRider": {
+			"extends": "RiderData",
+			"properties": [
+				{
+					"name": "potency_bonus",
+					"type": "int"
+				},
+				{
+					"name": "rider_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"enum_values": {
+						"Common": 0,
+						"Epic": 3,
+						"Rare": 2,
+						"Uncommon": 1
+					},
+					"name": "min_rarity",
+					"type": "enum"
+				}
+			],
+			"script": "res://scripts/potency_rider.gd"
+		},
 		"PowerBuffEffect": {
 			"extends": "Effect",
 			"properties": [
@@ -978,6 +1075,30 @@
 				}
 			],
 			"script": "res://scripts/rest_event_data.gd"
+		},
+		"RiderData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "rider_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"enum_values": {
+						"Common": 0,
+						"Epic": 3,
+						"Rare": 2,
+						"Uncommon": 1
+					},
+					"name": "min_rarity",
+					"type": "enum"
+				}
+			],
+			"script": "res://scripts/rider_data.gd"
 		},
 		"ShopData": {
 			"extends": "",
@@ -1065,6 +1186,34 @@
 				}
 			],
 			"script": "res://scripts/spell_data.gd"
+		},
+		"StackBonusRider": {
+			"extends": "RiderData",
+			"properties": [
+				{
+					"name": "bonus_stacks",
+					"type": "int"
+				},
+				{
+					"name": "rider_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"enum_values": {
+						"Common": 0,
+						"Epic": 3,
+						"Rare": 2,
+						"Uncommon": 1
+					},
+					"name": "min_rarity",
+					"type": "enum"
+				}
+			],
+			"script": "res://scripts/stack_bonus_rider.gd"
 		},
 		"StatusData": {
 			"extends": "",
@@ -1171,6 +1320,44 @@
 			],
 			"script": "res://scripts/status_effect.gd"
 		},
+		"TagData": {
+			"extends": "",
+			"properties": [
+				{
+					"name": "tag_name",
+					"type": "String"
+				},
+				{
+					"name": "description",
+					"type": "String"
+				},
+				{
+					"name": "power_delta",
+					"type": "float"
+				},
+				{
+					"name": "scaling_delta",
+					"type": "float"
+				},
+				{
+					"key_type": "Enums.Stat",
+					"name": "stat_modifiers",
+					"type": "Dictionary",
+					"value_type": "float"
+				},
+				{
+					"element_type": "ProcDef",
+					"name": "proc_effects",
+					"type": "Array"
+				},
+				{
+					"element_type": "ConditionalModifier",
+					"name": "conditional_modifiers",
+					"type": "Array"
+				}
+			],
+			"script": "res://scripts/tag_data.gd"
+		},
 		"TomeData": {
 			"extends": "EquipmentData",
 			"properties": [
@@ -1243,6 +1430,26 @@
 				{
 					"name": "price",
 					"type": "int"
+				},
+				{
+					"enum_values": {
+						"Common": 0,
+						"Epic": 3,
+						"Rare": 2,
+						"Uncommon": 1
+					},
+					"name": "base_rarity",
+					"type": "enum"
+				},
+				{
+					"element_type": "TagData",
+					"name": "default_tags",
+					"type": "Array"
+				},
+				{
+					"element_type": "RiderData",
+					"name": "default_riders",
+					"type": "Array"
 				},
 				{
 					"element_type": "AttackData",
@@ -1415,6 +1622,26 @@
 					"type": "int"
 				},
 				{
+					"enum_values": {
+						"Common": 0,
+						"Epic": 3,
+						"Rare": 2,
+						"Uncommon": 1
+					},
+					"name": "base_rarity",
+					"type": "enum"
+				},
+				{
+					"element_type": "TagData",
+					"name": "default_tags",
+					"type": "Array"
+				},
+				{
+					"element_type": "RiderData",
+					"name": "default_riders",
+					"type": "Array"
+				},
+				{
 					"element_type": "AttackData",
 					"name": "attacks",
 					"type": "Array"
@@ -1582,5 +1809,22 @@
 			"COMBAT": 0,
 			"PERSISTENT": 1
 		}
-	}
+	},
+	"lifecycle_signals": [
+		"player_turn_started",
+		"player_turn_ended",
+		"enemy_turn_started",
+		"enemy_turn_ended",
+		"event_started",
+		"event_completed",
+		"combat_wave_started",
+		"combat_wave_completed",
+		"player_attack_hit",
+		"enemy_attack_hit",
+		"player_damaged",
+		"player_healed",
+		"enemy_damaged",
+		"enemy_died",
+		"consumable_used"
+	]
 }

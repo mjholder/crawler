@@ -10,17 +10,17 @@ kanban-plugin: board
 - [ ] Elemental Caster Kits — a Comparable Matrix — Mirror the Pyromancer kit skeleton (weapon + signature status + utility spell + class) across elements so they balance like-for-like. [[ideas/elemental-caster-kits]]
 - [ ] Content editor — inline sub-resource creation — Let a resource-ref dropdown create a new concrete sub-resource inline and wire it in, with breadcrumb navigation. [[ideas/content-editor-inline-subresource-creation]]
 - [ ] Dungeon types and naming — Lore-weighted dungeon taxonomy (catacombs, ossuary, undercroft, vault, plague pit, charnel ground) where shrine count tracks burial piety. [[ideas/dungeon-types-and-naming]]
-- [ ] Consumable belt growth mechanics — Grow the consumable belt past its per-class starting size via equipment slots or level-up milestones. [[ideas/consumable-belt-growth]]
 - [ ] Status-effect consumables (cure / remove) — A cure/remove-status consumable, now unblocked by Effect System v2 — authored as an Effect .tres calling remove_status. [[ideas/status-effect-consumables]]
 - [ ] Group dialogue UI components in a shared container — Wrap dialogue UI nodes in a shared layout container so they scale together. [[ideas/group-dialogue-ui-container]]
 - [ ] Mana as Capacity — SPI Gates, Tomes Carry Potency — SPI sets mana capacity (casts/floor), not spell damage — spells carry flat authored power; martial power scales with stats, caster power scales with content. [[ideas/mana-as-capacity]]
-- [ ] Weapon Anatomy — Power and Scaling as Two Tunable Axes — Split weapon damage into flat `power` and stat `scaling` on `WeaponData`; smithing only moves power, rarity only moves scaling. [[ideas/weapon-anatomy-power-and-scaling]]
 - [ ] Equipment Tags and Riders — Two Kinds of Rarity Payload — Numeric TAGS (rolled, compose with power/scaling) vs. binary RIDERS (rarity-gated, never on commons) so higher tiers gain new behavior, not just bigger numbers. [[ideas/equipment-tags-and-riders]]
 
 
 ## In Progress
 
 - [ ] Player-facing information & combat legibility — Surface what attacks/weapons/statuses/procs actually do: tooltips, gear descriptions, proc/self-cost visibility, damage-formula/scaling-stat legibility, and damage-source feedback. [[ideas/player-facing-legibility]]
+- [ ] Weapon Anatomy — Power and Scaling as Two Tunable Axes — Split weapon damage into flat `power` and stat `scaling` on `WeaponData`; smithing only moves power, rarity only moves scaling. [[ideas/weapon-anatomy-power-and-scaling]]
+- [ ] Consumable belt growth mechanics — Grow the consumable belt past its per-class starting size via equipment slots or level-up milestones. [[ideas/consumable-belt-growth]]
 - [ ] Status-Effect Vocabulary Expansion — Grow the status "verb" roster (chill, weaken, haste, shock, barrier, mark), triaged by authoring-only vs. needs-code. [[ideas/status-effect-vocabulary]]
 
 

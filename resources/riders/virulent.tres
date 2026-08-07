@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PotencyRider" format=3]
+
+[ext_resource type="Script" path="res://scripts/potency_rider.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+rider_name = "Virulent"
+description = "The venom runs hot and concentrated. Every affliction it inflicts bites deeper each turn — the same wound, worse."
+min_rarity = 2
+potency_bonus = 1

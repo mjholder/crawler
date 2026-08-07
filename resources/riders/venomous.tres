@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="StackBonusRider" format=3]
+
+[ext_resource type="Script" path="res://scripts/stack_bonus_rider.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+rider_name = "Venomous"
+description = "The edge weeps a slow, clinging venom. Every affliction it inflicts lingers one turn longer — and a lucky strike doubles how long the whole wound festers."
+min_rarity = 2
+bonus_stacks = 1

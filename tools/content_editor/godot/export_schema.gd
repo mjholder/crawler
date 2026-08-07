@@ -31,6 +31,11 @@ const RESOURCE_SCRIPTS: Array[String] = [
 	"res://scripts/shop_data.gd",
 	"res://scripts/player_class_data.gd",
 	"res://scripts/proc_def.gd",
+	"res://scripts/tag_data.gd",
+	"res://scripts/rider_data.gd",
+	"res://scripts/stack_bonus_rider.gd",
+	"res://scripts/potency_rider.gd",
+	"res://scripts/innate_spell_rider.gd",
 	"res://scripts/conditional_modifier.gd",
 	"res://scripts/status_data.gd",
 	"res://scripts/blessing_data.gd",
@@ -133,7 +138,22 @@ func _build_schema() -> Dictionary:
 			"properties": properties,
 		}
 
+	# --- Collect the lifecycle-bus signals (game.gd is the sole publisher) ---
+	# These drive the subscriptions widget in the content editor so its signal
+	# dropdown can't drift from the real signals.
+	schema["lifecycle_signals"] = _collect_lifecycle_signals()
+
 	return schema
+
+
+func _collect_lifecycle_signals() -> Array:
+	var names: Array = []
+	var s := load("res://scripts/game.gd") as Script
+	if s == null:
+		return names
+	for sig in s.get_script_signal_list():
+		names.append(sig["name"])
+	return names
 
 
 func _describe_property(prop: Dictionary, class_annotations: Dictionary, enums: Dictionary) -> Dictionary:

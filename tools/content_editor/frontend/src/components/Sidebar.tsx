@@ -92,6 +92,17 @@ export function Sidebar({ selectedType, onSelectType, selectedPath, onSelectPath
       createCls = map[pick?.trim() ?? ""] ?? "DamageEffect";
     }
 
+    // Riders are a polymorphic family — pick the concrete subclass to create.
+    if (cls === "RiderData") {
+      const pick = window.prompt(
+        "Rider type:\n1 StackBonusRider (+N status stacks — longer DoT)\n2 PotencyRider (+N per-stack tick damage — harder DoT)\n3 InnateSpellRider (grants a spell)\n\nEnter number:"
+      );
+      const map: Record<string, string> = {
+        "1": "StackBonusRider", "2": "PotencyRider", "3": "InnateSpellRider",
+      };
+      createCls = map[pick?.trim() ?? ""] ?? "StackBonusRider";
+    }
+
     const name = window.prompt(`New ${createCls} filename (no extension):`);
     if (!name) return;
     const path = `${dir}${name.replace(/\.tres$/, "")}.tres`;

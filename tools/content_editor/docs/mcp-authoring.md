@@ -31,6 +31,16 @@ encodings (seen in any `read_resource` output):
 - **StringName** — `{ "__sn": "player_attack_hit" }` (used for signal/tag fields).
 - **Dictionary** — a JSON object plus a `__key_type` marker, e.g. stat modifiers:
   `"stat_modifiers": { "0": 10, "5": -4, "__key_type": "int" }`.
+- **Subscriptions** — a `StringName → Effect` dict (`BlessingData`/`StatusData`):
+  `"subscriptions": { "__key_type": "StringName", "enemy_died": { "__ref": "res://resources/effects/heal_15_flat.tres" } }`.
+  Each key is one of the lifecycle-bus signals published by `game.gd`; when the
+  signal fires during a run the effect is applied to the owner. The valid signal
+  names are enumerated at `schema.lifecycle_signals` (top level of `get_schema`):
+  `player_turn_started`, `player_turn_ended`, `enemy_turn_started`,
+  `enemy_turn_ended`, `event_started`, `event_completed`, `combat_wave_started`,
+  `combat_wave_completed`, `player_attack_hit`, `enemy_attack_hit`,
+  `player_damaged`, `player_healed`, `enemy_damaged`, `enemy_died`,
+  `consumable_used`.
 - **Typed array** — a JSON array of values: `"effects": [ { "__ref": "..." } ]`.
 - **Inline sub-resource** — a nested object with its own `_godot_meta`
   (`"inline": true`) when a child resource is owned by this file rather than
@@ -79,6 +89,8 @@ in an `effects` array:
 | `SpellData` | `res://resources/spells/` |
 | `TomeData` | `res://resources/tomes/` |
 | `AttackData` | `res://resources/attacks/` |
+| `TagData` | `res://resources/tags/` |
+| `RiderData` family (`StackBonusRider` / `PotencyRider` / `InnateSpellRider`) | `res://resources/riders/` |
 | effects (`DamageEffect`/`HealEffect`/`BuffEffect`/`StatusEffect`) | `res://resources/effects/` (`buffs/`, `statuses/`) |
 | `StatusData` | `res://resources/effects/statuses/` |
 | `ShopData` | `res://resources/shops/` |
@@ -135,6 +147,52 @@ expression** — leave it as the uniform form and set `power_coefficient` on the
 
 Only genuinely non-weapon damage uses raw stat expressions: spells (flat authored damage,
 no stat term), self-costs, and status `on_tick`/`on_apply`/`on_expire` bursts (flat).
+
+## Equipment tags & riders (rare-gear payload)
+
+Two mechanically distinct kinds of bonus compose onto an item at runtime — you author the payloads
+as their own resources, then optionally bake them onto a specific piece of gear.
+
+- **`TagData`** (`res://resources/tags/`) — *numeric*. Reuses the equipment vocabulary
+  (`stat_modifiers`, `proc_effects` → `ProcDef`, `conditional_modifiers` → `ConditionalModifier`) plus
+  two weapon-anatomy deltas: `power_delta`, `scaling_delta`. Tags are the only payload allowed to move
+  **both** power and scaling.
+- **`RiderData`** (`res://resources/riders/`) — *binary, rarity-gated behavior*. A **polymorphic
+  family**: write the concrete subclass, never the base.
+  - `StackBonusRider` — `bonus_stacks: int` (+N stacks to STACK-policy statuses this item's attacks
+    apply). This is the **longer** lever: on a decaying DoT (poison) more stacks = more turns.
+  - `PotencyRider` — `potency_bonus: int` (+N flat per-stack tick damage). This is the **harder**
+    lever, orthogonal to stacks: each DoT tick bites deeper, the affliction lasts the same number of
+    turns. Not crit-scaled (crit deepens stacks, not potency).
+  - `InnateSpellRider` — `spell` (`__ref` to a `SpellData`); grants that spell in the item's hand,
+    bypassing prep slots.
+  - Every rider has `min_rarity` (enum, default `RARE`). A rider only applies when the item's rarity
+    meets it — so a smithed common never gains one.
+
+### Baking payload onto a fixed / named item
+
+`EquipmentData` (and `WeaponData`) carry three authoring-time fields that seed a **fresh** item:
+
+- `base_rarity` (enum) — the fresh-item rarity floor. **Set this at or above a baked rider's
+  `min_rarity`**, or the rider is inert (a `RARE` rider on a `COMMON` item does nothing).
+- `default_tags` — array of `{ "__ref": "res://resources/tags/....tres" }`.
+- `default_riders` — array of `{ "__ref": "res://resources/riders/....tres" }`.
+
+These behave identically to rolled loot (composed at read time; the rider rarity gate is unchanged),
+and only seed brand-new items — a save is authoritative on reload, so seeding never double-applies.
+
+Example fixed magic weapon:
+```json
+{ "item_name": "Serpent's Kiss", "description": "...", "price": 140,
+  "power": 8, "scaling": 0.5, "scaling_stat": 0,
+  "attacks": [ { "__ref": "res://resources/attacks/slash.tres" } ],
+  "base_rarity": 2,
+  "default_riders": [ { "__ref": "res://resources/riders/venomous.tres" } ] }
+```
+
+> If `get_schema` / `write_resource` reports `Unknown class: TagData` (or a rider subclass) right
+> after `make schema`, call **`refresh_schema`** — the server caches the schema at startup and this
+> re-reads it from disk without needing Godot.
 
 ## Events & dialogue (JSON, not `.tres`)
 

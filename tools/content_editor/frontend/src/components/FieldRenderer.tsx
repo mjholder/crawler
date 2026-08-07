@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react";
 import type { PropDescriptor, GameSchema } from "../types/schema.js";
 import { getAllProperties } from "../types/schema.js";
-import { FIELD_VISIBILITY, getFieldDirOverride } from "../types/fieldVisibility.js";
+import { FIELD_VISIBILITY, getFieldDirOverride, getWidgetOverride } from "../types/fieldVisibility.js";
 import { api } from "../api.js";
 
 const BUILTIN_ASSET_TYPES = new Set(["Texture2D", "AudioStream", "PackedScene", "SpriteFrames"]);
@@ -36,10 +36,28 @@ export interface FieldProps {
   onNavigate?: (path: string) => void;
   onHelp?: (anchor: string) => void;
   dirOverride?: string;
+  /** Class that owns this prop; enables per-field widget overrides. */
+  ownerClass?: string;
 }
 
-export function FieldRenderer({ prop, value, onChange, schema, depth = 0, onNavigate, onHelp, dirOverride }: FieldProps) {
+export function FieldRenderer({ prop, value, onChange, schema, depth = 0, onNavigate, onHelp, dirOverride, ownerClass }: FieldProps) {
   if (depth > 4) return <span style={{ color: "#888" }}>[deep]</span>;
+
+  // Per-field widget overrides (keyed by ClassName.propName) win over the
+  // structural type dispatch below.
+  const override = getWidgetOverride(ownerClass, prop.name);
+  if (override === "subscriptions") {
+    return (
+      <SubscriptionsField
+        value={value as Record<string, unknown> | null}
+        onChange={onChange}
+        schema={schema}
+        depth={depth}
+        onNavigate={onNavigate}
+        onHelp={onHelp}
+      />
+    );
+  }
 
   switch (prop.type) {
     case "bool":
@@ -378,6 +396,113 @@ function StatDictField({
   );
 }
 
+// --- Subscriptions (StringName signal -> Effect) --------------------------
+
+function SubscriptionsField({
+  value,
+  onChange,
+  schema,
+  depth,
+  onNavigate,
+  onHelp,
+}: {
+  value: Record<string, unknown> | null;
+  onChange: (v: unknown) => void;
+  schema: GameSchema;
+  depth: number;
+  onNavigate?: (path: string) => void;
+  onHelp?: (anchor: string) => void;
+}) {
+  const signals = schema.lifecycle_signals ?? [];
+  const current = (value ?? {}) as Record<string, unknown>;
+  // Present signal keys are everything except the envelope's __key_type marker.
+  const presentKeys = Object.keys(current).filter((k) => k !== "__key_type");
+
+  function emitUpdate(keys: string[], vals: Record<string, unknown>) {
+    const next: Record<string, unknown> = { __key_type: "StringName" };
+    for (const k of keys) next[k] = vals[k];
+    onChange(next);
+  }
+
+  function updateEffect(key: string, effect: unknown) {
+    emitUpdate(presentKeys, { ...current, [key]: effect });
+  }
+
+  function changeSignal(oldKey: string, newKey: string) {
+    if (newKey === oldKey || presentKeys.includes(newKey)) return;
+    const next: Record<string, unknown> = {};
+    for (const k of presentKeys) next[k === oldKey ? newKey : k] = current[k];
+    emitUpdate(
+      presentKeys.map((k) => (k === oldKey ? newKey : k)),
+      next
+    );
+  }
+
+  function remove(key: string) {
+    const next: Record<string, unknown> = { ...current };
+    delete next[key];
+    emitUpdate(presentKeys.filter((k) => k !== key), next);
+  }
+
+  function addEntry() {
+    const available = signals.filter((s) => !presentKeys.includes(s));
+    if (available.length === 0) return;
+    emitUpdate([...presentKeys, available[0]], { ...current, [available[0]]: null });
+  }
+
+  const allUsed = signals.length > 0 && signals.every((s) => presentKeys.includes(s));
+
+  return (
+    <div style={{ border: "1px solid #333", borderRadius: 4, overflow: "hidden" }}>
+      {presentKeys.map((key) => {
+        const usedOthers = new Set(presentKeys.filter((k) => k !== key));
+        return (
+          <div key={key} style={styles.subRow}>
+            <select
+              value={key}
+              onChange={(e) => changeSignal(key, e.target.value)}
+              style={{ ...fieldStyle, flexShrink: 0 }}
+            >
+              {/* keep the current value selectable even if it's no longer a known signal */}
+              {!signals.includes(key) && <option value={key}>{key} (unknown)</option>}
+              {signals
+                .filter((s) => !usedOthers.has(s))
+                .map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+            </select>
+            <span style={{ color: "#555", flexShrink: 0 }}>→</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <ResourceRefField
+                value={current[key]}
+                onChange={(v) => updateEffect(key, v)}
+                resourceType="Effect"
+                schema={schema}
+                depth={depth + 1}
+                onNavigate={onNavigate}
+                onHelp={onHelp}
+              />
+            </div>
+            <button style={styles.removeBtn} onClick={() => remove(key)}>×</button>
+          </div>
+        );
+      })}
+      {!allUsed && (
+        <button style={styles.addBtn} onClick={addEntry}>
+          + Add subscription
+        </button>
+      )}
+      {signals.length === 0 && (
+        <div style={{ color: "#a70", fontSize: 11, padding: "4px 6px" }}>
+          No lifecycle signals in schema — run <code>make schema</code>.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Array -----------------------------------------------------------------
 
 function ArrayField({
@@ -611,6 +736,7 @@ function InlineResourceEditor({
             onNavigate={onNavigate}
             onHelp={onHelp}
             dirOverride={getFieldDirOverride(cls, p.name)}
+            ownerClass={cls}
           />
         </FormRow>
       ))}
@@ -722,6 +848,13 @@ const styles = {
     minWidth: 0,
   },
   arrayRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "4px 6px",
+    borderBottom: "1px solid #2a2a2a",
+  },
+  subRow: {
     display: "flex",
     alignItems: "center",
     gap: 6,

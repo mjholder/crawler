@@ -19,6 +19,80 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## DoT riders split into two orthogonal levers: stacks (longer) vs potency (harder)
+
+**Date:** 2026-08-04
+**Daily:** [[daily/2026-08-04]]
+
+**Decision:** The rider family gains a second STACK-policy lever. `StackBonusRider` (`bonus_stacks`)
+keeps its meaning — add to a status's applied **stack count** — and `PotencyRider` (`potency_bonus`,
+new subclass) adds flat **per-stack tick damage** instead. A persistent `StatusInstance.potency` field
+carries it (seeded at apply time from `ItemInstance.potency_bonus()` via the weapon context, since the
+context is gone by tick time); `DamageEffect`/`BurstDamageEffect.apply_tick` add it per stack before the
+stack multiply. Potency is **not** crit-scaled (crit deepens stacks, not the edge), and on re-application
+the strongest potency wins rather than summing.
+
+**Context:** On a `stack_decays` DoT (poison) the single `stacks` number does double duty — it is both
+the **lifetime** (`turns_remaining = stacks`, drains 1/turn) and the **per-tick multiplier**
+(`tick = expr × stacks`). So `StackBonusRider`'s +1 raised the first tick *and* added a turn, and read
+in play as "potency" as much as "duration." There was no way to author a DoT that hits harder without
+also lasting longer (or vice-versa). See [[ideas/equipment-tags-and-riders]].
+
+**Alternatives considered:** (a) Redefine tick damage as flat (`expr`, not `expr × stacks`) and add a
+separate potency multiplier — cleaner in isolation but discards the deliberate ramp-down (3/2/1) baked
+into every existing DoT and its authored content. (b) Keep one lever and just rename it — doesn't give
+designers the second axis the split is for. (c) Sum potency across re-applications — rejected as a
+runaway multiplier on a stacking DoT; "strongest edge in the wound" (max) is bounded and intuitive.
+
+**Rationale:** Two orthogonal levers make the rare-gear choice interesting rather than dominated (the
+recurring goal in [[ideas/equipment-tags-and-riders]]): "bites deeper" vs "festers longer" are now
+distinct, authorable properties. Threading potency onto the instance (not recomputing from the weapon)
+mirrors how stacks already persist, and keeping it off the crit path preserves the "a lucky strike
+deepens stacks" interaction as stacks' alone.
+
+**Trade-offs / risks:** `StatusInstance` grows a serialized field (`potency`); legacy saves default it to
+0 (inert), which is correct. The attack **preview** still doesn't surface DoT tick damage, so a
+PotencyRider's effect isn't visible in the tooltip yet (only its non-effect on duration is now honest) —
+tracked as a legibility follow-up. Potency currently rides only statuses applied through a weapon's
+*attack* effects; proc-applied statuses pass no context and are unaffected (same scope limit as stacks).
+
+## Equipment may bake fixed tags/riders + a base rarity (fixed / named magic items)
+
+**Date:** 2026-08-04
+**Daily:** [[daily/2026-08-04]]
+
+**Decision:** `EquipmentData` gains three authoring-time fields — `base_rarity` (Enums.Rarity),
+`default_tags: Array[TagData]`, `default_riders: Array[RiderData]` — that let a specific piece of
+gear ship with baked-in payload. `ItemInstance.wrap()` (the fresh-item factory) seeds them onto the
+new instance: `rarity = base.base_rarity`, `tags`/`riders` = duplicated base defaults. Seeding lives
+**only** in `wrap()`, never in `_init()` or `from_dict()`, so a reloaded save is authoritative and
+seeding never double-applies. `base_rarity` exists because riders are rarity-gated
+(`effective_riders()`): a baked `RARE` rider on a `COMMON`-floor item would be inert, so a fixed
+magic item must also declare the rarity that unlocks its riders.
+
+**Context:** Tags (Phase 17) and riders (Phase 18) compose onto `ItemInstance` at runtime, but the
+only way to attach them was `add_tag`/`add_rider` in code (no callers), and there is no loot
+generation yet. So there was no authoring path to a concrete magic weapon — the content tooling
+could define tag/rider *payloads* but nothing could *wear* them. See
+[[ideas/equipment-tags-and-riders]].
+
+**Alternatives considered:** (a) Wait for loot generation and keep attachment purely rolled — leaves
+designers unable to hand-place a signature item for an encounter/shop now. (b) A separate
+"unique item" resource wrapping a base + payload — more indirection than the composition model needs;
+the base .tres *is* the identity. (c) Seed in `_init()` — rejected because `from_dict()` builds via
+`ItemInstance.new()` and then loads saved tags/riders, which would double-seed.
+
+**Rationale:** Seeded tags/riders are indistinguishable from rolled ones downstream — they compose at
+read time and the rider rarity gate is unchanged — so THE LAW (smithing→power, rarity→scaling,
+tags→both) survives intact. It's the minimum surface that unblocks authoring real magic items today,
+and it degrades gracefully into the future loot system (a roll just seeds the same fields a base can).
+
+**Trade-offs / risks:** A designer can set `base_rarity` below a baked rider's `min_rarity` and get a
+silently inert rider (documented in the MCP authoring notes,
+`tools/content_editor/docs/mcp-authoring.md`; a cross-check lint is a possible future guard). Baked defaults only reach *fresh* items — a base edited after an item is in a
+save won't retroactively gain the new default (correct, and consistent with "rolled once", but worth
+knowing).
+
 ## Pierce is a percentage split, not a flat armor reduction
 
 **Date:** 2026-07-23
