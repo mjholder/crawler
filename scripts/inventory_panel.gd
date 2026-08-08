@@ -205,14 +205,17 @@ func _on_bag_button_pressed(index: int) -> void:
 	# An OFFHAND_ONLY weapon can't be equipped while a two-hander locks the offhand.
 	if not data.is_ring and not (data is ConsumableData) and _inventory.is_slot_locked(target_slot):
 		return
-	_inventory.remove_from_bag(data)
+	var inst := _inventory.remove_from_bag(data)
 	if data is ConsumableData:
+		# Consumables carry no runtime state; equip by base and re-bag on a full belt.
 		if not _inventory.equip_consumable(data as ConsumableData):
 			_inventory.add_to_bag(data)
 	elif data.is_ring:
-		_inventory.equip_ring(data)
+		# Preserve the bagged instance so a rolled ring keeps its rarity/tags on equip.
+		_inventory.equip_ring_instance(inst)
 	else:
-		_inventory.equip(target_slot, data)
+		# Preserve the bagged instance so a smithed/rolled weapon keeps its investment on equip.
+		_inventory.equip_instance(target_slot, inst)
 
 
 # --- Hand Selection ---
@@ -277,8 +280,8 @@ func _confirm_slot_choice() -> void:
 	var data := _selecting_hand_data
 	var chosen: Enums.Slot = _slot_choice_candidates[_slot_choice_index]
 	_end_slot_selection()
-	_inventory.remove_from_bag(data)
-	_inventory.equip(chosen, data)
+	var inst := _inventory.remove_from_bag(data)
+	_inventory.equip_instance(chosen, inst)
 
 
 func _cancel_slot_choice() -> void:

@@ -311,6 +311,8 @@ Phase 9 added the **three-layer character identity**: alongside `PlayerClassData
 
 **Phase 22 — DoT riders split into two orthogonal levers (2026-08-04).** On a `stack_decays` DoT the single `stacks` number is both lifetime and per-tick multiplier, so `StackBonusRider` (`bonus_stacks`) read as both "longer" and "harder." Added **`PotencyRider`** (`potency_bonus`) as the second lever: flat **per-stack tick damage**, same duration. `ItemInstance.potency_bonus()` (Σ through the same `effective_riders()` gate) feeds `Player.weapon_context_for` → `ctx["potency_bonus"]` → `StatusEffect.apply` → `Combatant.apply_status(…, potency)`, which stores it on a new persistent `StatusInstance.potency` (weapon context is gone by tick time). `DamageEffect`/`BurstDamageEffect.apply_tick` add it per stack **before** the stack multiply; it is *not* crit-scaled (crit deepens stacks) and re-application keeps the max. The attack preview (`AttackPreview`) was also corrected to fold the weapon's `bonus_stacks` into the shown count and to display a `stack_decays` status's real lifetime (= stacks) rather than its authored `duration`, matching the live `gui._status_tooltip` readout. Content: `resources/riders/virulent.tres` (PotencyRider), now baked on Serpent's Kiss; `venomous.tres` stays a StackBonusRider (the "longer" lever). See [[design.md]] — DoT riders split, [[daily/2026-08-04]].
 
+**Phase 23 — smithing goes per-attack + the town Smith service (2026-08-07).** Smithing's power move is now **per-attack**: `AttackData` gains `upgrade_scale` (default 2.0), `ItemInstance.effective_power()` drops the flat smith term (the global `POWER_PER_LEVEL` is retired), and a new `ItemInstance.smith_power_bonus(scale)` = `upgrade_level * scale` is folded into that attack's injected `power` var by `Player.weapon_context_for`. No `.tres` expressions changed and **THE LAW** (smithing → power) still holds; a multi-hit attack (which compounds the bonus ×coeff ×hits) is damped by a smaller authored scale. To make smithing durable, **`Inventory._bag` now holds `ItemInstance`s** (was bare `EquipmentData`): `equip()`/`unequip()` move the instance via `_add_instance_to_bag()` instead of re-wrapping, `remove_from_bag()` returns the removed instance, and new `equip_instance()`/`equip_ring_instance()` re-equip it — so smithing/rarity/tags survive unequip→re-equip and save/load (bag serializes instance dicts, legacy bare-path fallback). `get_bag()`/`add_to_bag()` stay base-facing (shop/display/`InventoryPanel` unchanged); `InventoryPanel`'s two equip-from-bag sites were rewired to the instance-aware path. The **Smith town service** wires the previously-dead button: `TownPanel.smith_requested → GUI.town_smith_requested → game._on_gui_town_smith_requested` opens a new `SmithPanel` weapon picker (equipped + bagged `WeaponData` instances, via `Inventory.get_bag_instances()`); a row emits `SmithPanel.upgrade_requested(index) → GUI.smith_upgrade_requested → game._on_gui_smith_upgrade_requested`, which spends `Game.SMITH_COST` (25g), calls `ItemInstance.smith(1)`, and refreshes in place; Leave (`smith_leave_requested`) returns to the town. See [[ideas/weapon-anatomy-power-and-scaling]], [[daily/2026-08-07]].
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -373,6 +375,7 @@ classDiagram
         +effective_riders() Array
         +stack_bonus() int
         +granted_innate_spells() Array
+        +smith_power_bonus(scale) float
         +smith(levels)
         +set_rarity(r)
         +add_tag(tag)
@@ -418,6 +421,7 @@ classDiagram
     }
     class AttackData {
         +float power_coefficient
+        +float upgrade_scale
     }
     class SpellData {
         +float mana_cost
@@ -531,7 +535,7 @@ classDiagram
         -Dictionary _slot_locks
         -Array _rings
         -Array _consumable_belt
-        -Array~EquipmentData~ _bag
+        -Array~ItemInstance~ _bag
         +signal slot_changed
         +signal ring_changed
         +signal bag_changed
@@ -539,6 +543,10 @@ classDiagram
         +get_equipped(slot) EquipmentData
         +get_equipped_instance(slot) ItemInstance
         +get_all_equipped_instances() Array
+        +get_bag() Array~EquipmentData~
+        +get_bag_instances() Array~ItemInstance~
+        +equip_instance(slot, inst)
+        +equip_ring_instance(inst) bool
         +lock_slot(slot)
         +unlock_slot(slot)
         +is_slot_locked(slot) bool
@@ -563,8 +571,7 @@ classDiagram
     RiderData <|-- PotencyRider
     RiderData <|-- InnateSpellRider
     InnateSpellRider ..> SpellData : grants
-    Inventory o-- ItemInstance : equipped/rings
-    Inventory o-- EquipmentData : bag
+    Inventory o-- ItemInstance : equipped/rings/bag
     Equipment ..> ItemInstance : item_instance
     PlayerClassData o-- EquipmentData : starting loadout
     PlayerClassData o-- BlessingData : starting_blessings

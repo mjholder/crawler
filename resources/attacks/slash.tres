@@ -1,11 +1,10 @@
-[gd_resource type="Resource" script_class="AttackData" format=3]
+[gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://5mqg30kwjj5w"]
 
-[ext_resource type="Script" path="res://scripts/attack_data.gd" id="1_script"]
-[ext_resource type="Resource" path="res://resources/effects/damage_str_half.tres" id="2_effect"]
+[ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://dq16uaw0od2a3" path="res://resources/effects/damage_str_half.tres" id="2_effect"]
 
 [resource]
 script = ExtResource("1_script")
 display_name = "Slash"
 description = "A powerful overhead strike"
-target_mode = 0
 effects = Array[Resource]([ExtResource("2_effect")])

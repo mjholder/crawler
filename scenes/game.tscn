@@ -25,6 +25,7 @@
 [ext_resource type="PackedScene" path="res://scenes/choice_button.tscn" id="27_chbtn"]
 [ext_resource type="PackedScene" uid="uid://dgbjlk3ybk6xm" path="res://scenes/action.tscn" id="28_action"]
 [ext_resource type="Script" uid="uid://127dhuk4vprq" path="res://scripts/combat_log.gd" id="29_clog"]
+[ext_resource type="Script" uid="uid://bmqfc61y4eatd" path="res://scripts/smith_panel.gd" id="30_smithp"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_sww3w"]
 font = ExtResource("6_p57ef")
@@ -612,10 +613,88 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Temple"
 
+[node name="SmithButton" type="Button" parent="GUI/TownPanel/PanelContainer/VBoxContainer/Services" unique_id=828420648]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Smith"
+
+[node name="TrainerButton" type="Button" parent="GUI/TownPanel/PanelContainer/VBoxContainer/Services" unique_id=1887029685]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Trainer"
+
 [node name="TravelButton" type="Button" parent="GUI/TownPanel/PanelContainer/VBoxContainer" unique_id=629902901]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Travel Onward"
+
+[node name="SmithPanel" type="Control" parent="GUI" unique_id=830000001]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("30_smithp")
+
+[node name="Background" type="ColorRect" parent="GUI/SmithPanel" unique_id=830000002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.14767182, 0.14767179, 0.14767179, 0.6)
+
+[node name="PanelContainer" type="PanelContainer" parent="GUI/SmithPanel" unique_id=830000003]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -180.0
+offset_right = 240.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GUI/SmithPanel/PanelContainer" unique_id=830000004]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="GUI/SmithPanel/PanelContainer/VBoxContainer" unique_id=830000005]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Smith"
+
+[node name="DescriptionLabel" type="Label" parent="GUI/SmithPanel/PanelContainer/VBoxContainer" unique_id=830000006]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Pay to sharpen a weapon — each upgrade raises the base damage of all of that weapon's attacks."
+autowrap_mode = 3
+
+[node name="GoldLabel" type="Label" parent="GUI/SmithPanel/PanelContainer/VBoxContainer" unique_id=830000007]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="WeaponList" type="VBoxContainer" parent="GUI/SmithPanel/PanelContainer/VBoxContainer" unique_id=830000008]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EmptyLabel" type="Label" parent="GUI/SmithPanel/PanelContainer/VBoxContainer" unique_id=830000009]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "You have no weapons to smith."
+
+[node name="LeaveButton" type="Button" parent="GUI/SmithPanel/PanelContainer/VBoxContainer" unique_id=830000010]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Leave"
 
 [node name="CharacterCreationPanel" type="Control" parent="GUI" unique_id=1828471361]
 visible = false

@@ -18,6 +18,9 @@ signal shop_leave_requested
 signal shrine_ascend_requested
 signal shrine_leave_requested
 signal town_temple_requested
+signal town_smith_requested
+signal smith_upgrade_requested(index: int)
+signal smith_leave_requested
 signal town_travel_requested
 signal consumable_use_requested(index: int)
 signal continue_requested
@@ -62,6 +65,7 @@ signal continue_requested
 @onready var _rest_panel: RestPanel = $RestPanel
 @onready var _shrine_panel: ShrinePanel = $ShrinePanel
 @onready var _town_panel: TownPanel = $TownPanel
+@onready var _smith_panel: SmithPanel = $SmithPanel
 @onready var _world_map: WorldMap = $WorldMap
 @onready var _inventory_panel: InventoryPanel = $InventoryPanel
 @onready var _stats_label: Label = $InventoryPanel/HBoxContainer/StatsContainer/Label
@@ -112,7 +116,11 @@ func _ready() -> void:
 	_shrine_panel.leave_requested.connect(func() -> void: shrine_leave_requested.emit())
 	_town_panel.hide()
 	_town_panel.temple_requested.connect(func() -> void: town_temple_requested.emit())
+	_town_panel.smith_requested.connect(func() -> void: town_smith_requested.emit())
 	_town_panel.travel_requested.connect(func() -> void: town_travel_requested.emit())
+	_smith_panel.hide()
+	_smith_panel.upgrade_requested.connect(func(index: int) -> void: smith_upgrade_requested.emit(index))
+	_smith_panel.leave_requested.connect(func() -> void: smith_leave_requested.emit())
 	_world_map.hide()
 	_world_map.node_selected.connect(_on_world_map_node_selected)
 	_player_hud.hide()
@@ -249,6 +257,7 @@ func return_to_main_menu() -> void:
 	_rest_panel.hide()
 	_shrine_panel.hide()
 	_town_panel.hide()
+	_smith_panel.hide()
 	_shop_panel.hide()
 	_inventory_panel.hide()
 	_consumable_belt.set_management_mode(false)
@@ -700,6 +709,21 @@ func show_shrine_panel(
 
 func hide_shrine_panel() -> void:
 	_shrine_panel.hide()
+
+
+# --- Smith Panel ---
+
+func show_smith_panel(weapons: Array, player_gold: int, cost: int) -> void:
+	_smith_panel.setup(weapons, player_gold, cost)
+	_smith_panel.show()
+
+
+func refresh_smith_panel(weapons: Array, player_gold: int) -> void:
+	_smith_panel.refresh(weapons, player_gold)
+
+
+func hide_smith_panel() -> void:
+	_smith_panel.hide()
 
 
 # --- Town Panel (end-of-act hub) ---

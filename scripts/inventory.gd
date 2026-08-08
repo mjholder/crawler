@@ -14,15 +14,16 @@ signal belt_size_changed(new_size: int)
 @export var belt_size: int = 2
 
 # --- State ---
-# Equipped/ring slots hold ItemInstance (base ref + upgrade_level + rarity + tags) so runtime
-# investment survives across a run and round-trips through saves. The bag holds bare
-# EquipmentData bases — bag items carry no runtime state yet (no loot/smithing UI this pass), and
-# equipping one wraps a fresh default instance. Signals and get_equipped()/get_all_equipped()
-# still expose bases for back-compat; composition sites use the *_instance() getters.
+# Equipped/ring slots AND the bag all hold ItemInstance (base ref + upgrade_level + rarity + tags)
+# so runtime investment (smithing, rarity, tags) survives across a run, round-trips through saves,
+# and is preserved when an item moves between a slot and the bag. Signals and
+# get_equipped()/get_all_equipped()/get_bag() still expose bases for back-compat; composition sites
+# and the smithy use the *_instance() getters. Fresh loot/purchases enter via add_to_bag(base),
+# which wraps a default instance; moving an equipped item to the bag keeps its existing instance.
 var _equipped: Dictionary = {}       # Enums.Slot -> ItemInstance
 var _rings: Array = []               # Array of ItemInstance or null, length = max_rings
 var _consumable_belt: Array = []     # Array of ConsumableData or null, length = belt_size
-var _bag: Array[EquipmentData] = []
+var _bag: Array = []                 # Array of ItemInstance
 var _dungeon_locked: bool = false    # true while inside a dungeon; blocks equip/unequip/remove_from_bag
 var _slot_locks: Dictionary = {}    # Enums.Slot -> bool; e.g. OFFHAND locked by a two-handed weapon
 
@@ -67,9 +68,24 @@ func equip(slot: Enums.Slot, data: EquipmentData) -> void:
 		return
 	var old: ItemInstance = _equipped.get(slot, null)
 	if old != null:
-		add_to_bag(old.base)
+		_add_instance_to_bag(old)
 	_equipped[slot] = ItemInstance.wrap(data)
 	slot_changed.emit(slot, data, old.base if old != null else null)
+
+
+## Equips an EXISTING instance (from the bag), preserving its upgrade_level/rarity/tags — the
+## instance-aware counterpart to equip(). Used by the inventory UI so smithed/rolled weapons keep
+## their investment when re-equipped. Bags the displaced instance intact.
+func equip_instance(slot: Enums.Slot, inst: ItemInstance) -> void:
+	if _dungeon_locked or inst == null:
+		return
+	if is_slot_locked(slot):
+		return
+	var old: ItemInstance = _equipped.get(slot, null)
+	if old != null:
+		_add_instance_to_bag(old)
+	_equipped[slot] = inst
+	slot_changed.emit(slot, inst.base, old.base if old != null else null)
 
 
 func unequip(slot: Enums.Slot) -> void:
@@ -79,7 +95,7 @@ func unequip(slot: Enums.Slot) -> void:
 		return
 	var old: ItemInstance = _equipped[slot]
 	_equipped.erase(slot)
-	add_to_bag(old.base)
+	_add_instance_to_bag(old)
 	slot_changed.emit(slot, null, old.base)
 
 
@@ -107,6 +123,21 @@ func equip_ring(data: EquipmentData) -> bool:
 	return false
 
 
+## Equips an EXISTING ring instance (from the bag) into the first free ring slot, preserving its
+## rarity/tags. Re-bags the instance and returns false if every ring slot is full, so the item is
+## never lost. Instance-aware counterpart to equip_ring().
+func equip_ring_instance(inst: ItemInstance) -> bool:
+	if _dungeon_locked or inst == null:
+		return false
+	for i in range(_rings.size()):
+		if _rings[i] == null:
+			_rings[i] = inst
+			ring_changed.emit(i, inst.base, null)
+			return true
+	_add_instance_to_bag(inst)
+	return false
+
+
 func equip_ring_at(index: int, data: EquipmentData) -> void:
 	if _dungeon_locked:
 		return
@@ -115,7 +146,7 @@ func equip_ring_at(index: int, data: EquipmentData) -> void:
 	var old: ItemInstance = _rings[index]
 	_rings[index] = ItemInstance.wrap(data)
 	if old != null:
-		add_to_bag(old.base)
+		_add_instance_to_bag(old)
 	ring_changed.emit(index, data, old.base if old != null else null)
 
 
@@ -126,7 +157,7 @@ func unequip_ring(index: int) -> void:
 		return
 	var old: ItemInstance = _rings[index]
 	_rings[index] = null
-	add_to_bag(old.base)
+	_add_instance_to_bag(old)
 	ring_changed.emit(index, null, old.base)
 
 
@@ -221,37 +252,70 @@ func place_consumable_on_belt(index: int, data: ConsumableData) -> ConsumableDat
 
 # --- Bag API ---
 
+## Adds a fresh item to the bag from its base data — the loot/purchase/starting-item path. Wraps a
+## default instance (upgrade_level 0, base rarity/tags), so callers keep passing bases.
 func add_to_bag(data: EquipmentData) -> bool:
-	if _bag.size() >= max_bag_size:
+	if data == null or _bag.size() >= max_bag_size:
 		return false
-	_bag.append(data)
+	_bag.append(ItemInstance.wrap(data))
 	bag_changed.emit()
 	return true
 
 
-func remove_from_bag(data: EquipmentData) -> void:
+## Adds an EXISTING instance to the bag, preserving its runtime state (smithing/rarity/tags). Used
+## when an equipped item is displaced or unequipped, so investment isn't reset to a fresh wrap.
+func _add_instance_to_bag(inst: ItemInstance) -> bool:
+	if inst == null or _bag.size() >= max_bag_size:
+		return false
+	_bag.append(inst)
+	bag_changed.emit()
+	return true
+
+
+## Removes the first bag instance backed by `data` and returns it (null if absent), so callers can
+## re-equip the SAME instance and keep its investment. Takes a base for back-compat with UI/shop.
+func remove_from_bag(data: EquipmentData) -> ItemInstance:
 	if _dungeon_locked:
-		return
-	var index := _bag.find(data)
+		return null
+	var index := -1
+	for i in _bag.size():
+		if _bag[i].base == data:
+			index = i
+			break
 	if index == -1:
-		return
+		return null
+	var inst: ItemInstance = _bag[index]
 	_bag.remove_at(index)
 	bag_changed.emit()
+	return inst
 
 
 func is_bag_full() -> bool:
 	return _bag.size() >= max_bag_size
 
 
+## Bag contents as bases, for display/shop/UI back-compat (parallels get_equipped()).
 func get_bag() -> Array[EquipmentData]:
-	return _bag.duplicate()
+	var out: Array[EquipmentData] = []
+	for inst in _bag:
+		out.append(inst.base)
+	return out
+
+
+## Bag contents as full instances (base + upgrade_level + rarity + tags), for the smithy and any
+## composition site that needs runtime state rather than just the base.
+func get_bag_instances() -> Array[ItemInstance]:
+	var out: Array[ItemInstance] = []
+	for inst in _bag:
+		out.append(inst)
+	return out
 
 
 # --- Save / Load ---
 
 func to_save_dict() -> Dictionary:
-	# Equipped/ring slots serialize the full instance (base path + upgrade_level + rarity + tags);
-	# the bag serializes bare base paths. Legacy saves stored plain paths for equipped/rings too —
+	# Equipped/ring slots AND the bag serialize the full instance (base path + upgrade_level +
+	# rarity + tags). Legacy saves stored bare paths (bag) or plain strings (equipped/rings) —
 	# apply_save_dict still reads those (see _instance_from_save).
 	var equipped: Dictionary = {}
 	for slot in _equipped:
@@ -262,9 +326,9 @@ func to_save_dict() -> Dictionary:
 	var belt: Array[String] = []
 	for item in _consumable_belt:
 		belt.append(item.resource_path if item != null else "")
-	var bag: Array[String] = []
-	for item in _bag:
-		bag.append(item.resource_path)
+	var bag: Array = []
+	for inst in _bag:
+		bag.append(inst.to_dict())
 	return {
 		"belt_size": _consumable_belt.size(),
 		"max_rings": _rings.size(),
@@ -307,20 +371,18 @@ func apply_save_dict(d: Dictionary) -> void:
 		if data != null:
 			_consumable_belt[i] = data
 			consumable_belt_changed.emit(i, data, null)
-	for path in d["bag"]:
-		if path.is_empty():
-			continue
-		var data := load(path) as EquipmentData
-		if data != null:
-			_bag.append(data)
-	# Legacy saves stored tomes separately; tomes are now bag items (TomeData extends
-	# EquipmentData), so fold any old "tomes" list into the bag.
+	# New saves store each bag item as an instance dict; legacy saves stored bare base paths.
+	# _instance_from_save handles both (dict -> from_dict, string -> fresh wrap, empty -> null).
+	for entry in d["bag"]:
+		var inst := _instance_from_save(entry)
+		if inst != null:
+			_bag.append(inst)
+	# Legacy saves stored tomes separately as bare paths; tomes are now bag items (TomeData extends
+	# EquipmentData), so fold any old "tomes" list into the bag as fresh instances.
 	for path in d.get("tomes", []):
-		if path.is_empty():
-			continue
-		var data := load(path) as EquipmentData
-		if data != null:
-			_bag.append(data)
+		var inst := _instance_from_save(path)
+		if inst != null:
+			_bag.append(inst)
 	if not _bag.is_empty():
 		bag_changed.emit()
 

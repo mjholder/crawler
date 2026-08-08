@@ -89,10 +89,23 @@ Phase 17 (2026-07-31) — see [[architecture.md]] §4, [[daily/2026-07-31]].
   `AttackCoeffBuffEffect` generalized to `PowerBuffEffect` (`POWER_ADD` / `COEFF_ADD` / `COEFF_MULT`).
   The flat buff applies to spells too — a temporary combat buff, not SPI scaling (mild tension with
   [[ideas/mana-as-capacity]], noted). See [[daily/2026-08-02]].
+- **Shipped 2026-08-07 — smithing goes per-attack + the smithy UI lands.** THE LAW still holds
+  (smithing moves only `power`), but the power move is no longer a flat `upgrade_level *
+  POWER_PER_LEVEL` folded into `effective_power`. Each attack now authors `AttackData.upgrade_scale`
+  (default 2.0), and `Player.weapon_context_for` adds `upgrade_level * upgrade_scale` into that
+  attack's injected `power` var — so a multi-hit attack (which would otherwise compound the bonus
+  ×coeff ×hits) is damped by a smaller authored scale. `POWER_PER_LEVEL` is retired; `upgrade_scale`
+  is the single per-level multiplier. No `.tres` expressions changed (the term stays inside `power`).
+  The smithy UI shipped as the end-of-act town **Smith** service: a weapon picker (`SmithPanel`)
+  over equipped + bagged weapons, flat 25g per `smith(1)`. Backing this, the **bag now stores
+  `ItemInstance`s** (was bare bases) so an upgrade survives unequip→re-equip and save/load —
+  `get_bag()`/`add_to_bag()` stay base-facing; `get_bag_instances()`/`equip_instance()` are the new
+  instance-aware paths. See [[daily/2026-08-07]].
 
 ## Remaining
 - **Smith transfer/reforge** — move a tag from an old weapon into a higher-tier one, consuming the
-  old. Still open (needs the smithy UI + economy hook, deliberately parked).
+  old. Still open. The smithy UI now exists (town Smith service, 2026-08-07), so this is now a
+  matter of adding a transfer mode to that panel plus an economy hook.
 - Loot-quality (LCK) roll odds that would populate rolled tags on drops — parked in
   [[ideas/luck-crit-loot-quality]]; nothing generates non-default instances yet.
 - **Spells joined the *form*, not the *scaling* (2026-08-01).** Spells now evaluate the same uniform

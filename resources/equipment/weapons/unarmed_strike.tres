@@ -1,11 +1,10 @@
-[gd_resource type="Resource" script_class="AttackData" format=3]
+[gd_resource type="Resource" script_class="AttackData" format=3 uid="uid://ccswquhgt1riu"]
 
-[ext_resource type="Script" path="res://scripts/attack_data.gd" id="1_script"]
-[ext_resource type="Resource" path="res://resources/effects/unarmed_damage.tres" id="2_new"]
+[ext_resource type="Script" uid="uid://ccpry8dqx7266" path="res://scripts/attack_data.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://c312cj5cosv8u" path="res://resources/effects/unarmed_damage.tres" id="2_new"]
 
 [resource]
 script = ExtResource("1_script")
 display_name = "Punch"
 description = "A bare-handed strike."
-target_mode = 0
-effects = [ExtResource("2_new")]
+effects = Array[Resource]([ExtResource("2_new")])

@@ -435,8 +435,10 @@ func weapon_context_for(attack_data: AttackData) -> Dictionary:
 	var inst: ItemInstance = _inventory.get_equipped_instance(slot) if slot != -1 else null
 	var ctx: Dictionary
 	if inst != null and inst.base is WeaponData:
-		# Effective (composed) power/scaling so smithing, rarity, and tags all reach the hit.
+		# Effective (composed) power/scaling so rarity and tags reach the hit; smithing is added
+		# per-attack below (scaled by this attack's upgrade_scale), not baked into effective_power.
 		ctx = _weapon_context_from(inst.effective_power(), inst.effective_scaling(), inst.scaling_stat())
+		ctx["power"] += inst.smith_power_bonus(attack_data.upgrade_scale)
 	elif attack_data == _UNARMED:
 		# No backing weapon instance (empty hand — the punch is registered into a hand's moveset even
 		# when that hand holds nothing). The bare-handed punch is backed by the innate Fists weapon.

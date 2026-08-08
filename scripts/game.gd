@@ -3,6 +3,9 @@ extends Node2D
 
 const TARGET_OVERLAY_SCENE := preload("res://scenes/target.tscn")
 
+## Flat gold cost for one smith upgrade at the town Smith service (placeholder economy).
+const SMITH_COST := 25
+
 # --- Screen Transform ---
 var screen_size: Vector2
 var screen_center: Vector2
@@ -103,6 +106,9 @@ func _ready() -> void:
 	_gui.shrine_ascend_requested.connect(_on_gui_shrine_ascend_requested)
 	_gui.shrine_leave_requested.connect(_on_gui_shrine_leave_requested)
 	_gui.town_temple_requested.connect(_on_gui_town_temple_requested)
+	_gui.town_smith_requested.connect(_on_gui_town_smith_requested)
+	_gui.smith_upgrade_requested.connect(_on_gui_smith_upgrade_requested)
+	_gui.smith_leave_requested.connect(_on_gui_smith_leave_requested)
 	_gui.town_travel_requested.connect(_on_gui_town_travel_requested)
 
 	_enter_main_menu()
@@ -918,6 +924,49 @@ func _on_gui_shrine_ascend_requested() -> void:
 
 func _on_gui_shrine_leave_requested() -> void:
 	_gui.hide_shrine_panel()
+	_gui.show_town_panel()
+
+
+# --- Smith ---
+
+## Weapons the Smith can upgrade: the equipped mainhand/offhand plus any bagged weapon, in a stable
+## order so a row index from the panel resolves back to the same ItemInstance across a refresh.
+func _upgradable_weapons() -> Array:
+	var out: Array = []
+	var inventory := player.get_inventory()
+	for slot in [Enums.Slot.WEAPON, Enums.Slot.OFFHAND]:
+		var equipped: ItemInstance = inventory.get_equipped_instance(slot)
+		if equipped != null and equipped.base is WeaponData:
+			out.append(equipped)
+	for inst in inventory.get_bag_instances():
+		if inst.base is WeaponData:
+			out.append(inst)
+	return out
+
+
+## Smith service: open the weapon-upgrade picker, sourced from the player's weapons.
+func _on_gui_town_smith_requested() -> void:
+	if not current_event is EndActEvent:
+		return
+	_gui.hide_town_panel()
+	_gui.show_smith_panel(_upgradable_weapons(), player.gold, SMITH_COST)
+
+
+func _on_gui_smith_upgrade_requested(index: int) -> void:
+	var weapons := _upgradable_weapons()
+	if index < 0 or index >= weapons.size():
+		return
+	if not player.spend_gold(SMITH_COST):
+		return
+	var inst: ItemInstance = weapons[index]
+	inst.smith(1)
+	_gui.update_player_gold(player.gold)
+	# Rebuild the list so the upgraded weapon's +N and affordability states refresh in place.
+	_gui.refresh_smith_panel(_upgradable_weapons(), player.gold)
+
+
+func _on_gui_smith_leave_requested() -> void:
+	_gui.hide_smith_panel()
 	_gui.show_town_panel()
 
 

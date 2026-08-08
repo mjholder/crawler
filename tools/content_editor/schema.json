@@ -50,6 +50,10 @@
 					"type": "float"
 				},
 				{
+					"name": "upgrade_scale",
+					"type": "float"
+				},
+				{
 					"name": "display_name",
 					"type": "String"
 				},

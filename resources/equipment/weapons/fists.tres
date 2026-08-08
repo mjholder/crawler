@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="WeaponData" format=3]
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://bu5v7u00vuhw4"]
 
-[ext_resource type="Script" path="res://scripts/weapon_data.gd" id="1_script"]
-[ext_resource type="Resource" path="res://resources/equipment/weapons/unarmed_strike.tres" id="2_attack"]
+[ext_resource type="Script" uid="uid://bkgb8ckvvwyft" path="res://scripts/weapon_data.gd" id="1_script"]
+[ext_resource type="Resource" uid="uid://ccswquhgt1riu" path="res://resources/equipment/weapons/unarmed_strike.tres" id="2_attack"]
+[ext_resource type="Script" uid="uid://duwc44cgbg4yn" path="res://scripts/rider_data.gd" id="2_ffv6k"]
+[ext_resource type="Script" uid="uid://dp2fcl8n5vngs" path="res://scripts/tag_data.gd" id="3_euvtt"]
 
 [resource]
 script = ExtResource("1_script")
-item_name = "Fists"
-description = "Bare hands — the innate fallback when a hand holds no weapon. Carries the power/scaling that back the unarmed punch."
-slot = 0
-attacks = Array[Resource]([ExtResource("2_attack")])
 power = 4.0
 scaling = 0.5
-scaling_stat = 0
+item_name = "Fists"
+description = "Bare hands — the innate fallback when a hand holds no weapon. Carries the power/scaling that back the unarmed punch."
+attacks = Array[Resource]([ExtResource("2_attack")])

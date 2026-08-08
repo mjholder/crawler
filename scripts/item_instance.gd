@@ -7,13 +7,13 @@ extends RefCounted
 ## saves stay small and base rebalances still reach items already in a save.
 ##
 ## THE LAW (journal/ideas/weapon-anatomy-power-and-scaling.md): smithing (`upgrade_level`) only
-## ever moves `power`; rarity only ever moves `scaling`. Tags may move both, via power_delta /
+## ever moves `power`; rarity only ever moves `scaling`. Smithing's power move is applied per-attack
+## (scaled by AttackData.upgrade_scale) rather than folded into flat effective_power, so a multi-hit
+## attack can carry a smaller scale. Tags may move both, via power_delta /
 ## scaling_delta, and are the only path that adds new stat_modifiers / procs / conditionals on
 ## top of the base. Enforced here — the one place effective numbers are composed.
 
 # --- Tuning tables (the two axes the law separates) ---
-## Flat power granted per smithing level. Smithing is the power-only mutation path.
-const POWER_PER_LEVEL := 2.0
 ## Scaling-coefficient bonus per rarity tier. Rarity is the scaling-only mutation path.
 const RARITY_SCALING := {
 	Enums.Rarity.COMMON: 0.0,
@@ -62,12 +62,20 @@ func scaling_stat() -> Enums.Stat:
 	return (base as WeaponData).scaling_stat if base is WeaponData else Enums.Stat.STRENGTH
 
 
-## power = base + smithing (power-only) + Σ tag.power_delta.
+## The attack-independent power: base + Σ tag.power_delta. Smithing does NOT fold in here — its
+## bonus is scaled per-attack (AttackData.upgrade_scale) and added at the hit, via smith_power_bonus().
 func effective_power() -> float:
-	var total := base_power() + float(upgrade_level) * POWER_PER_LEVEL
+	var total := base_power()
 	for tag in tags:
 		total += tag.power_delta
 	return total
+
+
+## Smithing's power contribution for one attack: upgrade_level × that attack's upgrade_scale. The
+## power-only mutation path (THE LAW), now applied per-attack — the caller folds this into the `power`
+## var for the specific attack being resolved (see Player.weapon_context_for).
+func smith_power_bonus(per_attack_scale: float) -> float:
+	return float(upgrade_level) * per_attack_scale
 
 
 ## scaling = base + rarity (scaling-only) + Σ tag.scaling_delta.
@@ -164,7 +172,8 @@ func add_rider(rider) -> void:
 		riders.append(rider)
 
 
-## Smithing: power only. Raises the upgrade level (POWER_PER_LEVEL flat power per level).
+## Smithing: power only. Raises the upgrade level; each level adds AttackData.upgrade_scale power
+## per attack at hit time (see smith_power_bonus / Player.weapon_context_for).
 func smith(levels: int = 1) -> void:
 	upgrade_level += levels
 

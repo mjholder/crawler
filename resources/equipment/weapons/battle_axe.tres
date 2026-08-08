@@ -5,9 +5,11 @@
 [ext_resource type="Resource" uid="uid://dmyt0yvxnjrft" path="res://resources/attacks/brace.tres" id="3_mvkcj"]
 [ext_resource type="Texture2D" uid="uid://dbv4prm15qp3l" path="res://assets/sprites/weapons/battle_axe/swing.png" id="3_o157q"]
 [ext_resource type="Texture2D" uid="uid://bx8qgjpp08r0n" path="res://assets/sprites/weapons/battle_axe/idle.png" id="4_sggdg"]
+[ext_resource type="Script" uid="uid://duwc44cgbg4yn" path="res://scripts/rider_data.gd" id="4_y2jmi"]
+[ext_resource type="Script" uid="uid://dp2fcl8n5vngs" path="res://scripts/tag_data.gd" id="5_ib701"]
 [ext_resource type="PackedScene" uid="uid://bkwtkj4t1b4se" path="res://scenes/weapon.tscn" id="5_weapon"]
-[ext_resource type="Resource" path="res://resources/attacks/slash.tres" id="6_slash"]
-[ext_resource type="Resource" path="res://resources/attacks/cleave.tres" id="7_cleave"]
+[ext_resource type="Resource" uid="uid://5mqg30kwjj5w" path="res://resources/attacks/slash.tres" id="6_slash"]
+[ext_resource type="Resource" uid="uid://vyhhbnyy1q21" path="res://resources/attacks/cleave.tres" id="7_cleave"]
 [ext_resource type="Texture2D" uid="uid://bj083b7w7egw7" path="res://assets/sprites/weapons/battle_axe/icon.png" id="8_pdf"]
 [ext_resource type="Script" uid="uid://bhd611piw5n14" path="res://scripts/proc_def.gd" id="9_procd"]
 [ext_resource type="Resource" path="res://resources/effects/apply_poison.tres" id="10_apply_poison"]
@@ -51,10 +53,9 @@ animations = [{
 
 [resource]
 script = ExtResource("1_84utr")
-item_name = "Battle Axe"
 power = 20.0
 scaling = 0.5
-scaling_stat = 0
+item_name = "Battle Axe"
 description = "One Handed axe"
 sprite_frames = SubResource("SpriteFrames_p4cbs")
 paper_doll_front = ExtResource("8_pdf")
