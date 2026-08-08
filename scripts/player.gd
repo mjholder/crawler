@@ -1070,8 +1070,8 @@ func _build_hand_actions(hand: Hand, slot: Enums.Slot) -> void:
 	elif data is WeaponData:
 		for spell_res in (data as WeaponData).innate_spells:
 			granted = _register_hand_spell(hand, spell_res as SpellData) or granted
-	# Innate-spell riders grant a hand-local castable that bypasses prep slots (rarity-gated inside
-	# the instance). _do_cast resolves from _hand_spells[hand], so registering here is sufficient.
+	# Innate-spell riders grant a hand-local castable that bypasses prep slots. _do_cast resolves
+	# from _hand_spells[hand], so registering the instance's granted spells here is sufficient.
 	var inst := _inventory.get_equipped_instance(slot)
 	if inst != null:
 		for spell in inst.granted_innate_spells():

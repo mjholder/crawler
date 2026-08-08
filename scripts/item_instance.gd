@@ -26,8 +26,9 @@ var base: EquipmentData = null
 var upgrade_level: int = 0
 var rarity: Enums.Rarity = Enums.Rarity.COMMON
 var tags: Array = []  # Array[TagData]
-## Binary, rarity-gated behaviors (RiderData). Composed at read time like tags, but each rider only
-## applies when the instance's rarity meets its min_rarity — the gate lives in effective_riders().
+## Binary behaviors (RiderData). Composed at read time like tags. Which riders an instance carries is
+## decided at generation time by drawing from the rarity-matched pool (RiderPool); every rider on the
+## instance applies — rarity is metadata on the rider, not a runtime gate.
 var riders: Array = []  # Array[RiderData]
 
 
@@ -117,14 +118,15 @@ func effective_conditional_modifiers() -> Array:
 	return out
 
 
-# --- Riders (rarity-gated behavior) ---
+# --- Riders (composed behavior) ---
 
-## Riders whose min_rarity this instance meets — the single enforcement point of the rarity gate.
-## Everything downstream (stack_bonus, granted_innate_spells) reads only through here.
+## Every non-null rider on this instance. Riders are selected by rarity at generation time
+## (RiderPool), so there is no runtime rarity check here — the single read point downstream
+## (stack_bonus, potency_bonus, granted_innate_spells) all funnel through this accessor.
 func effective_riders() -> Array:
 	var out: Array = []
 	for rider in riders:
-		if rider != null and int(rarity) >= int(rider.min_rarity):
+		if rider != null:
 			out.append(rider)
 	return out
 

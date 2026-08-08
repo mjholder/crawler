@@ -157,7 +157,7 @@ as their own resources, then optionally bake them onto a specific piece of gear.
   (`stat_modifiers`, `proc_effects` → `ProcDef`, `conditional_modifiers` → `ConditionalModifier`) plus
   two weapon-anatomy deltas: `power_delta`, `scaling_delta`. Tags are the only payload allowed to move
   **both** power and scaling.
-- **`RiderData`** (`res://resources/riders/`) — *binary, rarity-gated behavior*. A **polymorphic
+- **`RiderData`** (`res://resources/riders/`) — *binary, rarity-pooled behavior*. A **polymorphic
   family**: write the concrete subclass, never the base.
   - `StackBonusRider` — `bonus_stacks: int` (+N stacks to STACK-policy statuses this item's attacks
     apply). This is the **longer** lever: on a decaying DoT (poison) more stacks = more turns.
@@ -166,20 +166,23 @@ as their own resources, then optionally bake them onto a specific piece of gear.
     turns. Not crit-scaled (crit deepens stacks, not potency).
   - `InnateSpellRider` — `spell` (`__ref` to a `SpellData`); grants that spell in the item's hand,
     bypassing prep slots.
-  - Every rider has `min_rarity` (enum, default `RARE`). A rider only applies when the item's rarity
-    meets it — so a smithed common never gains one.
+  - Every rider has `rarity` (enum, default `RARE`) — **pool metadata, not a runtime gate**. It tags
+    which rarity pool the rider belongs to; loot generation draws a rider from the pool matching an
+    item's rolled rarity and attaches it (`RiderPool`). Once attached a rider always applies, so a
+    baked rider is never inert regardless of the item's rarity. Riders never belong to the COMMON
+    pool — keeping them off commons is what preserves "smithing moves power, rarity moves scaling".
 
 ### Baking payload onto a fixed / named item
 
 `EquipmentData` (and `WeaponData`) carry three authoring-time fields that seed a **fresh** item:
 
-- `base_rarity` (enum) — the fresh-item rarity floor. **Set this at or above a baked rider's
-  `min_rarity`**, or the rider is inert (a `RARE` rider on a `COMMON` item does nothing).
+- `base_rarity` (enum) — the fresh item's scaling tier. A baked rider applies regardless of this, so
+  set it for the scaling you want, not to "unlock" the rider.
 - `default_tags` — array of `{ "__ref": "res://resources/tags/....tres" }`.
 - `default_riders` — array of `{ "__ref": "res://resources/riders/....tres" }`.
 
-These behave identically to rolled loot (composed at read time; the rider rarity gate is unchanged),
-and only seed brand-new items — a save is authoritative on reload, so seeding never double-applies.
+These behave identically to rolled loot (composed at read time), and only seed brand-new items — a
+save is authoritative on reload, so seeding never double-applies.
 
 Example fixed magic weapon:
 ```json

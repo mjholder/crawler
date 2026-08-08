@@ -7,7 +7,7 @@ extends Resource
 ## the two weapon-anatomy axes on top. Tags are the only mutation path that may move BOTH power
 ## and scaling; smithing moves power alone, rarity scaling alone (see item_instance.gd, THE LAW).
 ##
-## Riders (binary, rarity-gated behavior like "+1 status stack" or an innate spell on a focus) are
+## Riders (binary, rarity-pooled behavior like "+1 status stack" or an innate spell on a focus) are
 ## a separate, deliberately non-numeric concept — parked, not modeled here
 ## (journal/ideas/equipment-tags-and-riders).
 

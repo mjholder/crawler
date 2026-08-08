@@ -15,10 +15,11 @@ extends Resource
 @export var price: int = 0
 ## Fixed / named magic items: baked-in payload seeded onto a fresh ItemInstance (ItemInstance.wrap).
 ## These are authoring-time defaults, not rolled loot — but seeded tags/riders behave identically to
-## rolled ones (compose at read time; the rider rarity gate is unchanged). Seeding happens for fresh
-## items only; save/load stays authoritative, so it never double-applies. See item_instance.gd.
-## base_rarity is the fresh-item rarity floor — required so a baked rider clears its min_rarity gate
-## (a RARE rider on a COMMON item is inert).
+## rolled ones (compose at read time). Seeding happens for fresh items only; save/load stays
+## authoritative, so it never double-applies. See item_instance.gd.
+## base_rarity sets the fresh item's scaling tier. A baked rider applies regardless of base_rarity —
+## the rider's own `rarity` is only pool metadata (RiderData) — so a designer picks base_rarity for
+## the scaling they want, not to "unlock" the baked rider.
 @export var base_rarity: Enums.Rarity = Enums.Rarity.COMMON
 @export var default_tags: Array[TagData] = []
 @export var default_riders: Array[RiderData] = []

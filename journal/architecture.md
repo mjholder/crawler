@@ -313,6 +313,8 @@ Phase 9 added the **three-layer character identity**: alongside `PlayerClassData
 
 **Phase 23 — smithing goes per-attack + the town Smith service (2026-08-07).** Smithing's power move is now **per-attack**: `AttackData` gains `upgrade_scale` (default 2.0), `ItemInstance.effective_power()` drops the flat smith term (the global `POWER_PER_LEVEL` is retired), and a new `ItemInstance.smith_power_bonus(scale)` = `upgrade_level * scale` is folded into that attack's injected `power` var by `Player.weapon_context_for`. No `.tres` expressions changed and **THE LAW** (smithing → power) still holds; a multi-hit attack (which compounds the bonus ×coeff ×hits) is damped by a smaller authored scale. To make smithing durable, **`Inventory._bag` now holds `ItemInstance`s** (was bare `EquipmentData`): `equip()`/`unequip()` move the instance via `_add_instance_to_bag()` instead of re-wrapping, `remove_from_bag()` returns the removed instance, and new `equip_instance()`/`equip_ring_instance()` re-equip it — so smithing/rarity/tags survive unequip→re-equip and save/load (bag serializes instance dicts, legacy bare-path fallback). `get_bag()`/`add_to_bag()` stay base-facing (shop/display/`InventoryPanel` unchanged); `InventoryPanel`'s two equip-from-bag sites were rewired to the instance-aware path. The **Smith town service** wires the previously-dead button: `TownPanel.smith_requested → GUI.town_smith_requested → game._on_gui_town_smith_requested` opens a new `SmithPanel` weapon picker (equipped + bagged `WeaponData` instances, via `Inventory.get_bag_instances()`); a row emits `SmithPanel.upgrade_requested(index) → GUI.smith_upgrade_requested → game._on_gui_smith_upgrade_requested`, which spends `Game.SMITH_COST` (25g), calls `ItemInstance.smith(1)`, and refreshes in place; Leave (`smith_leave_requested`) returns to the town. See [[ideas/weapon-anatomy-power-and-scaling]], [[daily/2026-08-07]].
 
+**Phase 24 — rider rarity becomes pool metadata, not a runtime gate (2026-08-08).** The Phase 20 rider *gate* is retired. `RiderData.min_rarity` is renamed to `rarity`, and `ItemInstance.effective_riders()` no longer compares it against the instance's rarity — it now just returns every non-null rider, so once a rider is attached it always applies (`stack_bonus`/`potency_bonus`/`granted_innate_spells` read through it unchanged). Rarity moves upstream to *generation*: new **`RiderPool`** (mirrors `FloorEventPool`) scans `res://resources/riders/`, buckets `RiderData` by `rarity`, and offers `pool_for(rarity)` / `pick_of_rarity(rarity, rng)` so a future loot roller draws a rider from the pool matching an item's rolled rarity and calls `ItemInstance.add_rider()`. `EquipmentData.base_rarity` reverts to meaning only "scaling tier" — a baked `default_riders` entry applies regardless of it, so it can no longer be mis-set to leave a rider silently inert. Content editor: the three rider `.tres` migrated `min_rarity → rarity`; `schema.json` regenerated (`make schema`). No loot generator consumes `RiderPool` yet. See [[design.md]] — Rider rarity is pool metadata, [[daily/2026-08-08]].
+
 ```mermaid
 classDiagram
     class EquipmentData {
@@ -395,7 +397,7 @@ classDiagram
     class RiderData {
         <<Resource>>
         +String rider_name
-        +Enums.Rarity min_rarity
+        +Enums.Rarity rarity
     }
     class StackBonusRider {
         +int bonus_stacks

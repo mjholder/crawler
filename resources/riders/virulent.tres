@@ -6,5 +6,5 @@
 script = ExtResource("1_script")
 rider_name = "Virulent"
 description = "The venom runs hot and concentrated. Every affliction it inflicts bites deeper each turn — the same wound, worse."
-min_rarity = 2
+rarity = 2
 potency_bonus = 1

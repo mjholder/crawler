@@ -7,5 +7,5 @@
 script = ExtResource("1_script")
 rider_name = "Sparkbound"
 description = "A restless charge lives in the metal. It answers your hand with a spark you never had to prepare."
-min_rarity = 2
+rarity = 2
 spell = ExtResource("2_spell")

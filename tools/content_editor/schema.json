@@ -852,7 +852,7 @@
 						"Rare": 2,
 						"Uncommon": 1
 					},
-					"name": "min_rarity",
+					"name": "rarity",
 					"type": "enum"
 				}
 			],
@@ -1005,7 +1005,7 @@
 						"Rare": 2,
 						"Uncommon": 1
 					},
-					"name": "min_rarity",
+					"name": "rarity",
 					"type": "enum"
 				}
 			],
@@ -1098,7 +1098,7 @@
 						"Rare": 2,
 						"Uncommon": 1
 					},
-					"name": "min_rarity",
+					"name": "rarity",
 					"type": "enum"
 				}
 			],
@@ -1213,7 +1213,7 @@
 						"Rare": 2,
 						"Uncommon": 1
 					},
-					"name": "min_rarity",
+					"name": "rarity",
 					"type": "enum"
 				}
 			],

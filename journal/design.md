@@ -19,6 +19,35 @@ Cross-reference daily logs with `See [[design.md]] — [[daily/YYYY-MM-DD]]` whe
 
 <!-- Add entries below, newest first -->
 
+## Rider rarity is pool metadata, not a runtime activation gate
+
+**Decision:** A rider's rarity stops being a runtime gate and becomes generation-time pool metadata.
+`RiderData.min_rarity` (the "only apply when the item's rarity meets it" gate) is renamed to
+`rarity`, and `ItemInstance.effective_riders()` no longer compares it against the instance's rarity —
+every rider on an instance applies. Which riders land on an instance is decided at generation time by
+drawing from the rarity-matched pool: new `RiderPool` scans `resources/riders/`, buckets riders by
+`rarity`, and offers `pool_for(rarity)` / `pick_of_rarity(rarity, rng)`.
+**Date:** 2026-08-08
+**Daily:** [[daily/2026-08-08]]
+**Context:** The gate model (Phase 20) enforced richness by filtering at read time — a `RARE` rider sat
+on the instance but stayed inert until the item's rarity climbed. That made rarity do two jobs (a
+scaling axis *and* a rider on/off switch), forced `base_rarity` to be picked to "unlock" baked riders,
+and let a designer silently ship an inert rider by mis-setting `base_rarity` below `min_rarity`. We
+want rarity to *select* what an item draws, then get out of the way.
+**Alternatives considered:** (a) Keep the gate and layer pools on top — but then rarity gates twice
+(pool membership *and* activation) with no added expressiveness. (b) Drop rarity from riders entirely
+and pool by hand-authored lists — loses the natural "richer behavior at higher rarity" curve and adds
+a second registry to maintain.
+**Rationale:** One axis, one job. Rarity picks the pool; the pool decides the rider; the rider always
+applies once attached. `base_rarity` goes back to meaning only "scaling tier," and a baked rider can
+never be silently inert. Seeded (`default_riders`) and rolled riders stay indistinguishable
+downstream, so THE LAW (smithing→power, rarity→scaling) is untouched. See
+[[ideas/equipment-tags-and-riders]].
+**Trade-offs / risks:** No loot generator consumes `RiderPool` yet (loot rolling is still unbuilt),
+so the pool is capability-ahead-of-caller. The old gate's belt-and-suspenders safety (a stray
+high-rarity rider on a low item was inert) is gone — attaching a rider now always applies it, so
+attachment sites must respect the pool rather than lean on a downstream gate.
+
 ## DoT riders split into two orthogonal levers: stacks (longer) vs potency (harder)
 
 **Date:** 2026-08-04
